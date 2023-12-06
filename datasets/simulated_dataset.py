@@ -3,6 +3,7 @@ import time
 import torch
 from torch.utils.data import Dataset
 
+
 class MatrixDataset(Dataset):
     def __init__(self, target_matrix, length):
         """
@@ -11,7 +12,7 @@ class MatrixDataset(Dataset):
             length (int): Number of samples in the dataset.
             dimensions (tuple): Dimensions (n, m, k) for the randomly generated matrices.
         """
-        #self.target_matrix = target_matrix
+        # self.target_matrix = target_matrix
         self.target_matrix = target_matrix / np.sum(np.abs(target_matrix))  # Normalize the target matrix
         self.length = length
         self.dimensions = target_matrix.shape  # Dimensions for the random matrices
@@ -29,10 +30,10 @@ class MatrixDataset(Dataset):
 
         # Compute the dot product with the target matrix
         target_tensor = torch.from_numpy(self.target_matrix).float()
-        output_matrix = random_matrix.squeeze(0)*target_tensor
+        output_matrix = random_matrix.squeeze(0) * target_tensor
         output_value = output_matrix.sum()
 
         # Apply sigmoid function to the output_value
-        #output_value = torch.tensor(output_value).clone().detach()
+        # output_value = torch.tensor(output_value).clone().detach()
 
         return random_matrix, output_value
