@@ -26,3 +26,5 @@ if __name__ == '__main__':
     torch.save({'dims': dims, 'length': length, 'target_matrix': target_matrix,
                 'sample_matrix': sample_matrix, 'output_sum': output_sum,
                 }, filename)
+
+    plt.savefig(f'{p.result_dir}check_figure{cfid}.png')
