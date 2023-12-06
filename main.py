@@ -9,6 +9,7 @@ import scipy.io
 import time
 from datasets.simulated_dataset import MatrixDataset
 from models.perceiver3d import Perceiver
+from torchsummary import summary
 import sys
 
 # Press the green button in the gutter to run the script.
