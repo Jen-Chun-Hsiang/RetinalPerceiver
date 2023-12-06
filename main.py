@@ -18,9 +18,9 @@ if __name__ == '__main__':
     dims = [10, 20, 30]  # Size of the matrix
     length = 1000  # Number of samples in the dataset
     target_matrix = np.random.randn(*dims)  # Random target matrix
-    sample_matrix, output_sum = dataset[0]
 
     dataset = MatrixDataset(target_matrix, length)
+    sample_matrix, output_sum = dataset[0]
     timestr = time.strftime("%Y%m%d-%H%M")
     filename = f'{savemodel_dir}annmodel_checkpoint_{timestr}.pth'
     torch.save({'dims': dims, 'length': length, 'target_matrix': target_matrix,
