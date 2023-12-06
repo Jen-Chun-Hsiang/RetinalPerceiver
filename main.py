@@ -46,6 +46,7 @@ if __name__ == '__main__':
     with open(f'{saveprint_dir}model_summary_{timestr}.txt', 'w') as file:
         sys.stdout = file
         # Print the summary to file
-        # summary(model, (1, 20, 30, 40))
+        model = model.to('cuda')  # Move model to GPU
+        summary(model, (1, 20, 30, 40), device='cuda')
         print("Output Shape:", output.shape)  # should be [1, output_size]
         print("Output Values:", output)  # values should be between 0 and 1 due to sigmoid
