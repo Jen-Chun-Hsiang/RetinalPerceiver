@@ -42,3 +42,25 @@ def evaluate(test_loader, model, criterion, device):
 
     avg_val_loss = total_val_loss / len(test_loader)
     return avg_val_loss
+
+def save_checkpoint(epoch, model, optimizer, training_losses, validation_losses, file_path):
+    """
+    Saves a checkpoint of the training process.
+
+    Args:
+    epoch (int): The current epoch number.
+    model (torch.nn.Module): The model being trained.
+    optimizer (torch.optim.Optimizer): The optimizer used for training.
+    training_losses (list): List of training losses.
+    validation_losses (list): List of validation losses.
+    file_path (str): Path to save the checkpoint.
+    """
+    checkpoint = {
+        'epoch': epoch,
+        'model_state_dict': model.state_dict(),
+        'optimizer_state_dict': optimizer.state_dict(),
+        'training_losses': training_losses,
+        'validation_losses': validation_losses
+    }
+    torch.save(checkpoint, file_path)
+

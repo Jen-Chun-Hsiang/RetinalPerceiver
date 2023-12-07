@@ -10,7 +10,7 @@ from datasets.simulated_target_rf import TargetMatrixGenerator
 from utils.utils import plot_and_save_3d_matrix_with_timestamp as plot3dmat
 from datasets.simulated_dataset import MatrixDataset
 from models.perceiver3d import Perceiver
-#from utils.trainer import train_one_epoch, evaluate
+from utils.training_procedure import train_one_epoch, evaluate, save_checkpoint
 #from utils.utils import save_checkpoint, load_checkpoint
 
 def parse_args():
@@ -86,40 +86,25 @@ def main():
     else:
         start_epoch = 0
 
-    # Training loop
+    # Training Loop with loss recording
+    training_losses = []
+    validation_losses = []
+
     for epoch in range(start_epoch, args.epochs):
-        train_one_epoch(train_loader, model, criterion, optimizer, epoch, device)
-        evaluate(test_loader, model, device)
+        avg_train_loss = train_one_epoch(train_loader, model, criterion, optimizer, epoch, device)
+        training_losses.append(avg_train_loss)
 
-        # Save checkpointt
-        save_checkpoint(epoch, model, optimizer, args.checkpoint_path)
+        avg_val_loss = evaluate(val_loader, model, criterion, device)
+        validation_losses.append(avg_val_loss)
 
-
-
-'''
-    train_loader = DataLoader(dataset=train_dataset, batch_size=args.batch_size, shuffle=True)
-
-    test_dataset = YourDataset(root='./data', train=False)
-    test_loader = DataLoader(dataset=test_dataset, batch_size=args.batch_size, shuffle=False)
-
-    # Model, loss and optimizer
-    model = YourModel().to(device)
-    criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
-
-    # Optionally, load from checkpoint
-    if args.load_checkpoint:
-        start_epoch, model, optimizer = load_checkpoint(args.checkpoint_path, model, optimizer, device)
-    else:
-        start_epoch = 0
-
-    # Training loop
-    for epoch in range(start_epoch, args.epochs):
-        train_one_epoch(train_loader, model, criterion, optimizer, epoch, device)
-        evaluate(test_loader, model, device)
+        # Print training status
+        if (epoch + 1) % 5 == 0:
+            print(f"Epoch [{epoch+1}/{args.epochs}], Training Loss: {avg_train_loss:.4f}, Validation Loss: {avg_val_loss:.4f}")
 
         # Save checkpoint
-        save_checkpoint(epoch, model, optimizer, args.checkpoint_path)
-'''
+        if (epoch + 1) % 10 == 0:  # Example: Save every 10 epochs
+            checkpoint_filename = f'checkpoint_epoch_{epoch+1}.pth'
+            save_checkpoint(epoch, model, optimizer, training_losses, validation_losses, os.path.join(args.checkpoint_path, checkpoint_filename))
+
 if __name__ == '__main__':
     main()
