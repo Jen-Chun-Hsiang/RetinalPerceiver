@@ -31,7 +31,7 @@ def parse_args():
     parser.add_argument('--batch_size', type=int, default=64, help='Batch size for training')
     parser.add_argument('--learning_rate', type=float, default=0.001, help='Learning rate')
     parser.add_argument('--weight_decay', type=float, default=0.001, help='Weight decay')
-    parser.add_argument('--checkpoint_path', type=str, default='./checkpoints/model.pth', help='Path to save the model checkpoint')
+    parser.add_argument('--checkpoint_path', type=str, default='./checkpoints/model.pth', help='Path to save load model checkpoint')
     parser.add_argument('--load_checkpoint', action='store_true', help='Flag to load the model from checkpoint')
     # Perceiver specificity
     parser.add_argument('--num_head', type=int, default=4, help='Number of heads in perceiver')
@@ -44,7 +44,7 @@ def parse_args():
 
 def main():
     args = parse_args()
-    savemodel_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/'
+    savemodel_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/CheckPoints/'
     saveprint_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Prints/'
     savefig_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Figures/'
     # Generate a timestamp
@@ -115,7 +115,7 @@ def main():
         # Save checkpoint
         if (epoch + 1) % 10 == 0:  # Example: Save every 10 epochs
             checkpoint_filename = f'checkpoint_epoch_{epoch+1}.pth'
-            save_checkpoint(epoch, model, optimizer, training_losses, validation_losses, os.path.join(args.checkpoint_path, checkpoint_filename))
+            save_checkpoint(epoch, model, optimizer, training_losses, validation_losses, os.path.join(savemodel_dir, checkpoint_filename))
 
 if __name__ == '__main__':
     main()
