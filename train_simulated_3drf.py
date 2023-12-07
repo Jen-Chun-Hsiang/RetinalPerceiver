@@ -2,14 +2,14 @@ import argparse
 import torch
 import torch.optim as optim
 import torch.nn as nn
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, random_split
 import numpy as np
 
 # Importing modules from your project
 from datasets.simulated_target_rf import TargetMatrixGenerator
 from utils.utils import plot_and_save_3d_matrix_with_timestamp as plot3dmat
 from datasets.simulated_dataset import MatrixDataset
-#from models.model import YourModel
+from models.perceiver3d import Perceiver
 #from utils.trainer import train_one_epoch, evaluate
 #from utils.utils import save_checkpoint, load_checkpoint
 
@@ -63,10 +63,36 @@ def main():
     # plot and save the target_matrix figure
     plot3dmat(target_matrix, args.num_cols, savefig_dir, file_prefix='plot_3D_matrix')
     # Initialize the dataset with the device
-    #dataset = MatrixDataset(target_matrix, args.total_length, device)
+    dataset = MatrixDataset(target_matrix, args.total_length, device)
 
+    # Splitting the dataset into training and validation sets
+    train_length = int(0.8 * args.total_length)  # 80% for training
+    val_length = args.total_length - train_length  # 20% for validation
 
+    train_dataset, val_dataset = random_split(dataset, [train_length, val_length])
+    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
 
+    # Model, Loss, and Optimizer
+    model = Perceiver(args.input_channels, args.hidden_size, args.output_size, args.num_latent, args.num_head,
+                      args.num_iter, args.input_depth, args.input_height, args.input_width, args.num_band,
+                      device=device)
+    criterion = nn.MSELoss()
+    optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
+
+    # Optionally, load from checkpoint
+    if args.load_checkpoint:
+        start_epoch, model, optimizer = load_checkpoint(args.checkpoint_path, model, optimizer, device)
+    else:
+        start_epoch = 0
+
+    # Training loop
+    for epoch in range(start_epoch, args.epochs):
+        train_one_epoch(train_loader, model, criterion, optimizer, epoch, device)
+        evaluate(test_loader, model, device)
+
+        # Save checkpointt
+        save_checkpoint(epoch, model, optimizer, args.checkpoint_path)
 
 
 
