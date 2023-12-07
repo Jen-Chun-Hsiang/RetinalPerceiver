@@ -3,9 +3,11 @@ import torch
 import torch.optim as optim
 import torch.nn as nn
 from torch.utils.data import DataLoader
+import numpy as np
 
 # Importing modules from your project
-from data.dataset import YourDataset
+from datasets.simulated_target_rf import TargetMatrixGenerator
+from datasets.simulated_dataset import MatrixDataset
 from models.model import YourModel
 from utils.trainer import train_one_epoch, evaluate
 from utils.utils import save_checkpoint, load_checkpoint
@@ -38,11 +40,28 @@ def parse_args():
 def main():
     args = parse_args()
 
-    # Device configuration
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    # Check if CUDA is available
+    if not torch.cuda.is_available():
+        raise RuntimeError("CUDA is not available. Please check your GPU and CUDA installation.")
 
-    # Initialize dataset and dataloader
-    train_dataset = YourDataset(root='./data', train=True)
+    # If CUDA is available, continue with the rest of the script
+    device = torch.device("cuda")
+
+    # Create the target matrix
+    generator = TargetMatrixGenerator(mean=(0.1, -0.2)), cov=np.array([[0.12, 0.05], [0.04, 0.03]]), device=device)
+
+    # Generate the target matrix
+    target_matrix = generator.create_3d_target_matrix(args.input_height, args.input_width, args.input_depth)
+
+    # Initialize the dataset with the device
+    dataset = MatrixDataset(target_matrix, args.total_length, device)
+
+
+
+
+
+
+'''
     train_loader = DataLoader(dataset=train_dataset, batch_size=args.batch_size, shuffle=True)
 
     test_dataset = YourDataset(root='./data', train=False)
@@ -66,6 +85,6 @@ def main():
 
         # Save checkpoint
         save_checkpoint(epoch, model, optimizer, args.checkpoint_path)
-
+'''
 if __name__ == '__main__':
     main()
