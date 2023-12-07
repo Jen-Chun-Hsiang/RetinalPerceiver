@@ -37,7 +37,7 @@ if __name__ == '__main__':
 
     model = Perceiver(input_size, 128, output_size, 32, 4, 1, 20, 30, 40, 10)
     model = model.to(device)  # Move model to GPU
-    input_tensor = torch.rand(32, 1, 20, 30, 40)  # Example input tensor for n x n image
+    input_tensor = torch.rand(32, 1, 20, 30, 40, device=device)  # Example input tensor for n x n image
     output = model(input_tensor)
 
     # Check the output shape and values
