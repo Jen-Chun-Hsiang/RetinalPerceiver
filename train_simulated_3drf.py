@@ -50,8 +50,11 @@ def main():
     # Generate a timestamp
     timestr = datetime.now().strftime('%Y%m%d_%H%M%S')
 
+    # Construct the full path for the log file
+    log_filename = os.path.join(saveprint_dir, f'model_training_log_{timestr}.txt')
+
     # Setup logging
-    logging.basicConfig(filename=f'{saveprint_dir}model_training_log_{timestr}.txt',
+    logging.basicConfig(filename=log_filename,
                         level=logging.INFO,
                         format='%(asctime)s %(levelname)s:%(message)s')
 
