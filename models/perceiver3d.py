@@ -34,24 +34,26 @@ class SelfAttention(nn.Module):
         #return self.norm(attn_output + x)
 
 class FourierFeaturePositionalEncoding3D(nn.Module):
-    def __init__(self, depth, height, width, num_bands):
+    def __init__(self, depth, height, width, num_bands, device=None):
         super().__init__()
         self.num_bands = num_bands
+        self.device = device if device is not None else torch.device("cpu")
 
         # Create a grid of 3D coordinates
         z_coord, y_coord, x_coord = torch.meshgrid(
-            torch.linspace(-1, 1, depth),
-            torch.linspace(-1, 1, height),
-            torch.linspace(-1, 1, width)
+            torch.linspace(-1, 1, depth, device=self.device),
+            torch.linspace(-1, 1, height, device=self.device),
+            torch.linspace(-1, 1, width, device=self.device)
         )
         coord = torch.stack([z_coord, y_coord, x_coord], dim=0)  # Shape: [3, depth, height, width]
 
         # Apply Fourier Feature Mapping
-        frequencies = 2.0 ** torch.linspace(0., num_bands - 1, num_bands)
+        frequencies = 2.0 ** torch.linspace(0., num_bands - 1, num_bands, device=self.device)
         self.frequencies = frequencies.reshape(-1, 1, 1, 1, 1)
         self.fourier_basis = torch.cat([torch.sin(coord * self.frequencies), torch.cos(coord * self.frequencies)], dim=0)
 
     def forward(self, x):
+        x = x.to(self.device)
         a, b, c, d, e = self.fourier_basis.shape
         basis = self.fourier_basis.reshape(1, a*b, c, d, e)
         fourier_features = basis.repeat(x.shape[0], 1, 1, 1, 1)
@@ -68,7 +70,7 @@ class Perceiver(nn.Module):
         self.cross_attentions = nn.ModuleList([CrossAttention(total_channels, latent_dim, heads).to(self.device) for _ in range(depth)])
         self.self_attentions = nn.ModuleList([SelfAttention(latent_dim, heads).to(self.device) for _ in range(depth)])
         self.fc = nn.Linear(latent_dim, output_dim).to(self.device)
-        self.positional_encoding = FourierFeaturePositionalEncoding3D(depth_dim, height, width, num_bands).to(self.device)
+        self.positional_encoding = FourierFeaturePositionalEncoding3D(depth_dim, height, width, num_bands, self.device)
 
     def forward(self, x):
         x = x.to(self.device)
