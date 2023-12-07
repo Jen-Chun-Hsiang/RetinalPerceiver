@@ -58,18 +58,20 @@ class FourierFeaturePositionalEncoding3D(nn.Module):
         return torch.cat([x, fourier_features], dim=1)
 
 class Perceiver(nn.Module):
-    def __init__(self, input_dim, latent_dim, output_dim, num_latents, heads, depth=2, depth_dim=10, height=20, width=20, num_bands=10):
+    def __init__(self, input_dim, latent_dim, output_dim, num_latents, heads, depth=2, depth_dim=10, height=20, width=20, num_bands=10, device=None):
         super().__init__()
-        # Calculate the total channels after adding Fourier features
+        self.device = device if device is not None else torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
         total_channels = input_dim + num_bands * 2 * 3  # 2 for sin & cos, 3 for depth, height & width
 
-        self.latents = nn.Parameter(torch.randn(num_latents, latent_dim))
-        self.cross_attentions = nn.ModuleList([CrossAttention(total_channels, latent_dim, heads) for _ in range(depth)])
-        self.self_attentions = nn.ModuleList([SelfAttention(latent_dim, heads) for _ in range(depth)])
-        self.fc = nn.Linear(latent_dim, output_dim)
-        self.positional_encoding = FourierFeaturePositionalEncoding3D(depth_dim, height, width, num_bands)
+        self.latents = nn.Parameter(torch.randn(num_latents, latent_dim)).to(self.device)
+        self.cross_attentions = nn.ModuleList([CrossAttention(total_channels, latent_dim, heads).to(self.device) for _ in range(depth)])
+        self.self_attentions = nn.ModuleList([SelfAttention(latent_dim, heads).to(self.device) for _ in range(depth)])
+        self.fc = nn.Linear(latent_dim, output_dim).to(self.device)
+        self.positional_encoding = FourierFeaturePositionalEncoding3D(depth_dim, height, width, num_bands).to(self.device)
 
     def forward(self, x):
+        x = x.to(self.device)
         x = self.positional_encoding(x)
         x = rearrange(x, 'b c d h w -> b (d h w) c')  # Flatten the 3D input
         latents = self.latents.unsqueeze(0).repeat(x.shape[0], 1, 1)

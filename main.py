@@ -1,11 +1,5 @@
 import torch
-from torch.utils.data import Dataset, DataLoader, random_split
-import torchvision.transforms.functional as TF
 import numpy as np
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
-import scipy.io
 import time
 from datasets.simulated_dataset import MatrixDataset
 from models.perceiver3d import Perceiver
@@ -35,26 +29,23 @@ if __name__ == '__main__':
                 'sample_matrix': sample_matrix.cpu().numpy(), 'output_sum': output_sum.item(),
                 }, filename)
 
-    # Initialize the model and move it to the device
+    # Initialize the model
     input_size = 1  # Example input size (i.e., channels)
     output_size = 1  # Example output size, e.g., for classification into 10 classes
-    model = Perceiver(input_size, 128, output_size, 32, 4, 1, 20, 30, 40, 10)
-    model.to(device)
+    model = Perceiver(input_size, 128, output_size, 32, 4, 1, 20, 30, 40, 10, device=device)
 
     # Create an input tensor and move it to the device
     input_tensor = torch.rand(32, 1, 20, 30, 40).to(device)  # Example input tensor for n x n image
     output = model(input_tensor)
 
     # Check the output shape and values
-    # Redirect stdout to a file
+    original_stdout = sys.stdout  # Save the original stdout
     with open(f'{saveprint_dir}model_summary_{timestr}.txt', 'w') as file:
         sys.stdout = file
         # Print the summary to file
-        if next(model.parameters()).device == output.device:
-            summary(model, (1, 20, 30, 40))
+        summary(model, (1, 20, 30, 40))
         print("Output Shape:", output.shape)  # Should be [1, output_size]
         print("Output Values:", output)  # Values should be between 0 and 1 due to sigmoid
 
-    # Restore the original stdout
-    sys.stdout = original_stdout
+    sys.stdout = original_stdout  # Restore the original stdout
     print("Model summary has been saved to 'model_summary_{timestr}.txt'.")
