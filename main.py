@@ -47,7 +47,7 @@ if __name__ == '__main__':
     with open(f'{saveprint_dir}model_summary_{timestr}.txt', 'w') as file:
         sys.stdout = file
         # Print the summary to file
-        #summary(model, (1, 20, 30, 40))
+        summary(model, (1, 20, 30, 40))
         print("Is CUDA available:", torch.cuda.is_available())
         print("CUDA version:", torch.version.cuda)
         print("Device name:", torch.cuda.get_device_name(0))
