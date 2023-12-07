@@ -135,6 +135,8 @@ class DataVisualizer:
         # Plot the data
         if plot_type == '3D_matrix':
             self._plot_3d_matrix(data, num_cols)
+        elif plot_type == 'scatter':
+            self._plot_scatter(**kwargs)
         elif plot_type == 'custom' and custom_plot_func is not None:
             custom_plot_func(data)
         else:
@@ -157,6 +159,15 @@ class DataVisualizer:
                     continue
         return max_series_num + 1
 
+    def _save_figure(self, timestamp, series_num):
+        if not os.path.exists(self.result_dir):
+            os.makedirs(self.result_dir)
+        new_filename = f"{self.file_prefix}_{timestamp}_{series_num}.png"
+        file_path = os.path.join(self.result_dir, new_filename)
+        plt.savefig(file_path)
+        plt.close()
+        return file_path
+
     def _plot_3d_matrix(self, data, num_cols):
         num_rows = data.shape[0] // num_cols + int(data.shape[0] % num_cols > 0)
         plt.figure(figsize=(15, num_rows * 3))
@@ -168,11 +179,20 @@ class DataVisualizer:
             plt.colorbar(image, ax=ax, fraction=0.046, pad=0.04)
         plt.tight_layout()
 
-    def _save_figure(self, timestamp, series_num):
-        if not os.path.exists(self.result_dir):
-            os.makedirs(self.result_dir)
-        new_filename = f"{self.file_prefix}_{timestamp}_{series_num}.png"
-        file_path = os.path.join(self.result_dir, new_filename)
-        plt.savefig(file_path)
-        plt.close()
-        return file_path
+    def _plot_scatter(self, x_data, y_data, xlabel='X-axis', ylabel='Y-axis', title='Scatter Plot'):
+        """
+        Plots a scatter plot of the given data.
+
+        Args:
+        x_data (array-like): Data for the X-axis.
+        y_data (array-like): Data for the Y-axis.
+        xlabel (str): Label for the X-axis.
+        ylabel (str): Label for the Y-axis.
+        title (str): Title of the plot.
+        """
+        plt.figure()
+        plt.scatter(x_data, y_data)
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
+        plt.title(title)
+        plt.grid(True)
