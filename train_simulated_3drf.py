@@ -44,6 +44,7 @@ def parse_args():
 
 def main():
     args = parse_args()
+    filename_fixed = 'train_simulated_3drf_perceiver'
     savemodel_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/CheckPoints/'
     saveprint_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Prints/'
     savefig_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Figures/'
@@ -51,7 +52,7 @@ def main():
     timestr = datetime.now().strftime('%Y%m%d_%H%M%S')
 
     # Construct the full path for the log file
-    log_filename = os.path.join(saveprint_dir, f'model_training_log_{timestr}.txt')
+    log_filename = os.path.join(saveprint_dir, f'{filename_fixed}_training_log_{timestr}.txt')
 
     # Setup logging
     logging.basicConfig(filename=log_filename,
@@ -117,7 +118,7 @@ def main():
 
         # Save checkpoint
         if (epoch + 1) % 10 == 0:  # Example: Save every 10 epochs
-            checkpoint_filename = f'checkpoint_epoch_{epoch+1}.pth'
+            checkpoint_filename = f'{filename_fixed}_checkpoint_epoch_{epoch+1}.pth'
             save_checkpoint(epoch, model, optimizer, training_losses, validation_losses, os.path.join(savemodel_dir, checkpoint_filename))
 
 if __name__ == '__main__':
