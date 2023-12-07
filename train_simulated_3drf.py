@@ -55,7 +55,7 @@ def main():
     device = torch.device("cuda")
 
     # Create the target matrix
-    generator = TargetMatrixGenerator(mean=(0.1, -0.2)), cov=np.array([[0.12, 0.05], [0.04, 0.03]]), device=device)
+    generator = TargetMatrixGenerator(mean=(0.1, -0.2), cov=np.array([[0.12, 0.05], [0.04, 0.03]]), device=device)
 
     # Generate the target matrix
     target_matrix = generator.create_3d_target_matrix(args.input_height, args.input_width, args.input_depth)
