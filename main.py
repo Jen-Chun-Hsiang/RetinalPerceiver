@@ -10,8 +10,12 @@ if __name__ == '__main__':
     savemodel_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/'
     saveprint_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Prints/'
 
-    # Set the device to CUDA if available
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # Check if CUDA is available
+    if not torch.cuda.is_available():
+        raise RuntimeError("CUDA is not available. Please check your GPU and CUDA installation.")
+
+    # If CUDA is available, continue with the rest of the script
+    device = torch.device("cuda")
 
     # Example usage
     dims = [10, 20, 30]  # Size of the matrix
