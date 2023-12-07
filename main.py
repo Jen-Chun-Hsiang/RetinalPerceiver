@@ -4,6 +4,7 @@ import time
 from datasets.simulated_dataset import MatrixDataset
 from models.perceiver3d import Perceiver
 from torchsummary import summary
+import parameters.params_20231206_01 as p
 import sys
 
 if __name__ == '__main__':
@@ -56,3 +57,4 @@ if __name__ == '__main__':
 
     sys.stdout = original_stdout  # Restore the original stdout
     print("Model summary has been saved to 'model_summary_{timestr}.txt'.")
+
