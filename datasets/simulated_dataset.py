@@ -11,8 +11,19 @@ class MatrixDataset(Dataset):
             length (int): Number of samples in the dataset.
             device (torch.device): Device where the tensors will be stored.
         """
-        target_matrix = target_matrix / np.sum(np.abs(target_matrix))  # Normalize the target matrix
-        self.target_matrix = torch.tensor(target_matrix, dtype=torch.float32, device=device)
+        # Convert target_matrix to a PyTorch tensor if it's a numpy array
+        if isinstance(target_matrix, np.ndarray):
+            target_matrix = torch.tensor(target_matrix, dtype=torch.float32, device=device)
+        elif isinstance(target_matrix, torch.Tensor):
+            target_matrix = target_matrix.to(device)
+
+        # Normalize the target matrix
+        norm_factor = torch.sum(torch.abs(target_matrix))
+        if norm_factor != 0:
+            self.target_matrix = target_matrix / norm_factor
+        else:
+            self.target_matrix = target_matrix
+
         self.length = length
         self.dimensions = target_matrix.shape  # Dimensions for the random matrices
         self.device = device
