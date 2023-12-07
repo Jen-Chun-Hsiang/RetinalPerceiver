@@ -48,7 +48,7 @@ def main():
     saveprint_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Prints/'
     savefig_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Figures/'
     # Generate a timestamp
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    timestr = datetime.now().strftime('%Y%m%d_%H%M%S')
 
     # Setup logging
     logging.basicConfig(filename=f'{saveprint_dir}model_training_log_{timestr}.txt',
