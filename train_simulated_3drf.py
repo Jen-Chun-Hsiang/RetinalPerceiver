@@ -7,10 +7,11 @@ import numpy as np
 
 # Importing modules from your project
 from datasets.simulated_target_rf import TargetMatrixGenerator
+from utils.utils import plot_and_save_3d_matrix_with_timestamp as plot3dmat
 from datasets.simulated_dataset import MatrixDataset
-from models.model import YourModel
-from utils.trainer import train_one_epoch, evaluate
-from utils.utils import save_checkpoint, load_checkpoint
+#from models.model import YourModel
+#from utils.trainer import train_one_epoch, evaluate
+#from utils.utils import save_checkpoint, load_checkpoint
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Script for Model Training to get 3D RF in simulation")
@@ -35,10 +36,16 @@ def parse_args():
     parser.add_argument('--num_latent', type=int, default=16, help='Number of latent length (encoding)')
     parser.add_argument('--num_band', type=int, default=10, help='Number of bands in positional encoding')
 
+    parser.add_argument('--num_cols', type=int, default=5, help='Number of columns in a figure')
+
+
     return parser.parse_args()
 
 def main():
     args = parse_args()
+    savemodel_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/'
+    saveprint_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Prints/'
+    savefig_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Figures/'
 
     # Check if CUDA is available
     if not torch.cuda.is_available():
@@ -53,8 +60,10 @@ def main():
     # Generate the target matrix
     target_matrix = generator.create_3d_target_matrix(args.input_height, args.input_width, args.input_depth)
 
+    # plot and save the target_matrix figure
+    plot3dmat(target_matrix, args.num_cols, savefig_dir, file_prefix='plot_3D_matrix')
     # Initialize the dataset with the device
-    dataset = MatrixDataset(target_matrix, args.total_length, device)
+    #dataset = MatrixDataset(target_matrix, args.total_length, device)
 
 
 

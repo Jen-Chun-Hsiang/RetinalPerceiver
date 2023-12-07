@@ -50,6 +50,11 @@ def plot_and_save_3d_matrix_with_timestamp(target_matrix, num_cols, result_dir, 
     file_prefix (str): Prefix for the saved figure file name.
 
     """
+    # Convert PyTorch tensor to NumPy array if necessary
+    if isinstance(target_matrix, torch.Tensor):
+        # Ensure the tensor is on CPU and is a float32 tensor
+        target_matrix = target_matrix.cpu().numpy()
+
     # Generate timestamp
     timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
 
