@@ -7,6 +7,7 @@ from torchsummary import summary
 import parameters.params_20231206_01 as p
 import sys
 
+
 if __name__ == '__main__':
     savemodel_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/'
     saveprint_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Prints/'

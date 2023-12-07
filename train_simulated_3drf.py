@@ -3,15 +3,18 @@ import torch
 import torch.optim as optim
 import torch.nn as nn
 from torch.utils.data import DataLoader, random_split
+from datetime import datetime
 import numpy as np
+import logging
+import time
+import os
 
-# Importing modules from your project
 from datasets.simulated_target_rf import TargetMatrixGenerator
 from utils.utils import plot_and_save_3d_matrix_with_timestamp as plot3dmat
 from datasets.simulated_dataset import MatrixDataset
 from models.perceiver3d import Perceiver
-from utils.training_procedure import train_one_epoch, evaluate, save_checkpoint
-#from utils.utils import save_checkpoint, load_checkpoint
+from utils.training_procedure import train_one_epoch, evaluate, save_checkpoint, load_checkpoint
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Script for Model Training to get 3D RF in simulation")
@@ -30,15 +33,13 @@ def parse_args():
     parser.add_argument('--weight_decay', type=float, default=0.001, help='Weight decay')
     parser.add_argument('--checkpoint_path', type=str, default='./checkpoints/model.pth', help='Path to save the model checkpoint')
     parser.add_argument('--load_checkpoint', action='store_true', help='Flag to load the model from checkpoint')
-
+    # Perceiver specificity
     parser.add_argument('--num_head', type=int, default=4, help='Number of heads in perceiver')
     parser.add_argument('--num_iter', type=int, default=1, help='Number of input reiteration')
     parser.add_argument('--num_latent', type=int, default=16, help='Number of latent length (encoding)')
     parser.add_argument('--num_band', type=int, default=10, help='Number of bands in positional encoding')
-
+    # Plot parameters
     parser.add_argument('--num_cols', type=int, default=5, help='Number of columns in a figure')
-
-
     return parser.parse_args()
 
 def main():
@@ -46,6 +47,13 @@ def main():
     savemodel_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/'
     saveprint_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Prints/'
     savefig_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Figures/'
+    # Generate a timestamp
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+
+    # Setup logging
+    logging.basicConfig(filename=f'{saveprint_dir}model_training_log_{timestr}.txt',
+                        level=logging.INFO,
+                        format='%(asctime)s %(levelname)s:%(message)s')
 
     # Check if CUDA is available
     if not torch.cuda.is_available():
@@ -82,13 +90,13 @@ def main():
 
     # Optionally, load from checkpoint
     if args.load_checkpoint:
-        start_epoch, model, optimizer = load_checkpoint(args.checkpoint_path, model, optimizer, device)
+        start_epoch, model, optimizer, training_losses, validation_losses = load_checkpoint(args.checkpoint_path, model,
+                                                                                            optimizer, device)
     else:
         start_epoch = 0
-
-    # Training Loop with loss recording
-    training_losses = []
-    validation_losses = []
+        training_losses = []
+        validation_losses = []
+        start_time = time.time()  # Capture the start time
 
     for epoch in range(start_epoch, args.epochs):
         avg_train_loss = train_one_epoch(train_loader, model, criterion, optimizer, epoch, device)
@@ -99,7 +107,10 @@ def main():
 
         # Print training status
         if (epoch + 1) % 5 == 0:
-            print(f"Epoch [{epoch+1}/{args.epochs}], Training Loss: {avg_train_loss:.4f}, Validation Loss: {avg_val_loss:.4f}")
+            elapsed_time = time.time() - start_time
+            # Log the epoch and elapsed time, and on a new indented line, log the losses
+            logging.info(f"Epoch [{epoch + 1}/{args.epochs}], Elapsed time: {elapsed_time:.2f} seconds\n"
+                         f"\tTraining Loss: {avg_train_loss:.4f}, Validation Loss: {avg_val_loss:.4f}")
 
         # Save checkpoint
         if (epoch + 1) % 10 == 0:  # Example: Save every 10 epochs

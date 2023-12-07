@@ -64,3 +64,30 @@ def save_checkpoint(epoch, model, optimizer, training_losses, validation_losses,
     }
     torch.save(checkpoint, file_path)
 
+def load_checkpoint(checkpoint_path, model, optimizer, device):
+    """
+    Load a training checkpoint.
+
+    Args:
+    checkpoint_path (str): Path to the checkpoint file.
+    model (torch.nn.Module): The model to load the state into.
+    optimizer (torch.optim.Optimizer): The optimizer to load the state into.
+    device (torch.device): The device to map the model to.
+
+    Returns:
+    int: The epoch at which training was interrupted.
+    model: The model with loaded state.
+    optimizer: The optimizer with loaded state.
+    list: The list of recorded training losses.
+    list: The list of recorded validation losses.
+    """
+    checkpoint = torch.load(checkpoint_path, map_location=device)
+    model.load_state_dict(checkpoint['model_state_dict'])
+    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+    start_epoch = checkpoint['epoch']
+    training_losses = checkpoint.get('training_losses', [])
+    validation_losses = checkpoint.get('validation_losses', [])
+
+    return start_epoch, model, optimizer, training_losses, validation_losses
+
+
