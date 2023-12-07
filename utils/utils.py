@@ -137,6 +137,8 @@ class DataVisualizer:
             self._plot_3d_matrix(data, num_cols)
         elif plot_type == 'scatter':
             self._plot_scatter(**kwargs)
+        elif plot_type == 'plot_line':
+            self._plot_line(**kwargs)
         elif plot_type == 'custom' and custom_plot_func is not None:
             custom_plot_func(data)
         else:
@@ -192,6 +194,28 @@ class DataVisualizer:
         """
         plt.figure()
         plt.scatter(x_data, y_data)
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
+        plt.title(title)
+        plt.grid(True)
+
+    def _plot_line(self, linedata1, linedata2, setlim=[0, 0.001], xlabel='Epochs', ylabel='Losses', title='Training and Validation Loss'):
+        """
+        Plots a scatter plot of the given data.
+
+        Args:
+        x_data (array-like): Data for the X-axis.
+        y_data (array-like): Data for the Y-axis.
+        xlabel (str): Label for the X-axis.
+        ylabel (str): Label for the Y-axis.
+        title (str): Title of the plot.
+        """
+        plt.figure()
+        plt.plot(range(1, len(linedata1) + 1), linedata1, label='Training Loss')
+        plt.plot(range(1, len(linedata2) + 1), linedata2, label='Validation Loss')
+        plt.ylim(setlim)
+        plt.legend()
+        plt.grid(True)
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)
         plt.title(title)

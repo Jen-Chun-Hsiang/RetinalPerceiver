@@ -1,5 +1,5 @@
 import torch
-
+from torch.utils.data import DataLoader
 
 def train_one_epoch(train_loader, model, criterion, optimizer, epoch, device):
     model.train()  # Set the model to training mode
@@ -89,5 +89,45 @@ def load_checkpoint(checkpoint_path, model, optimizer, device):
     validation_losses = checkpoint.get('validation_losses', [])
 
     return start_epoch, model, optimizer, training_losses, validation_losses
+
+def forward_model(model, dataset, batch_size=32):
+    model.eval()  # Set the model to evaluation mode
+
+    all_weights = []
+    all_labels = []
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
+
+    # First pass: Compute weights for all images
+    with torch.no_grad():
+        for images, labels in dataloader:
+            images = images.to(next(model.parameters()).device)
+            weights = model(images).squeeze()
+
+            all_weights.extend(weights.cpu().tolist())
+            all_labels.extend(labels.cpu().tolist() if torch.is_tensor(labels) else labels)
+
+    # Normalize weights
+    weights_tensor = torch.tensor(all_weights)
+    weights_mean = weights_tensor.mean()
+    weights_std = weights_tensor.std()
+    normalized_weights = (weights_tensor - weights_mean) / weights_std
+
+    # Second pass: Apply normalized weights to images
+    weighted_sum = None
+    idx = 0  # Index to track position in normalized weights
+    for images, _ in dataloader:
+        images = images.to(next(model.parameters()).device)
+        weights_batch = normalized_weights[idx:idx + images.size(0)].to(images.device).view(-1, 1, 1, 1)
+        weighted_images = images * weights_batch
+        batch_sum = weighted_images.sum(dim=0)  # Sum over the batch
+
+        if weighted_sum is None:
+            weighted_sum = batch_sum
+        else:
+            weighted_sum += batch_sum
+
+        idx += images.size(0)
+
+    return weighted_sum, all_weights, all_labels
 
 

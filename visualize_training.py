@@ -1,9 +1,13 @@
 import torch
 import torch.optim as optim
-from models.perceiver3d import Perceiver
-from utils.training_procedure import load_checkpoint
-from utils.utils import DataVisualizer
 import matplotlib.pyplot as plt
+
+from datasets.simulated_target_rf import TargetMatrixGenerator
+from datasets.simulated_dataset import MatrixDataset
+from models.perceiver3d import Perceiver
+from utils.training_procedure import load_checkpoint, forward_model
+from utils.utils import DataVisualizer
+
 
 def weightedsum_image_plot(output_image_np):
     plt.figure()
@@ -36,19 +40,26 @@ def main():
     optimizer = optim.Adam(model.parameters(), lr=0.001)
 
     start_epoch, model, optimizer, training_losses, validation_losses = load_checkpoint(checkpoint_path, model, optimizer, device)
-
-    plot_losses(training_losses, validation_losses, start_epoch)
+    visualizer_prog.plot_and_save(None, plot_type='plot_line', x_data=training_losses, y_data=validation_losses,
+                                        xlabel='Epochs', ylabel='Loss')
 
     # Visual evaluation of results
-    target_matrix = None  # Replace with your actual target matrix
-    total_length = None  # Replace with your actual dataset length
-    batch_size = None  # Replace with your actual batch size
+    # Create the target matrix
+    generator = TargetMatrixGenerator(mean=(0.1, -0.2), cov=np.array([[0.12, 0.05], [0.04, 0.03]]), device=device)
+
+    # Generate the target matrix
+    target_matrix = generator.create_3d_target_matrix(30, 40, 20)
+
+    total_length = 1000  # Replace with your actual dataset length
+    batch_size = 64  # Replace with your actual batch size
 
     dataset_test = MatrixDataset(target_matrix, total_length)
     output_image, weights, labels = forward_model(model, dataset_test, batch_size=batch_size)
     output_image_np = output_image.squeeze().cpu().numpy()
     visualizer_est_rf.plot_and_save(output_image_np, plot_type='custom', custom_plot_func=weightedsum_image_plot)
-    visualizer_inout_corr.plot_and_save(output_image_np, plot_type='custom', custom_plot_func=weightedsum_image_plot)
+    visualizer_inout_corr.plot_and_save(None, plot_type='scatter', x_data=labels, y_data=weights,
+                                                 xlabel='Labels', ylabel='Weights',
+                                                 title='Relationship between Weights and Labels')
 
 if __name__ == "__main__":
     main()
