@@ -22,6 +22,10 @@ def weightedsum_image_plot(output_image_np):
 
 def main():
     checkpoint_filename = 'Perceiver2timepoint_checkpoint_epoch_200'
+    height = 20
+    width = 24
+    timepoint = 2
+
     checkpoint_folder = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/CheckPoints/'
     savefig_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Figures/'
     saveprint_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Prints/'
@@ -49,7 +53,7 @@ def main():
     visualizer_est_rfstd = DataVisualizer(savefig_dir, file_prefix='Estimate_RF_std')
     visualizer_inout_corr = DataVisualizer(savefig_dir, file_prefix='Input_output_correlation')
 
-    model = Perceiver(depth_dim=2, height=20, width=24).to(device)
+    model = Perceiver(depth_dim=timepoint, height=height, width=width).to(device)
     optimizer = optim.Adam(model.parameters(), lr=0.001)
 
     start_epoch, model, optimizer, training_losses, validation_losses = load_checkpoint(checkpoint_path, model, optimizer, device)
@@ -61,7 +65,7 @@ def main():
     generator = TargetMatrixGenerator(mean=(0.1, -0.2), cov=np.array([[0.12, 0.05], [0.04, 0.03]]), device=device)
 
     # Generate the target matrix
-    target_matrix = generator.create_3d_target_matrix(30, 40, 20)
+    target_matrix = generator.create_3d_target_matrix(height, width, timepoint)
     logging.info(f"target_matrix size: {target_matrix.shape}")
 
     total_length = 1000  # Replace with your actual dataset length
