@@ -2,6 +2,7 @@ import torch
 import torch.optim as optim
 import matplotlib.pyplot as plt
 import os
+import numpy as np
 
 from datasets.simulated_target_rf import TargetMatrixGenerator
 from datasets.simulated_dataset import MatrixDataset
