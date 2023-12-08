@@ -112,8 +112,13 @@ def forward_model(model, dataset, batch_size=32):
     weights_std = weights_tensor.std()
     normalized_weights = (weights_tensor - weights_mean) / weights_std
 
-    # Second pass: Apply normalized weights to images
-    weighted_sum = None
+    # Initialize weighted_sum before the loop
+    if dataloader.dataset[0][0].dim() == 3:  # Assuming the images are 3D tensors (C, H, W)
+        C, H, W = dataloader.dataset[0][0].shape
+        weighted_sum = torch.zeros((C, H, W), device=next(model.parameters()).device)
+    else:
+        raise ValueError("Unexpected image dimensions")
+
     idx = 0  # Index to track position in normalized weights
     for images, _ in dataloader:
         images = images.to(next(model.parameters()).device)
