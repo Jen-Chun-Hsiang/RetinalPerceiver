@@ -193,7 +193,7 @@ class DataVisualizer:
         title (str): Title of the plot.
         """
         plt.figure()
-        plt.scatter(x_data, y_data)
+        plt.scatter(x_data, y_data, s=5)
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)
         plt.title(title)
