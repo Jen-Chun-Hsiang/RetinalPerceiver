@@ -35,7 +35,7 @@ def main():
     visualizer_est_rf = DataVisualizer(savefig_dir, file_prefix='Estimate_RF')
     visualizer_inout_corr = DataVisualizer(savefig_dir, file_prefix='Input_output_correlation')
 
-    model = Perceiver().to(device)
+    model = Perceiver(device=device)
     optimizer = optim.Adam(model.parameters(), lr=0.001)
 
     start_epoch, model, optimizer, training_losses, validation_losses = load_checkpoint(checkpoint_path, model, optimizer, device)
