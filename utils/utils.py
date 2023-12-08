@@ -172,10 +172,14 @@ class DataVisualizer:
 
     def _plot_3d_matrix(self, data, num_cols):
         num_rows = data.shape[0] // num_cols + int(data.shape[0] % num_cols > 0)
+        # Calculate the global min and max values across all data samples
+        data_min = np.min(data)
+        data_max = np.max(data)
+
         plt.figure(figsize=(15, num_rows * 3))
         for i in range(data.shape[0]):
             ax = plt.subplot(num_rows, num_cols, i + 1)
-            image = ax.imshow(data[i], cmap='viridis', vmin=-0.4, vmax=0.5)
+            image = ax.imshow(data[i], cmap='viridis', vmin=data_min, vmax=data_max)
             plt.title(f'Time Frame {i}')
             plt.axis('off')
             plt.colorbar(image, ax=ax, fraction=0.046, pad=0.04)
