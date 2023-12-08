@@ -112,7 +112,7 @@ class DataVisualizer:
         self.result_dir = result_dir
         self.file_prefix = file_prefix
 
-    def plot_and_save(self, data, plot_type='3D_matrix', num_cols=3, custom_plot_func=None):
+    def plot_and_save(self, data, plot_type='3D_matrix', num_cols=3, custom_plot_func=None, **kwargs):
         """
         Plots and saves a figure based on the data and plot type.
 
@@ -199,7 +199,7 @@ class DataVisualizer:
         plt.title(title)
         plt.grid(True)
 
-    def _plot_line(self, linedata1, linedata2, setlim=[0, 0.001], xlabel='Epochs', ylabel='Losses', title='Training and Validation Loss'):
+    def _plot_line(self, line1, line2, setlim=[0, 0.001], xlabel='Epochs', ylabel='Losses', title='Training and Validation Loss'):
         """
         Plots a scatter plot of the given data.
 
@@ -211,8 +211,8 @@ class DataVisualizer:
         title (str): Title of the plot.
         """
         plt.figure()
-        plt.plot(range(1, len(linedata1) + 1), linedata1, label='Training Loss')
-        plt.plot(range(1, len(linedata2) + 1), linedata2, label='Validation Loss')
+        plt.plot(range(1, len(line1) + 1), linedata1, label='Training Loss')
+        plt.plot(range(1, len(line2) + 1), linedata2, label='Validation Loss')
         plt.ylim(setlim)
         plt.legend()
         plt.grid(True)
