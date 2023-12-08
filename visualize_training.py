@@ -1,6 +1,7 @@
 import torch
 import torch.optim as optim
 import matplotlib.pyplot as plt
+import os
 
 from datasets.simulated_target_rf import TargetMatrixGenerator
 from datasets.simulated_dataset import MatrixDataset
@@ -12,22 +13,20 @@ from utils.utils import DataVisualizer
 def weightedsum_image_plot(output_image_np):
     plt.figure()
     plt.imshow(output_image_np, cmap='gray')  # Use cmap='gray' for grayscale images
-    plt.title("Weigthed sum image of RF")
+    plt.title("Weighted Sum Image of RF")
     plt.xlabel("Width")
     plt.ylabel("Height")
 
 def main():
-    # Existing main function setup
-
-    checkpoint_filename = ''
-    checkpoint_path = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/CheckPoints/'
+    checkpoint_filename = 'checkpoint_epoch_390'
+    checkpoint_folder = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/CheckPoints/'
     savefig_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Figures/'
+    # Construct the full path for the checkpoint file
+    checkpoint_path = os.path.join(checkpoint_folder, f'{checkpoint_filename}.pth')
 
     # Check if CUDA is available
     if not torch.cuda.is_available():
         raise RuntimeError("CUDA is not available. Please check your GPU and CUDA installation.")
-
-    # If CUDA is available, continue with the rest of the script
     device = torch.device("cuda")
 
     # Initialize the DataVisualizer
