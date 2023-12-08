@@ -211,8 +211,8 @@ class DataVisualizer:
         title (str): Title of the plot.
         """
         plt.figure()
-        plt.plot(range(1, len(line1) + 1), linedata1, label='Training Loss')
-        plt.plot(range(1, len(line2) + 1), linedata2, label='Validation Loss')
+        plt.plot(range(1, len(line1) + 1), line1, label='Training Loss')
+        plt.plot(range(1, len(line2) + 1), line2, label='Validation Loss')
         plt.ylim(setlim)
         plt.legend()
         plt.grid(True)
