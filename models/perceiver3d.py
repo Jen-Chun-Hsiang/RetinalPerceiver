@@ -61,7 +61,7 @@ class FourierFeaturePositionalEncoding3D(nn.Module):
 
 class Perceiver(nn.Module):
     def __init__(self, input_dim=1, latent_dim=128, output_dim=1, num_latents=16, heads=4, depth=1,
-                 depth_dim=10, height=20, width=20, num_bands=10, device=None):
+                 depth_dim=20, height=30, width=40, num_bands=10, device=None):
         super().__init__()
         self.device = device if device is not None else torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
