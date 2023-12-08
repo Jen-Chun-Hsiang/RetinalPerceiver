@@ -68,7 +68,7 @@ def main():
     target_matrix = generator.create_3d_target_matrix(height, width, timepoint)
     logging.info(f"target_matrix size: {target_matrix.shape}")
 
-    total_length = 1000  # Replace with your actual dataset length
+    total_length = 10000  # Replace with your actual dataset length
     batch_size = 64  # Replace with your actual batch size
 
     dataset_test = MatrixDataset(target_matrix, total_length, device)
