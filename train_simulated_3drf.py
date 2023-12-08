@@ -18,7 +18,7 @@ from utils.training_procedure import train_one_epoch, evaluate, save_checkpoint,
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Script for Model Training to get 3D RF in simulation")
-    parser.add_argument('--experiment_name', type=str, default='New_experiment, help='Experiment name')
+    parser.add_argument('--experiment_name', type=str, default='new_experiment', help='Experiment name')
     parser.add_argument('--input_depth', type=int, default=20, help='Number of time points')
     parser.add_argument('--input_height', type=int, default=30, help='Heights of the input')
     parser.add_argument('--input_width', type=int, default=40, help='Width of the input')
