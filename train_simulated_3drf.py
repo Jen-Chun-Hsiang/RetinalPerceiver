@@ -18,7 +18,7 @@ from utils.training_procedure import train_one_epoch, evaluate, save_checkpoint,
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Script for Model Training to get 3D RF in simulation")
-
+    parser.add_argument('--experiment_name', type=str, default='New_experiment, help='Experiment name')
     parser.add_argument('--input_depth', type=int, default=20, help='Number of time points')
     parser.add_argument('--input_height', type=int, default=30, help='Heights of the input')
     parser.add_argument('--input_width', type=int, default=40, help='Width of the input')
@@ -44,7 +44,7 @@ def parse_args():
 
 def main():
     args = parse_args()
-    filename_fixed = 'train_simulated_3drf_perceiver'
+    filename_fixed = args.experiment_name
     savemodel_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/CheckPoints/'
     saveprint_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Prints/'
     savefig_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Figures/'
@@ -113,7 +113,7 @@ def main():
         if (epoch + 1) % 5 == 0:
             elapsed_time = time.time() - start_time
             # Log the epoch and elapsed time, and on a new indented line, log the losses
-            logging.info(f"Epoch [{epoch + 1}/{args.epochs}], Elapsed time: {elapsed_time:.2f} seconds\n"
+            logging.info(f"{filename_fixed} Epoch [{epoch + 1}/{args.epochs}], Elapsed time: {elapsed_time:.2f} seconds\n"
                          f"\tTraining Loss: {avg_train_loss:.4f}, Validation Loss: {avg_val_loss:.4f}")
 
         # Save checkpoint
