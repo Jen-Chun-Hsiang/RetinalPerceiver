@@ -174,7 +174,7 @@ class DataVisualizer:
         return file_path
     def _plot_2d_matrix(self, data):
         plt.figure(figsize=(8, 6))
-        plt.imshow(data, cmp='viridis', interpolation='nearest')
+        plt.imshow(data, cmap='viridis', interpolation='nearest')
         plt.title('2D matrix')
         plt.colorbar()
 

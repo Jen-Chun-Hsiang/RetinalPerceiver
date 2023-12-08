@@ -46,7 +46,7 @@ def main():
     # Initialize the DataVisualizer
     visualizer_prog = DataVisualizer(savefig_dir, file_prefix='Plot_training_progress')
     visualizer_est_rf = DataVisualizer(savefig_dir, file_prefix='Estimate_RF')
-    visualizer_est_rfstd = DataVisualizer(savefig_dir, file_prefix='Estimate_RF std')
+    visualizer_est_rfstd = DataVisualizer(savefig_dir, file_prefix='Estimate_RF_std')
     visualizer_inout_corr = DataVisualizer(savefig_dir, file_prefix='Input_output_correlation')
 
     model = Perceiver().to(device)
