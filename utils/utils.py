@@ -137,7 +137,7 @@ class DataVisualizer:
             self._plot_3d_matrix(data, num_cols)
         elif plot_type == 'scatter':
             self._plot_scatter(**kwargs)
-        elif plot_type == 'plot_line':
+        elif plot_type == 'line':
             self._plot_line(**kwargs)
         elif plot_type == 'custom' and custom_plot_func is not None:
             custom_plot_func(data)

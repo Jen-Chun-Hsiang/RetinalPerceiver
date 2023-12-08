@@ -52,7 +52,7 @@ def main():
     optimizer = optim.Adam(model.parameters(), lr=0.001)
 
     start_epoch, model, optimizer, training_losses, validation_losses = load_checkpoint(checkpoint_path, model, optimizer, device)
-    #visualizer_prog.plot_and_save(None, plot_type='plot_line', x_data=training_losses, y_data=validation_losses,
+    #visualizer_prog.plot_and_save(None, plot_type='line', line1=training_losses, line2=validation_losses,
     #                                    xlabel='Epochs', ylabel='Loss')
 
     # Visual evaluation of results
