@@ -67,7 +67,8 @@ def main():
     batch_size = 64  # Replace with your actual batch size
 
     dataset_test = MatrixDataset(target_matrix, total_length, device)
-    logging.info(f"dataset size: {dataset_test.shape}")
+    sample_data, sample_label = dataset_test[0]
+    logging.info(f"dataset size: {sample_data.shape}")
     output_image, weights, labels = forward_model(model, dataset_test, batch_size=batch_size)
     output_image_np = output_image.squeeze().cpu().numpy()
     visualizer_est_rf.plot_and_save(output_image_np, plot_type='custom', custom_plot_func=weightedsum_image_plot)
