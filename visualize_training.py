@@ -3,6 +3,8 @@ import torch.optim as optim
 import matplotlib.pyplot as plt
 import os
 import numpy as np
+import logging
+from datetime import datetime
 
 from datasets.simulated_target_rf import TargetMatrixGenerator
 from datasets.simulated_dataset import MatrixDataset
@@ -22,9 +24,20 @@ def main():
     checkpoint_filename = 'checkpoint_epoch_390'
     checkpoint_folder = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/CheckPoints/'
     savefig_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Figures/'
+    saveprint_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Prints/'
     # Construct the full path for the checkpoint file
     checkpoint_path = os.path.join(checkpoint_folder, f'{checkpoint_filename}.pth')
 
+    # Generate a timestamp
+    timestr = datetime.now().strftime('%Y%m%d_%H%M%S')
+    log_name = 'visualize_model'
+    # Construct the full path for the log file
+    log_filename = os.path.join(saveprint_dir, f'{log_name}_training_log_{timestr}.txt')
+
+    # Setup logging
+    logging.basicConfig(filename=log_filename,
+                        level=logging.INFO,
+                        format='%(asctime)s %(levelname)s:%(message)s')
     # Check if CUDA is available
     if not torch.cuda.is_available():
         raise RuntimeError("CUDA is not available. Please check your GPU and CUDA installation.")
@@ -48,6 +61,7 @@ def main():
 
     # Generate the target matrix
     target_matrix = generator.create_3d_target_matrix(30, 40, 20)
+    logging.info(f"target_matrix size: {target_matrix.shape}")
 
     total_length = 1000  # Replace with your actual dataset length
     batch_size = 64  # Replace with your actual batch size
