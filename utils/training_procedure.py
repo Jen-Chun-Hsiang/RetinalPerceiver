@@ -113,16 +113,17 @@ def forward_model(model, dataset, batch_size=32):
     normalized_weights = (weights_tensor - weights_mean) / weights_std
 
     # Initialize weighted_sum before the loop
-    if dataloader.dataset[0][0].dim() == 3:  # Assuming the images are 3D tensors (C, H, W)
-        C, H, W = dataloader.dataset[0][0].shape
-        weighted_sum = torch.zeros((C, H, W), device=next(model.parameters()).device)
+    sample_shape = dataloader.dataset[0][0].shape
+    if len(sample_shape) == 4:  # Check if the sample has 4 dimensions
+        C, D, H, W = sample_shape  # Assuming the shape is (C, D, H, W)
+        weighted_sum = torch.zeros((C, D, H, W), device=next(model.parameters()).device)
     else:
-        raise ValueError(f'Unexpected image dimensions {dataloader.dataset[0][0].shape}')
+        raise ValueError(f'Unexpected image dimensions {sample_shape}')
 
     idx = 0  # Index to track position in normalized weights
     for images, _ in dataloader:
         images = images.to(next(model.parameters()).device)
-        weights_batch = normalized_weights[idx:idx + images.size(0)].to(images.device).view(-1, 1, 1, 1)
+        weights_batch = normalized_weights[idx:idx + images.size(0)].to(images.device).view(-1, 1, 1, 1, 1)
         weighted_images = images * weights_batch
         batch_sum = weighted_images.sum(dim=0)  # Sum over the batch
 

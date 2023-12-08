@@ -71,7 +71,7 @@ def main():
     logging.info(f"dataset size: {sample_data.shape}")
     output_image, weights, labels = forward_model(model, dataset_test, batch_size=batch_size)
     output_image_np = output_image.squeeze().cpu().numpy()
-    visualizer_est_rf.plot_and_save(output_image_np, plot_type='custom', custom_plot_func=weightedsum_image_plot)
+    visualizer_est_rf.plot_and_save(output_image_np, plot_type='3D_matrix', num_cols=5)
     visualizer_inout_corr.plot_and_save(None, plot_type='scatter', x_data=labels, y_data=weights,
                                                  xlabel='Labels', ylabel='Weights',
                                                  title='Relationship between Weights and Labels')
