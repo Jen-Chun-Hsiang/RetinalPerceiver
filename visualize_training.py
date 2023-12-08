@@ -21,7 +21,7 @@ def weightedsum_image_plot(output_image_np):
     plt.ylabel("Height")
 
 def main():
-    checkpoint_filename = 'checkpoint_epoch_390'
+    checkpoint_filename = 'Perceiver2timepoint_checkpoint_epoch_200'
     checkpoint_folder = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/CheckPoints/'
     savefig_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Figures/'
     saveprint_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Prints/'
@@ -49,7 +49,7 @@ def main():
     visualizer_est_rfstd = DataVisualizer(savefig_dir, file_prefix='Estimate_RF_std')
     visualizer_inout_corr = DataVisualizer(savefig_dir, file_prefix='Input_output_correlation')
 
-    model = Perceiver().to(device)
+    model = Perceiver(depth_dim=2, height=20, width=24).to(device)
     optimizer = optim.Adam(model.parameters(), lr=0.001)
 
     start_epoch, model, optimizer, training_losses, validation_losses = load_checkpoint(checkpoint_path, model, optimizer, device)
