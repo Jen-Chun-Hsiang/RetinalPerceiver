@@ -117,7 +117,7 @@ def forward_model(model, dataset, batch_size=32):
         C, H, W = dataloader.dataset[0][0].shape
         weighted_sum = torch.zeros((C, H, W), device=next(model.parameters()).device)
     else:
-        raise ValueError("Unexpected image dimensions")
+        raise ValueError(f'Unexpected image dimensions {dataloader.dataset[0][0].dim()}')
 
     idx = 0  # Index to track position in normalized weights
     for images, _ in dataloader:
