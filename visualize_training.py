@@ -31,7 +31,6 @@ def main():
     device = torch.device("cuda")
 
     # Initialize the DataVisualizer
-    result_dir = 'path/to/save/directory'  # Replace with your actual directory
     visualizer_prog = DataVisualizer(savefig_dir, file_prefix='Plot_training_progress')
     visualizer_est_rf = DataVisualizer(savefig_dir, file_prefix='Estimate_RF')
     visualizer_inout_corr = DataVisualizer(savefig_dir, file_prefix='Input_output_correlation')
