@@ -136,6 +136,8 @@ class DataVisualizer:
         # Plot the data
         if plot_type == '3D_matrix':
             self._plot_3d_matrix(data, num_cols)
+        elif plot_type == '2D_matrix':
+            self._plot_2d_matrix(data)
         elif plot_type == 'scatter':
             self._plot_scatter(**kwargs)
         elif plot_type == 'line':
@@ -170,6 +172,11 @@ class DataVisualizer:
         plt.savefig(file_path)
         plt.close()
         return file_path
+    def _plot_2d_matrix(self, data):
+        plt.figure(figsize=(8, 6))
+        plt.imshow(data, cmp='viridis', interpolation='nearest')
+        plt.title('2D matrix')
+        plt.colorbar()
 
     def _plot_3d_matrix(self, data, num_cols):
         num_rows = data.shape[0] // num_cols + int(data.shape[0] % num_cols > 0)

@@ -46,6 +46,7 @@ def main():
     # Initialize the DataVisualizer
     visualizer_prog = DataVisualizer(savefig_dir, file_prefix='Plot_training_progress')
     visualizer_est_rf = DataVisualizer(savefig_dir, file_prefix='Estimate_RF')
+    visualizer_est_rfstd = DataVisualizer(savefig_dir, file_prefix='Estimate_RF std')
     visualizer_inout_corr = DataVisualizer(savefig_dir, file_prefix='Input_output_correlation')
 
     model = Perceiver().to(device)
@@ -75,6 +76,8 @@ def main():
     visualizer_inout_corr.plot_and_save(None, plot_type='scatter', x_data=labels, y_data=weights,
                                                  xlabel='Labels', ylabel='Weights',
                                                  title='Relationship between Weights and Labels')
+    output_image_np_std = np.std(output_image_np, axis=0)
+    visualizer_est_rfstd.plot_and_save(output_image_np_std, plot_type='2D_matrix')
 
 if __name__ == "__main__":
     main()
