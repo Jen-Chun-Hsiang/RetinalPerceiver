@@ -21,10 +21,10 @@ def weightedsum_image_plot(output_image_np):
     plt.ylabel("Height")
 
 def main():
-    checkpoint_filename = 'Perceiver10timepoint_checkpoint_epoch_200'
+    checkpoint_filename = 'Perceiver12timepoint_checkpoint_epoch_200'
     height = 20
     width = 24
-    timepoint = 10
+    timepoint = 12
 
     checkpoint_folder = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/CheckPoints/'
     savefig_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Figures/'
