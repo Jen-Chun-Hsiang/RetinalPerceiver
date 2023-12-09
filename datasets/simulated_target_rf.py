@@ -22,7 +22,7 @@ class TargetMatrixGenerator:
         T = np.arange(-1, 3, 1 / SamplingRate)
         # Calculate freqf_t
         T_positive = T[(T >= 0) & (T < 0.5)]
-        freqf_t = Ypf(T_positive, [0.05, 0.12, 0.08, 0.12, 1, 0.2, 0])
+        freqf_t = Ypf(T_positive, [0.05, 0.12, 0.08, 0.12, 1, 0.0, 0])
         target_matrix = np.array([self.generate_2d_gaussian((input_width, input_height)) * time_point for time_point in freqf_t[:input_depth]])
         return torch.tensor(target_matrix, dtype=torch.float32).to(self.device)
 
