@@ -19,8 +19,23 @@ class MatrixDataset(Dataset):
             matrix_type (int): Type of random matrix to generate.
             combination_set (list): Set of types to combine for type 4.
         """
-        # ... [existing code to handle target_matrix] ...
+        # Convert target_matrix to a PyTorch tensor if it's a numpy array
+        if isinstance(target_matrix, np.ndarray):
+            target_matrix = torch.tensor(target_matrix, dtype=torch.float32, device=device)
+        elif isinstance(target_matrix, torch.Tensor):
+            target_matrix = target_matrix.to(device)
 
+        # Normalize the target matrix
+        norm_factor = torch.sum(torch.abs(target_matrix))
+        if norm_factor != 0:
+            self.target_matrix = target_matrix / norm_factor
+        else:
+            self.target_matrix = target_matrix
+
+        self.length = length
+        self.dimensions = target_matrix.shape  # Dimensions for the random matrices
+        self.device = device
+        self.seed = int(time.time())
         self.matrix_type = matrix_type
         self.combination_set = combination_set if combination_set is not None else [1]
 
