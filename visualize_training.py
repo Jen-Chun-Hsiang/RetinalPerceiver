@@ -25,7 +25,7 @@ def main():
     width = 24
     timepoint = 15
     tf_surround_weight = 0.2
-    stimulus_type = 'binary'
+    stimulus_type = 'combo'
     checkpoint_filename = f'Perceiver{timepoint}timepoint_{stimulus_type}_checkpoint_epoch_200'
 
     checkpoint_folder = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/CheckPoints/'
