@@ -21,10 +21,11 @@ def weightedsum_image_plot(output_image_np):
     plt.ylabel("Height")
 
 def main():
-    checkpoint_filename = 'Perceiver12timepoint_checkpoint_epoch_200'
     height = 20
     width = 24
     timepoint = 12
+    tf_surround_weight = 0.2
+    checkpoint_filename = f'Perceiver{timepoint}timepoint_checkpoint_epoch_200'
 
     checkpoint_folder = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/CheckPoints/'
     savefig_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Figures/'
@@ -65,7 +66,7 @@ def main():
     generator = TargetMatrixGenerator(mean=(0.1, -0.2), cov=np.array([[0.12, 0.05], [0.04, 0.03]]), device=device)
 
     # Generate the target matrix
-    target_matrix = generator.create_3d_target_matrix(height, width, timepoint)
+    target_matrix = generator.create_3d_target_matrix(height, width, timepoint, tf_surround_weight)
     logging.info(f"target_matrix size: {target_matrix.shape}")
 
     total_length = 10000  # Replace with your actual dataset length
