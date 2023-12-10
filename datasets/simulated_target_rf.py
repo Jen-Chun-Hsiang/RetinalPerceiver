@@ -7,7 +7,7 @@ class TargetMatrixGenerator:
         self.cov = cov
         self.device = device
 
-    def create_3d_target_matrix(self, input_height, input_width, input_depth):
+    def create_3d_target_matrix(self, input_height, input_width, input_depth, tf_surround_weight):
         # Define a Gaussian function
         def gaussian(x, sigma, mean_t):
             return np.exp(-np.power(x - mean_t, 2.) / (2 * np.power(sigma, 2.)))
@@ -22,7 +22,7 @@ class TargetMatrixGenerator:
         T = np.arange(-1, 3, 1 / SamplingRate)
         # Calculate freqf_t
         T_positive = T[(T >= 0) & (T < 0.5)]
-        freqf_t = Ypf(T_positive, [0.05, 0.12, 0.08, 0.12, 1, 0.0, 0])
+        freqf_t = Ypf(T_positive, [0.05, 0.12, 0.08, 0.12, 1, tf_surround_weight, 0])
         target_matrix = np.array([self.generate_2d_gaussian((input_width, input_height)) * time_point for time_point in freqf_t[:input_depth]])
         return torch.tensor(target_matrix, dtype=torch.float32).to(self.device)
 
