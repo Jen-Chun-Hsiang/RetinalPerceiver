@@ -23,7 +23,7 @@ def weightedsum_image_plot(output_image_np):
 def main():
     height = 20
     width = 24
-    timepoint = 12
+    timepoint = 15
     tf_surround_weight = 0.2
     checkpoint_filename = f'Perceiver{timepoint}timepoint_checkpoint_epoch_200'
 
