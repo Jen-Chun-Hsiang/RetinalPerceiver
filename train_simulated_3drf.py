@@ -33,6 +33,8 @@ def parse_args():
     parser.add_argument('--weight_decay', type=float, default=0.001, help='Weight decay')
     parser.add_argument('--checkpoint_path', type=str, default='./checkpoints/model.pth', help='Path to save load model checkpoint')
     parser.add_argument('--load_checkpoint', action='store_true', help='Flag to load the model from checkpoint')
+    # Stimulus specificity
+    parser.add_argument('--tf_surround_weight', type=float, default=0.2, help='Strength of temporal surround')
     # Perceiver specificity
     parser.add_argument('--num_head', type=int, default=4, help='Number of heads in perceiver')
     parser.add_argument('--num_iter', type=int, default=1, help='Number of input reiteration')
@@ -40,6 +42,7 @@ def parse_args():
     parser.add_argument('--num_band', type=int, default=10, help='Number of bands in positional encoding')
     # Plot parameters
     parser.add_argument('--num_cols', type=int, default=5, help='Number of columns in a figure')
+
     return parser.parse_args()
 
 def main():
@@ -70,7 +73,8 @@ def main():
     generator = TargetMatrixGenerator(mean=(0.1, -0.2), cov=np.array([[0.12, 0.05], [0.04, 0.03]]), device=device)
 
     # Generate the target matrix
-    target_matrix = generator.create_3d_target_matrix(args.input_height, args.input_width, args.input_depth)
+    target_matrix = generator.create_3d_target_matrix(args.input_height, args.input_width, args.input_depth,
+                                                      args.tf_surround_weight)
 
     # plot and save the target_matrix figure
     plot3dmat(target_matrix, args.num_cols, savefig_dir, file_prefix='plot_3D_matrix')
