@@ -35,6 +35,8 @@ def parse_args():
     parser.add_argument('--load_checkpoint', action='store_true', help='Flag to load the model from checkpoint')
     # Stimulus specificity
     parser.add_argument('--tf_surround_weight', type=float, default=0.2, help='Strength of temporal surround')
+    parser.add_argument('--stimulus_type', type=int, default=4, help='Stimulus type')
+    parser.add_argument('--stimulus_type_set', nargs='+', type=int, default=[1], help='Sets of stimulus type')
     # Perceiver specificity
     parser.add_argument('--num_head', type=int, default=4, help='Number of heads in perceiver')
     parser.add_argument('--num_iter', type=int, default=1, help='Number of input reiteration')
@@ -79,7 +81,8 @@ def main():
     # plot and save the target_matrix figure
     plot3dmat(target_matrix, args.num_cols, savefig_dir, file_prefix='plot_3D_matrix')
     # Initialize the dataset with the device
-    dataset = MatrixDataset(target_matrix, args.total_length, device)
+    dataset = MatrixDataset(target_matrix, args.total_length, device,
+                            matrix_type=args.stimulus_type, combination_set=args.stimulus_type_set)
 
     # Splitting the dataset into training and validation sets
     train_length = int(0.8 * args.total_length)  # 80% for training
