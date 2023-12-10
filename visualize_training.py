@@ -23,9 +23,10 @@ def weightedsum_image_plot(output_image_np):
 def main():
     height = 20
     width = 24
-    timepoint = 18
+    timepoint = 15
     tf_surround_weight = 0.2
-    checkpoint_filename = f'Perceiver{timepoint}timepoint_checkpoint_epoch_200'
+    stimulus_type = 'binary'
+    checkpoint_filename = f'Perceiver{timepoint}timepoint_{stimulus_type}_checkpoint_epoch_200'
 
     checkpoint_folder = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/CheckPoints/'
     savefig_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Figures/'
