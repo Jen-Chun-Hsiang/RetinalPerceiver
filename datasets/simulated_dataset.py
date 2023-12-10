@@ -19,6 +19,15 @@ class MatrixDataset(Dataset):
             matrix_type (int): Type of random matrix to generate.
             combination_set (list): Set of types to combine for type 4.
         """
+        """
+        Args:
+            target_matrix (numpy.ndarray): A target 3D matrix for operations.
+            length (int): Number of samples in the dataset.
+            device (torch.device): Device where the tensors will be stored.
+            matrix_type (int): Type of random matrix to generate.
+            combination_set (list): Set of types to combine for type 4.
+        """
+
         # Convert target_matrix to a PyTorch tensor if it's a numpy array
         if isinstance(target_matrix, np.ndarray):
             target_matrix = torch.tensor(target_matrix, dtype=torch.float32, device=device)
@@ -36,6 +45,7 @@ class MatrixDataset(Dataset):
         self.dimensions = target_matrix.shape  # Dimensions for the random matrices
         self.device = device
         self.seed = int(time.time())
+
         self.matrix_type = matrix_type
         self.combination_set = combination_set if combination_set is not None else [1]
 
@@ -53,7 +63,7 @@ class MatrixDataset(Dataset):
 
         random_matrix = torch.tensor(random_matrix, dtype=torch.float32, device=self.device)
         random_matrix = random_matrix.unsqueeze(0)
-
+        print(random_matrix.shape)
         output_matrix = random_matrix.squeeze(0) * self.target_matrix
         output_value = output_matrix.sum()
 
@@ -65,8 +75,12 @@ class MatrixDataset(Dataset):
         elif matrix_type == 2:
             return np.random.randint(0, 2, self.dimensions).astype(float)
         elif matrix_type == 3:
-            base = np.random.uniform(0, 1, (self.dimensions[0],))
-            return np.tile(base, (self.dimensions[1], 1)).T
+            # Generate a 1D array with size equal to the first dimension of self.dimensions
+            base = np.random.uniform(0, 1, self.dimensions[0])
+
+            # Replicate this array along the second and third dimensions
+            replicated_base = np.tile(base, (self.dimensions[2], self.dimensions[1], 1)).T
+            return replicated_base
         else:
             raise ValueError("Invalid matrix type")
 
