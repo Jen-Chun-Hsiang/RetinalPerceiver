@@ -4,7 +4,7 @@ import torch.nn.functional as F
 import numpy as np
 
 class RetinalCNN(nn.Module):
-    def __init__(self, input_depth, input_height, input_width, output_size=1, hidden_size=128, device='None'):
+    def __init__(self, input_depth, input_height, input_width, output_size=1, hidden_size=128, device=None):
         super().__init__()
         self.device = device if device is not None else torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.input_depth = input_depth
