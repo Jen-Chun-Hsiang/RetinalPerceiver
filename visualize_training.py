@@ -8,7 +8,7 @@ from datetime import datetime
 
 from datasets.simulated_target_rf import TargetMatrixGenerator
 from datasets.simulated_dataset import MatrixDataset
-from models.perceiver3d import Perceiver
+from models.perceiver3d import RetinalPerceiver
 from utils.training_procedure import load_checkpoint, forward_model
 from utils.utils import DataVisualizer
 
@@ -23,9 +23,9 @@ def weightedsum_image_plot(output_image_np):
 def main():
     height = 20
     width = 24
-    timepoint = 6
+    timepoint = 20
     tf_surround_weight = 0.2
-    stimulus_type = 'uniform'
+    stimulus_type = 'combo'
     checkpoint_filename = f'Perceiver{timepoint}timepoint_{stimulus_type}_checkpoint_epoch_200'
 
     checkpoint_folder = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/CheckPoints/'
@@ -55,7 +55,7 @@ def main():
     visualizer_est_rfstd = DataVisualizer(savefig_dir, file_prefix='Estimate_RF_std')
     visualizer_inout_corr = DataVisualizer(savefig_dir, file_prefix='Input_output_correlation')
 
-    model = Perceiver(depth_dim=timepoint, height=height, width=width).to(device)
+    model = RetinalPerceiver(depth_dim=timepoint, height=height, width=width).to(device)
     optimizer = optim.Adam(model.parameters(), lr=0.001)
 
     start_epoch, model, optimizer, training_losses, validation_losses = load_checkpoint(checkpoint_path, model, optimizer, device)
