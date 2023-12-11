@@ -26,7 +26,7 @@ def main():
     width = 24
     timepoint = 20
     tf_surround_weight = 0.2
-    stimulus_type = 'combo10000cnn'
+    stimulus_type = 'uniform10000cnn'
     model_type = 'RetinalCNN'
     checkpoint_filename = f'Perceiver{timepoint}timepoint_{stimulus_type}_checkpoint_epoch_200'
 
