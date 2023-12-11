@@ -59,7 +59,7 @@ class FourierFeaturePositionalEncoding3D(nn.Module):
         fourier_features = basis.repeat(x.shape[0], 1, 1, 1, 1)
         return torch.cat([x, fourier_features], dim=1)
 
-class Perceiver(nn.Module):
+class RetinalPerceiver(nn.Module):
     def __init__(self, input_dim=1, latent_dim=128, output_dim=1, num_latents=16, heads=4, depth=1,
                  depth_dim=20, height=30, width=40, num_bands=10, device=None):
         super().__init__()

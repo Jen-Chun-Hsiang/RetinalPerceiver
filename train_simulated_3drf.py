@@ -12,13 +12,16 @@ import os
 from datasets.simulated_target_rf import TargetMatrixGenerator
 from utils.utils import plot_and_save_3d_matrix_with_timestamp as plot3dmat
 from datasets.simulated_dataset import MatrixDataset
-from models.perceiver3d import Perceiver
+from models.perceiver3d import RetinalPerceiver
+from models.cnn3d import RetinalCNN
 from utils.training_procedure import train_one_epoch, evaluate, save_checkpoint, load_checkpoint
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Script for Model Training to get 3D RF in simulation")
     parser.add_argument('--experiment_name', type=str, default='new_experiment', help='Experiment name')
+    parser.add_argument('--model', type=str, choices=['RetinalPerceiver', 'RetinalCNN'], required=True,
+                        help='Model to train')
     parser.add_argument('--input_depth', type=int, default=20, help='Number of time points')
     parser.add_argument('--input_height', type=int, default=30, help='Heights of the input')
     parser.add_argument('--input_width', type=int, default=40, help='Width of the input')
@@ -93,9 +96,13 @@ def main():
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
 
     # Model, Loss, and Optimizer
-    model = Perceiver(args.input_channels, args.hidden_size, args.output_size, args.num_latent, args.num_head,
-                      args.num_iter, args.input_depth, args.input_height, args.input_width, args.num_band,
-                      device=device)
+    if args.model == 'RetinalPerceiver':
+        model = RetinalPerceiver(args.input_channels, args.hidden_size, args.output_size, args.num_latent, args.num_head,
+                          args.num_iter, args.input_depth, args.input_height, args.input_width, args.num_band,
+                          device=device)
+    elif args.model == 'RetinalCNN':
+        model = RetinalCNN(args.input_depth, args.input_height, args.input_width, args.output_size,
+                           hidden_size=args.hidden_size, device=device)  # Add necessary arguments
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
 
