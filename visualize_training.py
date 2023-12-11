@@ -9,6 +9,7 @@ from datetime import datetime
 from datasets.simulated_target_rf import TargetMatrixGenerator
 from datasets.simulated_dataset import MatrixDataset
 from models.perceiver3d import RetinalPerceiver
+from models.cnn3d import RetinalCNN
 from utils.training_procedure import load_checkpoint, forward_model
 from utils.utils import DataVisualizer
 
@@ -26,6 +27,7 @@ def main():
     timepoint = 20
     tf_surround_weight = 0.2
     stimulus_type = 'combo10000cnn'
+    model_type = 'RetinalCNN'
     checkpoint_filename = f'Perceiver{timepoint}timepoint_{stimulus_type}_checkpoint_epoch_200'
 
     checkpoint_folder = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/CheckPoints/'
@@ -55,7 +57,11 @@ def main():
     visualizer_est_rfstd = DataVisualizer(savefig_dir, file_prefix='Estimate_RF_std')
     visualizer_inout_corr = DataVisualizer(savefig_dir, file_prefix='Input_output_correlation')
 
-    model = RetinalPerceiver(depth_dim=timepoint, height=height, width=width).to(device)
+    if model_type == 'RetinalPerceiver':
+        model = RetinalPerceiver(depth_dim=timepoint, height=height, width=width).to(device)
+    elif model_type == 'RetinalCNN':
+        model = RetinalCNN(timepoint, height, width).to(device)
+
     optimizer = optim.Adam(model.parameters(), lr=0.001)
 
     start_epoch, model, optimizer, training_losses, validation_losses = load_checkpoint(checkpoint_path, model, optimizer, device)
