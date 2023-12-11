@@ -8,6 +8,9 @@ import numpy as np
 import logging
 import time
 import os
+from io import StringIO
+import sys
+from torchsummary import summary
 
 from datasets.simulated_target_rf import TargetMatrixGenerator
 from utils.utils import plot_and_save_3d_matrix_with_timestamp as plot3dmat
@@ -103,6 +106,13 @@ def main():
     elif args.model == 'RetinalCNN':
         model = RetinalCNN(args.input_depth, args.input_height, args.input_width, args.output_size,
                            hidden_size=args.hidden_size, device=device)  # Add necessary arguments
+    logging.info(f'Model: {args.model} \n')
+    old_stdout = sys.stdout
+    sys.stdout = buffer = StringIO()
+    summary(model, (args.input_channels, args.input_depth, args.input_height, args.input_width))
+    sys.stdout = old_stdout
+    logging.info(buffer.getvalue())
+
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
 
