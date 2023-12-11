@@ -63,7 +63,6 @@ class MatrixDataset(Dataset):
 
         random_matrix = torch.tensor(random_matrix, dtype=torch.float32, device=self.device)
         random_matrix = random_matrix.unsqueeze(0)
-        print(random_matrix.shape)
         output_matrix = random_matrix.squeeze(0) * self.target_matrix
         output_value = output_matrix.sum()
 
