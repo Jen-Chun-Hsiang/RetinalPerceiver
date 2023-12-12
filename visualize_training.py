@@ -26,8 +26,10 @@ def main():
     width = 24
     timepoint = 20
     tf_surround_weight = 0.2
-    stimulus_type = 'combo10000cnn10tf'
-    model_type = 'RetinalCNN'
+    conv3d_out_channels = 10
+    num_bands = 16  # default 10
+    stimulus_type = 'combo50000'
+    model_type = 'RetinalPerceiver'
     checkpoint_filename = f'Perceiver{timepoint}timepoint_{stimulus_type}_checkpoint_epoch_200'
 
     checkpoint_folder = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/CheckPoints/'
@@ -58,9 +60,9 @@ def main():
     visualizer_inout_corr = DataVisualizer(savefig_dir, file_prefix='Input_output_correlation')
 
     if model_type == 'RetinalPerceiver':
-        model = RetinalPerceiver(depth_dim=timepoint, height=height, width=width).to(device)
+        model = RetinalPerceiver(depth_dim=timepoint, height=height, width=width, num_bands=num_bands).to(device)
     elif model_type == 'RetinalCNN':
-        model = RetinalCNN(timepoint, height, width).to(device)
+        model = RetinalCNN(timepoint, height, width, conv3d_out_channels=conv3d_out_channels).to(device)
 
     optimizer = optim.Adam(model.parameters(), lr=0.001)
 
