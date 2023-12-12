@@ -33,6 +33,8 @@ def parse_args():
     parser.add_argument('--train_proportion', type=float, default=0.8, help='Proportion for training data split')
     parser.add_argument('--hidden_size', type=int, default=128, help='Number of hidden nodes (information bottleneck)')
     parser.add_argument('--output_size', type=int, default=1, help='Number of neurons for prediction')
+    parser.add_argument('--conv3d_out_channels', type=int, default=10, help='Number of temporal in CNN3D')
+    # Training procedure
     parser.add_argument('--epochs', type=int, default=100, help='Number of training epochs')
     parser.add_argument('--batch_size', type=int, default=64, help='Batch size for training')
     parser.add_argument('--learning_rate', type=float, default=0.001, help='Learning rate')
@@ -105,7 +107,7 @@ def main():
                           device=device)
     elif args.model == 'RetinalCNN':
         model = RetinalCNN(args.input_depth, args.input_height, args.input_width, args.output_size,
-                           hidden_size=args.hidden_size, device=device)  # Add necessary arguments
+                           hidden_size=args.hidden_size, device=device, conv3d_out_channels=args.conv3d_out_channels)  # Add necessary arguments
     logging.info(f'Model: {args.model} \n')
     old_stdout = sys.stdout
     sys.stdout = buffer = StringIO()
