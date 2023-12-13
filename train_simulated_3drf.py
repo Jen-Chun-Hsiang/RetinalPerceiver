@@ -103,9 +103,8 @@ def main():
     device = torch.device("cuda")
 
     # Create the target matrix
-    generator = TargetMatrixGenerator(mean=args.mean, cov=args.cov,
+    generator = TargetMatrixGenerator(mean=args.mean, cov=args.cov, cov2=args.cov2,
                                       surround_weight=args.sf_surround_weight, device=device)
-
     # Generate the target matrix
     target_matrix = generator.create_3d_target_matrix(args.input_height, args.input_width, args.input_depth,
                                                       args.tf_surround_weight)

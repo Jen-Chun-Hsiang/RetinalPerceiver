@@ -26,10 +26,11 @@ def main():
     width = 24
     timepoint = 20
     tf_surround_weight = 0.2
+    sf_surround_weight = 0.5
     conv3d_out_channels = 10
     num_bands = 16  # default 10
-    stimulus_type = 'combo50000'
-    model_type = 'RetinalPerceiver'
+    stimulus_type = 'combo10000cnn10tfsf'
+    model_type = 'RetinalCNN
     checkpoint_filename = f'Perceiver{timepoint}timepoint_{stimulus_type}_checkpoint_epoch_200'
 
     checkpoint_folder = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/CheckPoints/'
@@ -70,10 +71,11 @@ def main():
     visualizer_prog.plot_and_save(None, plot_type='line', line1=training_losses, line2=validation_losses,
                                         xlabel='Epochs', ylabel='Loss')
 
-    # Visual evaluation of results
     # Create the target matrix
-    generator = TargetMatrixGenerator(mean=(0.1, -0.2), cov=np.array([[0.12, 0.05], [0.04, 0.03]]), device=device)
-
+    generator = TargetMatrixGenerator(mean=(0.1, -0.2), cov=np.array([[0.12, 0.05], [0.04, 0.03]]),
+                                      cov2=np.array([[0.24, 0.05], [0.04, 0.06]]),
+                                      surround_weight=sf_surround_weight,
+                                      device=device)
     # Generate the target matrix
     target_matrix = generator.create_3d_target_matrix(height, width, timepoint, tf_surround_weight)
     logging.info(f"target_matrix size: {target_matrix.shape}")
