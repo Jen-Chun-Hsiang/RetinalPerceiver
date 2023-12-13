@@ -27,10 +27,10 @@ def main():
     timepoint = 20
     tf_surround_weight = 0.2
     sf_surround_weight = 0.5
-    conv3d_out_channels = 1
-    num_bands = 16  # default 10
-    stimulus_type = 'combo10000cnn10tfsf'
-    model_type = 'RetinalCNN'
+    conv3d_out_channels = 1  # default 1
+    num_bands = 10  # default 10
+    stimulus_type = 'combo20000sf'
+    model_type = 'RetinalPerceiver'
     checkpoint_filename = f'Perceiver{timepoint}timepoint_{stimulus_type}_checkpoint_epoch_200'
 
     checkpoint_folder = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/CheckPoints/'
