@@ -3,7 +3,7 @@ import torch
 
 
 class TargetMatrixGenerator:
-    def __init__(self, mean=(0, 0), cov=((1, 0), (0, 1)), mean2=None, cov2=None, surround_weight=0.2, device='cpu'):
+    def __init__(self, mean=(0, 0), cov=((1, 0), (0, 1)), mean2=None, cov2=None, surround_weight=0.5, device='cpu'):
         self.mean1 = mean
         self.cov1 = cov
         self.mean2 = mean if mean2 is None else mean2

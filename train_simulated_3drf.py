@@ -108,7 +108,7 @@ def main():
     # Generate the target matrix
     target_matrix = generator.create_3d_target_matrix(args.input_height, args.input_width, args.input_depth,
                                                       args.tf_surround_weight)
-
+    logging.info(f'target matrix: cov2:{args.cov2} spatial surround weight:{args.sf_surround_weight} \n')
     # plot and save the target_matrix figure
     plot3dmat(target_matrix, args.num_cols, savefig_dir, file_prefix='plot_3D_matrix')
     # Initialize the dataset with the device
