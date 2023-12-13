@@ -19,6 +19,21 @@ from models.perceiver3d import RetinalPerceiver
 from models.cnn3d import RetinalCNN
 from utils.training_procedure import train_one_epoch, evaluate, save_checkpoint, load_checkpoint
 
+def parse_covariance(string):
+    try:
+        # Split the string into list of strings
+        values = string.split(',')
+        # Check if we have exactly four values
+        if len(values) != 4:
+            raise ValueError
+        # Convert each string to float
+        values = [float(val) for val in values]
+        # Form a 2x2 matrix
+        cov_matrix = np.array(values).reshape(2, 2)
+        return cov_matrix
+    except:
+        raise argparse.ArgumentTypeError("Covariance matrix must be four floats separated by commas (e.g., '0.12,0.05,0.04,0.03')")
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Script for Model Training to get 3D RF in simulation")
@@ -41,8 +56,16 @@ def parse_args():
     parser.add_argument('--weight_decay', type=float, default=0.001, help='Weight decay')
     parser.add_argument('--checkpoint_path', type=str, default='./checkpoints/model.pth', help='Path to save load model checkpoint')
     parser.add_argument('--load_checkpoint', action='store_true', help='Flag to load the model from checkpoint')
-    # Stimulus specificity
+    # Target matrix specificity
+    parser.add_argument('--sf_surround_weight', type=float, default=0.5, help='Strength of spatial surround')
     parser.add_argument('--tf_surround_weight', type=float, default=0.2, help='Strength of temporal surround')
+    parser.add_argument("--mean", nargs=2, type=float, default=(0.1, -0.2), help="Mean as two separate floats (e.g., 0.1 -0.2)")
+    parser.add_argument("--mean2", nargs=2, type=float, default=None, help="Mean as two separate floats (e.g., 0.1 -0.2)")
+    parser.add_argument("--cov", type=parse_covariance, default=np.array([[0.12, 0.05], [0.04, 0.03]]),
+                        help="Covariance matrix as four floats separated by commas (e.g., '0.12,0.05,0.04,0.03')")
+    parser.add_argument("--cov2", type=parse_covariance, default=None,
+                        help="Covariance matrix as four floats separated by commas (e.g., '0.12,0.05,0.04,0.03')")
+    # Stimulus specificity
     parser.add_argument('--stimulus_type', type=int, default=4, help='Stimulus type')
     parser.add_argument('--stimulus_type_set', nargs='+', type=int, default=[1], help='Sets of stimulus type')
     # Perceiver specificity
@@ -80,7 +103,8 @@ def main():
     device = torch.device("cuda")
 
     # Create the target matrix
-    generator = TargetMatrixGenerator(mean=(0.1, -0.2), cov=np.array([[0.12, 0.05], [0.04, 0.03]]), device=device)
+    generator = TargetMatrixGenerator(mean=args.mean, cov=args.cov,
+                                      surround_weight=args.sf_surround_weight, device=device)
 
     # Generate the target matrix
     target_matrix = generator.create_3d_target_matrix(args.input_height, args.input_width, args.input_depth,

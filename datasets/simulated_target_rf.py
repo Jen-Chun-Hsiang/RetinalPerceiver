@@ -3,11 +3,12 @@ import torch
 
 
 class TargetMatrixGenerator:
-    def __init__(self, mean=(0, 0), cov=((1, 0), (0, 1)), mean2=None, cov2=None, device='cpu'):
+    def __init__(self, mean=(0, 0), cov=((1, 0), (0, 1)), mean2=None, cov2=None, surround_weight=0.2, device='cpu'):
         self.mean1 = mean
         self.cov1 = cov
         self.mean2 = mean if mean2 is None else mean2
         self.cov2 = cov2
+        self.surround_weight = surround_weight
         self.device = device
 
     def create_3d_target_matrix(self, input_height, input_width, input_depth, tf_surround_weight):
@@ -32,15 +33,15 @@ class TargetMatrixGenerator:
         else:
             # Use the difference of two Gaussians
             target_matrix = np.array(
-                [self.generate_difference_of_2d_gaussians((input_width, input_height)) * time_point for time_point in
+                [self.generate_difference_of_2d_gaussians((input_width, input_height), self.surround_weight) * time_point for time_point in
                  freqf_t[:input_depth]])
 
         return torch.tensor(target_matrix, dtype=torch.float32).to(self.device)
 
-    def generate_difference_of_2d_gaussians(self, size):
+    def generate_difference_of_2d_gaussians(self, size, surround_weight):
         gaussian_matrix1 = self.generate_2d_gaussian(size, self.mean1, self.cov1)
         gaussian_matrix2 = self.generate_2d_gaussian(size, self.mean2, self.cov2)
-        return gaussian_matrix1 - gaussian_matrix2
+        return gaussian_matrix1 - surround_weight*gaussian_matrix2
 
     def generate_2d_gaussian(self, size, mean=None, cov=None):
         if mean is None:
