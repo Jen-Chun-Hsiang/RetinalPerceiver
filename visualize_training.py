@@ -28,7 +28,7 @@ def main():
     tf_surround_weight = 0.2
     sf_surround_weight = 0.5
     conv3d_out_channels = 10  # default 1
-    use_layer_norm = True
+    use_layer_norm = False
     num_bands = 10  # default 10
     stimulus_type = 'combo20000tfsfstim123'
     model_type = 'RetinalPerceiver'
