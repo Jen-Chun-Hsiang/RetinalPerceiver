@@ -57,8 +57,8 @@ def main():
     # Initialize the DataVisualizer
     visualizer_prog = DataVisualizer(savefig_dir, file_prefix=f'{stimulus_type}_Training_progress')
     visualizer_est_rf = DataVisualizer(savefig_dir, file_prefix=f'{stimulus_type}_Estimate_RF')
-    visualizer_est_rfstd = DataVisualizer(savefig_dir, file_prefix=f'{Estimate_RF}_Estimate_RF_std')
-    visualizer_inout_corr = DataVisualizer(savefig_dir, file_prefix=f'{Estimate_RF}_Input_output_correlation')
+    visualizer_est_rfstd = DataVisualizer(savefig_dir, file_prefix=f'{stimulus_type}_Estimate_RF_std')
+    visualizer_inout_corr = DataVisualizer(savefig_dir, file_prefix=f'{stimulus_type}_Input_output_correlation')
 
     if model_type == 'RetinalPerceiver':
         model = RetinalPerceiver(depth_dim=timepoint, height=height, width=width, num_bands=num_bands).to(device)
