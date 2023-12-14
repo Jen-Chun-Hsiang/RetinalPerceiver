@@ -29,8 +29,8 @@ def main():
     sf_surround_weight = 0.5
     conv3d_out_channels = 10  # default 1
     num_bands = 10  # default 10
-    stimulus_type = 'combo10000cnn10tfsfstim234'
-    model_type = 'RetinalCNN'
+    stimulus_type = 'combo20000tfsfstim234'
+    model_type = 'RetinalPerceiver'
     checkpoint_filename = f'Perceiver{timepoint}timepoint_{stimulus_type}_checkpoint_epoch_200'
 
     checkpoint_folder = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/CheckPoints/'
