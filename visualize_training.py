@@ -29,7 +29,7 @@ def main():
     sf_surround_weight = 0.5
     conv3d_out_channels = 10  # default 1
     num_bands = 10  # default 10
-    stimulus_type = 'combo10000cnn10tfsf'
+    stimulus_type = 'combo10000cnn10tfsfstim234'
     model_type = 'RetinalCNN'
     checkpoint_filename = f'Perceiver{timepoint}timepoint_{stimulus_type}_checkpoint_epoch_200'
 
@@ -83,7 +83,7 @@ def main():
     total_length = 10000  # Replace with your actual dataset length
     batch_size = 64  # Replace with your actual batch size
 
-    dataset_test = MatrixDataset(target_matrix, total_length, device)
+    dataset_test = MatrixDataset(target_matrix, total_length, device, combination_set=[1])
     sample_data, sample_label = dataset_test[0]
     logging.info(f"dataset size: {sample_data.shape}")
     output_image, weights, labels = forward_model(model, dataset_test, batch_size=batch_size)
