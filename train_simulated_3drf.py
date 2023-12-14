@@ -73,6 +73,7 @@ def parse_args():
     parser.add_argument('--num_iter', type=int, default=1, help='Number of input reiteration')
     parser.add_argument('--num_latent', type=int, default=16, help='Number of latent length (encoding)')
     parser.add_argument('--num_band', type=int, default=10, help='Number of bands in positional encoding')
+    parser.add_argument('--use_layer_norm', action='store_true', help='Enable layer normalization')
     # Plot parameters
     parser.add_argument('--num_cols', type=int, default=5, help='Number of columns in a figure')
 
@@ -126,7 +127,7 @@ def main():
     if args.model == 'RetinalPerceiver':
         model = RetinalPerceiver(args.input_channels, args.hidden_size, args.output_size, args.num_latent, args.num_head,
                           args.num_iter, args.input_depth, args.input_height, args.input_width, args.num_band,
-                          device=device)
+                          device=device, use_layer_norm=args.use_layer_norm)
     elif args.model == 'RetinalCNN':
         model = RetinalCNN(args.input_depth, args.input_height, args.input_width, args.output_size,
                            hidden_size=args.hidden_size, device=device, conv3d_out_channels=args.conv3d_out_channels)  # Add necessary arguments
