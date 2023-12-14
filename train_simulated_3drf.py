@@ -112,8 +112,7 @@ def main():
     # plot and save the target_matrix figure
     plot3dmat(target_matrix, args.num_cols, savefig_dir, file_prefix='plot_3D_matrix')
     # Initialize the dataset with the device
-    dataset = MatrixDataset(target_matrix, args.total_length, device,
-                            matrix_type=args.stimulus_type, combination_set=args.stimulus_type_set)
+    dataset = MatrixDataset(target_matrix, args.total_length, device, combination_set=args.stimulus_type_set)
 
     # Splitting the dataset into training and validation sets
     train_length = int(0.8 * args.total_length)  # 80% for training
