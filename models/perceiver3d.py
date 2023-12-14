@@ -4,34 +4,49 @@ from einops import rearrange
 
 
 class CrossAttention(nn.Module):
-    def __init__(self, input_dim, latent_dim, heads):
+    def __init__(self, input_dim, latent_dim, heads, use_layer_norm=False):
         super().__init__()
+        self.use_layer_norm = use_layer_norm
         self.query_proj = nn.Linear(latent_dim, latent_dim)
         self.key_proj = nn.Linear(input_dim, latent_dim)
         self.value_proj = nn.Linear(input_dim, latent_dim)
         self.out_proj = nn.Linear(latent_dim, latent_dim)
         self.attention = nn.MultiheadAttention(latent_dim, heads)
+        if self.use_layer_norm:
+            self.norm = nn.LayerNorm(latent_dim)
 
     def forward(self, x, context):
-        q = self.query_proj(x).transpose(0, 1)
-        k = self.key_proj(context).transpose(0, 1)
-        v = self.value_proj(context).transpose(0, 1)
+        q = self.query_proj(x)
+        k = self.key_proj(context)
+        v = self.value_proj(context)
+
+        if self.use_layer_norm:
+            q = self.norm(q)
+            k = self.norm(k)
+            v = self.norm(v)
+
+        q, k, v = map(lambda t: t.transpose(0, 1), (q, k, v))
         attn_output, _ = self.attention(q, k, v)
         attn_output = attn_output.transpose(0, 1)
         return self.out_proj(attn_output)
 
 class SelfAttention(nn.Module):
-    def __init__(self, latent_dim, heads):
+    def __init__(self, latent_dim, heads, use_layer_norm=False):
         super().__init__()
+        self.use_layer_norm = use_layer_norm
         self.attention = nn.MultiheadAttention(latent_dim, heads)
-        self.norm = nn.LayerNorm(latent_dim)
+        if self.use_layer_norm:
+            self.norm = nn.LayerNorm(latent_dim)
 
     def forward(self, x):
         x_transposed = x.transpose(0, 1)
+
+        if self.use_layer_norm:
+            x_transposed = self.norm(x_transposed)
+
         attn_output, _ = self.attention(x_transposed, x_transposed, x_transposed)
         attn_output = attn_output.transpose(0, 1)
         return attn_output + x
-        #return self.norm(attn_output + x)
 
 class FourierFeaturePositionalEncoding3D(nn.Module):
     def __init__(self, depth, height, width, num_bands, device=None):
@@ -61,15 +76,17 @@ class FourierFeaturePositionalEncoding3D(nn.Module):
 
 class RetinalPerceiver(nn.Module):
     def __init__(self, input_dim=1, latent_dim=128, output_dim=1, num_latents=16, heads=4, depth=1,
-                 depth_dim=20, height=30, width=40, num_bands=10, device=None):
+                 depth_dim=20, height=30, width=40, num_bands=10, device=None, use_layer_norm=False):
         super().__init__()
         self.device = device if device is not None else torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         total_channels = input_dim + num_bands * 2 * 3  # 2 for sin & cos, 3 for depth, height & width
 
         self.latents = nn.Parameter(torch.randn(num_latents, latent_dim)).to(self.device)
-        self.cross_attentions = nn.ModuleList([CrossAttention(total_channels, latent_dim, heads).to(self.device) for _ in range(depth)])
-        self.self_attentions = nn.ModuleList([SelfAttention(latent_dim, heads).to(self.device) for _ in range(depth)])
+        self.cross_attentions = nn.ModuleList([CrossAttention(total_channels, latent_dim, heads,
+                                                              use_layer_norm=use_layer_norm).to(self.device) for _ in range(depth)])
+        self.self_attentions = nn.ModuleList([SelfAttention(latent_dim, heads,
+                                                            use_layer_norm=use_layer_norm).to(self.device) for _ in range(depth)])
         self.fc = nn.Linear(latent_dim, output_dim).to(self.device)
         self.positional_encoding = FourierFeaturePositionalEncoding3D(depth_dim, height, width, num_bands, self.device)
 
