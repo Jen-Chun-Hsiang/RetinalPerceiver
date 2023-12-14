@@ -28,6 +28,7 @@ def main():
     tf_surround_weight = 0.2
     sf_surround_weight = 0.5
     conv3d_out_channels = 10  # default 1
+    use_layer_norm = True
     num_bands = 10  # default 10
     stimulus_type = 'combo20000tfsfstim123'
     model_type = 'RetinalPerceiver'
@@ -61,7 +62,8 @@ def main():
     visualizer_inout_corr = DataVisualizer(savefig_dir, file_prefix=f'{stimulus_type}_Input_output_correlation')
 
     if model_type == 'RetinalPerceiver':
-        model = RetinalPerceiver(depth_dim=timepoint, height=height, width=width, num_bands=num_bands).to(device)
+        model = RetinalPerceiver(depth_dim=timepoint, height=height, width=width, num_bands=num_bands,
+                                 use_layer_norm=use_layer_norm).to(device)
     elif model_type == 'RetinalCNN':
         model = RetinalCNN(timepoint, height, width, conv3d_out_channels=conv3d_out_channels).to(device)
 
