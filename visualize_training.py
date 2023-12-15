@@ -32,7 +32,7 @@ def main():
     num_bands = 10  # default 10
     stimulus_type = 'combo20000tfsfstim123layernorm'
     model_type = 'RetinalPerceiver'
-    checkpoint_filename = f'Perceiver_{timepoint}tp{stimulus_type}_checkpoint_epoch_200'
+    checkpoint_filename = f'Perceiver_{timepoint}tp{stimulus_type}_checkpoint_epoch_180'
 
     checkpoint_folder = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/CheckPoints/'
     savefig_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Figures/'
