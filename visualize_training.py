@@ -30,9 +30,9 @@ def main():
     conv3d_out_channels = 10  # default 1
     use_layer_norm = True
     num_bands = 10  # default 10
-    stimulus_type = 'combo20000tfsfstim123layernorm'
+    stimulus_type = '20tpcombo20000tfsfstim123LYnormfc'
     model_type = 'RetinalPerceiver'
-    checkpoint_filename = f'Perceiver_{timepoint}tp{stimulus_type}_checkpoint_epoch_180'
+    checkpoint_filename = f'Perceiver_{timepoint}tp{stimulus_type}_checkpoint_epoch_200'
 
     checkpoint_folder = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/CheckPoints/'
     savefig_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Figures/'
