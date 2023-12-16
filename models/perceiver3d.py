@@ -89,6 +89,7 @@ class RetinalPerceiver(nn.Module):
                                                             use_layer_norm=use_layer_norm).to(self.device) for _ in range(depth)])
         self.fc = nn.Linear(latent_dim, output_dim).to(self.device)
         self.positional_encoding = FourierFeaturePositionalEncoding3D(depth_dim, height, width, num_bands, self.device)
+        self.fc_hidden = nn.Linear(latent_dim, latent_dim).to(self.device)
 
     def forward(self, x):
         x = x.to(self.device)
@@ -98,6 +99,7 @@ class RetinalPerceiver(nn.Module):
 
         for cross_attention, self_attention in zip(self.cross_attentions, self.self_attentions):
             latents = cross_attention(latents, x) + latents
+            latents = F.relu(self.fc_hidden(latents))
             latents = self_attention(latents) + latents
 
         return self.fc(latents.mean(dim=1))
