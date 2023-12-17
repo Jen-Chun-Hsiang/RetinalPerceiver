@@ -100,7 +100,7 @@ class RetinalPerceiver(nn.Module):
 
         for cross_attention, self_attention in zip(self.cross_attentions, self.self_attentions):
             latents = cross_attention(latents, x) + latents
-            latents = F.relu(self.fc_hidden(latents))
+            latents = F.relu(self.fc_hidden(latents)) + latents
             latents = self_attention(latents) + latents
 
         return self.fc(latents.mean(dim=1))
