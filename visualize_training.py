@@ -30,7 +30,7 @@ def main():
     conv3d_out_channels = 10  # default 1
     use_layer_norm = True
     num_bands = 10  # default 10
-    stimulus_type = '20tpcombo20000tfsfstim123LYnormfc'
+    stimulus_type = 'combo20000tfsfstim123LYnormfc'
     model_type = 'RetinalPerceiver'
     checkpoint_filename = f'Perceiver_{timepoint}tp{stimulus_type}_checkpoint_epoch_200'
 
