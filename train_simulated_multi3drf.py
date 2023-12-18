@@ -18,7 +18,7 @@ from utils.utils import SeriesEncoder
 from datasets.simulated_dataset import MatrixDataset
 from models.perceiver3d import RetinalPerceiver
 from models.cnn3d import RetinalCNN
-from utils.training_procedure import train_one_epoch, evaluate, save_checkpoint, load_checkpoint
+from utils.training_procedure import Trainer, Evaluator, save_checkpoint, load_checkpoint
 
 def parse_covariance(string):
     try:
