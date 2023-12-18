@@ -148,13 +148,52 @@ class SharpenFilter(nn.Module):
         x = F.conv2d(x, self.sharpening_kernel, padding=0)  # No additional padding during convolution
         return x
 
-'''
-# Example usage
-target_matrix = torch.rand(12, 20, 24)
-dataset = MatrixDataset(target_matrix=target_matrix,
-                        length=1,
-                        device=torch.device('cuda'),
-                        combination_set=[2],
-                        ratio_for_one=0.2)
-'''
+class MultiMatrixDataset(MatrixDataset):
+    def __init__(self, target_matrices, length, device, combination_set=None, ratio_for_one=0.5):
+        """
+        Args:
+            target_matrices (list of numpy.ndarray or torch.Tensor): A list of target 3D matrices.
+            length (int): Number of samples in the dataset.
+            device (torch.device): Device where the tensors will be stored.
+            combination_set (list): Set of matrix types to use for generating random matrices.
+            ratio_for_one (float): Ratio for generating binary matrices (Type 2).
+        """
+
+        # Check if only a single matrix is provided and convert to a list
+        if isinstance(target_matrices, (np.ndarray, torch.Tensor)):
+            target_matrices = [target_matrices]
+
+        # Initialize the base MatrixDataset with the first matrix (as a placeholder)
+        super().__init__(target_matrices[0], length, device, combination_set, ratio_for_one)
+
+        # Normalize and store all matrices
+        self.target_matrices = []
+        for matrix in target_matrices:
+            if isinstance(matrix, np.ndarray):
+                matrix = torch.tensor(matrix, dtype=torch.float32, device=device)
+            elif isinstance(matrix, torch.Tensor):
+                matrix = matrix.to(device)
+            else:
+                raise ValueError("Target matrices must be either numpy arrays or torch tensors")
+
+            norm_factor = torch.sum(torch.abs(matrix))
+            normalized_matrix = matrix / norm_factor if norm_factor != 0 else matrix
+            self.target_matrices.append(normalized_matrix)
+
+    def __getitem__(self, idx):
+        torch.manual_seed(self.seed + idx)
+
+        # Randomly select a target matrix and its index
+        matrix_index = random.randint(0, len(self.target_matrices) - 1)
+        selected_matrix = self.target_matrices[matrix_index]
+        self.target_matrix = selected_matrix  # Update the target matrix in the base class
+
+        selected_type = random.choice(self.combination_set)
+        random_matrix = self.generate_matrix(selected_type, selected_matrix.shape)
+
+        random_matrix = random_matrix.unsqueeze(0)
+        output_matrix = random_matrix.squeeze(0) * selected_matrix
+        output_value = output_matrix.sum()
+
+        return random_matrix, output_value, matrix_index
 
