@@ -4,6 +4,7 @@ import numpy as np
 from datetime import datetime
 import matplotlib.pyplot as plt
 
+
 # Function to evaluate the model on validation data
 def validate_model(model, dataloader, criterion):
     model.eval()  # Set the model to evaluation mode
@@ -15,6 +16,7 @@ def validate_model(model, dataloader, criterion):
             loss = criterion(outputs, targets)
             total_loss += loss.item()
     return total_loss / len(dataloader)
+
 
 def create_checkpoint_filename(checkpoint_dir, file_prefix='model_checkpoint'):
     # Generate timestamp
@@ -100,6 +102,7 @@ def plot_and_save_3d_matrix_with_timestamp(target_matrix, num_cols, result_dir, 
     plt.close()  # Close the figure to free up memory
 
     return file_path
+
 
 class DataVisualizer:
     def __init__(self, result_dir, file_prefix='plot_figure'):
@@ -232,3 +235,68 @@ class DataVisualizer:
         plt.ylabel(ylabel)
         plt.title(title)
         plt.grid(True)
+
+
+class SeriesEncoder:
+    def __init__(self, max_values, lengths, order=None, shuffle_components=None, seed=42):
+        """
+        Initialize the encoder with maximum values, lengths, and optional order and shuffle settings.
+        max_values: Dictionary with keys specifying the maximum values for each component.
+        lengths: Dictionary with keys specifying the length of each component.
+        order: List specifying the order of the components, default is the order of max_values keys.
+        shuffle_components: List of components to be shuffled, default is empty.
+        seed: Random seed for consistency.
+        """
+        self.max_values = max_values
+        self.lengths = lengths
+        self.order = order if order is not None else list(max_values.keys())
+        self.shuffle_components = shuffle_components if shuffle_components is not None else []
+        np.random.seed(seed)
+        self.bases = self.calculate_bases(max_values, lengths)
+        self.shuffle_indices = {component: np.random.permutation(lengths[component]) for component in self.shuffle_components}
+
+    def calculate_bases(self, max_values, lengths):
+        """ Calculate optimal bases for each component. """
+        bases = {}
+        for component, max_val in max_values.items():
+            length = lengths[component]
+            base = np.ceil((max_val + 1)  ** (1 / length))
+            bases[component] = base
+        return bases
+
+    def encode_component(self, value, max_value, length, base, component):
+        """ Encode a value using base representation and apply shuffling if needed. """
+        encoded = np.zeros(length)
+        for i in range(length):
+            digit = (value % base) / (base - 1) * 2 - 1
+            encoded[i] = digit
+            value //= base
+
+        if component in self.shuffle_components:
+            # Apply shuffling
+            shuffle_idx = self.shuffle_indices[component]
+            encoded = encoded[shuffle_idx]
+
+        return encoded
+
+    def encode(self, input_tuples):
+        """
+        Encode multiple input tuples into a concatenated vector.
+        input_tuples: List of tuples, each representing values for components in the order.
+        """
+        encoded_vectors = []
+
+        for input_values in input_tuples:
+            encoded_vector = []
+            for component, value in zip(self.order, input_values):
+                max_value = self.max_values[component]
+                length = self.lengths[component]
+                base = self.bases[component]
+                randomize = component in self.shuffle_components
+                encoded_vector.append(self.encode_component(value, max_value, length, base, component))
+            encoded_vectors.append(np.concatenate(encoded_vector))
+
+        # Concatenate along a new dimension
+        return np.stack(encoded_vectors)
+
+
