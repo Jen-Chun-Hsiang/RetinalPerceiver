@@ -11,19 +11,23 @@ class TargetMatrixGenerator:
         self.surround_weight = surround_weight
         self.device = device
 
-    def create_3d_target_matrix(self, input_height, input_width, input_depth, tf_surround_weight):
+    def create_3d_target_matrix(self, input_height, input_width, input_depth, tf_weight_surround=0.2,
+                                tf_sigma_center=0.05, tf_sigma_surround=0.12, tf_mean_center=0.08,
+                                tf_mean_surround=0.12, tf_weight_center=1, tf_offset=0):
         def gaussian(x, sigma, mean_t):
             return np.exp(-np.power(x - mean_t, 2.) / (2 * np.power(sigma, 2.)))
 
-        def Ypf(T, w):
-            gauss1 = gaussian(T, w[0], w[2]) * w[4]
-            gauss2 = gaussian(T, w[1], w[3]) * w[5]
-            return (gauss1 - gauss2) + w[6]
+        def Ypf(T, tf_sigma_center, tf_sigma_surround, tf_mean_center, tf_mean_surround,
+                tf_weight_center, tf_weight_surround, tf_offset):
+            gauss1 = gaussian(T, tf_sigma_center, tf_mean_center) * tf_weight_center
+            gauss2 = gaussian(T, tf_sigma_surround, tf_mean_surround) * tf_weight_surround
+            return (gauss1 - gauss2) + tf_offset
 
         SamplingRate = 40
         T = np.arange(-1, 3, 1 / SamplingRate)
         T_positive = T[(T >= 0) & (T < 0.5)]
-        freqf_t = Ypf(T_positive, [0.05, 0.12, 0.08, 0.12, 1, tf_surround_weight, 0])
+        freqf_t = Ypf(T_positive, tf_sigma_center, tf_sigma_surround, tf_mean_center, tf_mean_surround,
+                      tf_weight_center, tf_weight_surround, tf_offset)
 
         if self.cov2 is None:
             # Only use the first Gaussian
@@ -33,7 +37,8 @@ class TargetMatrixGenerator:
         else:
             # Use the difference of two Gaussians
             target_matrix = np.array(
-                [self.generate_difference_of_2d_gaussians((input_width, input_height), self.surround_weight) * time_point for time_point in
+                [self.generate_difference_of_2d_gaussians((input_width, input_height),
+                                                          self.surround_weight) * time_point for time_point in
                  freqf_t[:input_depth]])
 
         return torch.tensor(target_matrix, dtype=torch.float32).to(self.device)
@@ -57,3 +62,209 @@ class TargetMatrixGenerator:
         gaussian_matrix = np.exp(-0.5 * np.sum(np.dot(d - mean, np.linalg.inv(cov)) * (d - mean), axis=2))
 
         return gaussian_matrix
+
+
+class MultiTargetMatrixGenerator(TargetMatrixGenerator):
+    def __init__(self, param_list, device='cpu'):
+        super().__init__(device=device)
+        self.param_list = param_list
+
+    def create_3d_target_matrices(self, input_height, input_width, input_depth):
+        all_matrices = []
+        for params in self.param_list:
+            self.mean1, self.cov1, self.mean2, self.cov2, self.surround_weight = (
+                params['sf_mean_center'], params['sf_cov_center'], params['sf_mean_surround'],
+                params['sf_cov_surround'], params['sf_weight_surround']
+            )
+            matrix = self.create_3d_target_matrix(
+                input_height,
+                input_width,
+                input_depth,
+                params['tf_weight_surround'],
+                params['tf_sigma_center'],
+                params['tf_sigma_surround'],
+                params['tf_mean_center'],
+                params['tf_mean_surround'],
+                params['tf_weight_center'],
+                params['tf_offset']
+            )
+            all_matrices.append(matrix.unsqueeze(0))  # Add an extra dimension for concatenation
+
+        return torch.cat(all_matrices, dim=0)  # Concatenating along the new dimension
+
+def create_hexagonal_centers(xlim, ylim, target_num_centers, max_iterations=100):
+    x_min, x_max = xlim
+    y_min, y_max = ylim
+    x_range = x_max - x_min
+    y_range = y_max - y_min
+
+    # Estimate initial side length based on target number of centers
+    approximate_area = x_range * y_range
+    approximate_cell_area = approximate_area / target_num_centers
+    side_length = np.sqrt(approximate_cell_area / (3 * np.sqrt(3) / 2))
+
+    # Calculate horizontal and vertical spacing
+    dx = side_length * 3**0.5
+    dy = side_length * 1.5
+
+    # Estimate number of columns and rows
+    cols = int(np.ceil(x_range / dx))
+    rows = int(np.ceil(y_range / dy))
+
+    # Function to generate grid points with given spacing and offsets
+    def generate_points(dx, dy, offset_x, offset_y):
+        points = []
+        for row in range(rows):
+            for col in range(cols):
+                x = col * dx + x_min - offset_x
+                y = row * dy + y_min - offset_y
+                if row % 2 == 1:
+                    x += dx / 2  # Offset every other row
+
+                if x_min <= x < x_max and y_min <= y < y_max:
+                    points.append((x, y))
+        return points
+
+    # Calculate initial offsets to center the grid
+    offset_x = (cols * dx - x_range) / 2
+    offset_y = (rows * dy - y_range) / 2
+
+    # Generate initial grid points
+    points = generate_points(dx, dy, offset_x, offset_y)
+
+    # Adjust grid spacing for a fixed number of iterations
+    for _ in range(max_iterations):
+        if len(points) > target_num_centers:
+            dx *= 1.01
+            dy *= 1.01
+        else:
+            dx *= 0.99
+            dy *= 0.99
+        cols = int(np.ceil(x_range / dx))
+        rows = int(np.ceil(y_range / dy))
+        offset_x = (cols * dx - x_range) / 2
+        offset_y = (rows * dy - y_range) / 2
+        points = generate_points(dx, dy, offset_x, offset_y)
+        if abs(len(points) - target_num_centers) <= target_num_centers * 0.05:  # 5% tolerance
+            break
+
+    return points
+
+class CellLevel:
+    def __init__(self, sf_mean_center=None, sf_mean_surround=None):
+        self.sf_mean_center = sf_mean_center
+        self.sf_mean_surround = sf_mean_surround
+
+    def get_params(self):
+        return {
+            'sf_mean_center': self.sf_mean_center,
+            'sf_mean_surround': self.sf_mean_surround
+        }
+
+class CellClassLevel:
+    def __init__(self, sf_cov_center, sf_cov_surround, sf_weight_surround, num_cells, xlim, ylim):
+        self.sf_cov_center = sf_cov_center
+        self.sf_cov_surround = sf_cov_surround
+        self.sf_weight_surround = sf_weight_surround
+        self.cells = self.create_cells(num_cells, xlim, ylim)
+
+    def create_cells(self, num_cells, xlim, ylim):
+        centers = create_hexagonal_centers(xlim, ylim, num_cells)
+        cells = []
+        for center in centers:
+            cell = CellLevel(sf_mean_center=center, sf_mean_surround=center)
+            cells.append(cell)
+        return cells
+
+    def get_params(self):
+        params = []
+        for cell in self.cells:
+            cell_params = cell.get_params()
+            cell_params.update({
+                'sf_cov_center': self.sf_cov_center,
+                'sf_cov_surround': self.sf_cov_surround,
+                'sf_weight_surround': self.sf_weight_surround
+            })
+            params.append(cell_params)
+        return params
+
+class ExperimentalLevel:
+    def __init__(self, tf_weight_surround, tf_sigma_center, tf_sigma_surround, tf_mean_center, tf_mean_surround, tf_weight_center, tf_offset, cell_classes):
+        """
+        Initialize the experimental level with specific parameters and a list of cell classes.
+
+        :param tf_weight_surround: Parameter for the weight surround at the experimental level.
+        :param tf_sigma_center: Sigma center parameter at the experimental level.
+        :param tf_sigma_surround: Sigma surround parameter at the experimental level.
+        :param tf_mean_center: Mean center parameter at the experimental level.
+        :param tf_mean_surround: Mean surround parameter at the experimental level.
+        :param tf_weight_center: Weight center parameter at the experimental level.
+        :param tf_offset: Offset parameter at the experimental level.
+        :param cell_classes: A list of CellClassLevel objects.
+        """
+        self.tf_weight_surround = tf_weight_surround
+        self.tf_sigma_center = tf_sigma_center
+        self.tf_sigma_surround = tf_sigma_surround
+        self.tf_mean_center = tf_mean_center
+        self.tf_mean_surround = tf_mean_surround
+        self.tf_weight_center = tf_weight_center
+        self.tf_offset = tf_offset
+        self.cell_classes = cell_classes
+
+    def generate_param_list(self):
+        """
+        Generates a parameter list for this experimental level, including cell class level information.
+        Does not descend to the individual cell level.
+
+        :return: A list of tuples, each containing cell class parameters and a list of cell parameters.
+        """
+        param_list = []
+
+        for class_level_id, cell_class in enumerate(self.cell_classes, start=1):
+            class_params = cell_class.get_params()
+            combined_params = {
+                'tf_weight_surround': self.tf_weight_surround,
+                'tf_sigma_center': self.tf_sigma_center,
+                'tf_sigma_surround': self.tf_sigma_surround,
+                'tf_mean_center': self.tf_mean_center,
+                'tf_mean_surround': self.tf_mean_surround,
+                'tf_weight_center': self.tf_weight_center,
+                'tf_offset': self.tf_offset,
+                'class_level_id': class_level_id,  # Include class level id
+                'cell_params': class_params  # List of cell parameters
+            }
+            param_list.append(combined_params)
+
+        return param_list
+
+class IntegratedLevel:
+    def __init__(self, experimental_levels):
+        """
+        Initialize the integrated level with a list of ExperimentalLevel instances.
+
+        :param experimental_levels: A list of ExperimentalLevel objects.
+        """
+        self.experimental_levels = experimental_levels
+
+    def generate_combined_param_list(self):
+        """
+        Generates a comprehensive parameter list and unique series IDs across all levels.
+
+        :return: A tuple containing two lists:
+                 1. A combined list of dictionaries, each containing a set of parameters.
+                 2. A list of unique series IDs corresponding to each entry in the parameter list.
+        """
+        combined_param_list = []
+        series_ids = []
+
+        for exp_level_id, exp_level in enumerate(self.experimental_levels, start=1):
+            class_param_list = exp_level.generate_param_list()
+
+            for class_params in class_param_list:
+                class_level_id = class_params['class_level_id']
+                for cell_level_id, cell_params in enumerate(class_params['cell_params'], start=1):
+                    final_params = {**cell_params, **class_params}  # Combine class and cell level params
+                    combined_param_list.append(final_params)
+                    series_ids.append((exp_level_id, class_level_id, cell_level_id))
+
+        return combined_param_list, series_ids
