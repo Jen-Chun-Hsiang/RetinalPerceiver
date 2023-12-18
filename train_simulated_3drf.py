@@ -17,7 +17,7 @@ from utils.utils import plot_and_save_3d_matrix_with_timestamp as plot3dmat
 from datasets.simulated_dataset import MatrixDataset
 from models.perceiver3d import RetinalPerceiver
 from models.cnn3d import RetinalCNN
-from utils.training_procedure import train_one_epoch, evaluate, save_checkpoint, load_checkpoint
+from utils.training_procedure import Trainer, Evaluator, save_checkpoint, load_checkpoint
 
 def parse_covariance(string):
     try:
@@ -141,6 +141,11 @@ def main():
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
 
+    # Initialize the Trainer
+    trainer = Trainer(model, criterion, optimizer, device)
+    # Initialize the Evaluator
+    evaluator = Evaluator(model, criterion, device)
+
     # Optionally, load from checkpoint
     if args.load_checkpoint:
         start_epoch, model, optimizer, training_losses, validation_losses = load_checkpoint(args.checkpoint_path, model,
@@ -152,10 +157,10 @@ def main():
         start_time = time.time()  # Capture the start time
 
     for epoch in range(start_epoch, args.epochs):
-        avg_train_loss = train_one_epoch(train_loader, model, criterion, optimizer, epoch, device)
+        avg_train_loss = trainer.train_one_epoch(train_loader, epoch)
         training_losses.append(avg_train_loss)
 
-        avg_val_loss = evaluate(val_loader, model, criterion, device)
+        avg_val_loss = evaluator.evaluate(val_loader)
         validation_losses.append(avg_val_loss)
 
         # Print training status

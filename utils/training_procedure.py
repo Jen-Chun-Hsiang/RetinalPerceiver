@@ -1,47 +1,104 @@
 import torch
 from torch.utils.data import DataLoader
 
-def train_one_epoch(train_loader, model, criterion, optimizer, epoch, device):
-    model.train()  # Set the model to training mode
-    total_train_loss = 0
+class Trainer:
+    def __init__(self, model, criterion, optimizer, device):
+        self.model = model
+        self.criterion = criterion
+        self.optimizer = optimizer
+        self.device = device
 
-    for batch_idx, (input_matrices, targets) in enumerate(train_loader):
-        input_matrices, targets = input_matrices.to(device), targets.to(device)
+    def train_one_epoch(self, train_loader, epoch, query_array=None):
+        self.model.train()  # Set the model to training mode
+        total_train_loss = 0
 
-        # Adjusting shape for MSE loss, if needed
+        for batch_idx, data in enumerate(train_loader):
+            if query_array is not None:
+                # Process with query vectors
+                loss = self._process_batch_with_query(data, query_array)
+            else:
+                # Process as originally
+                loss = self._process_batch(data)
+
+            total_train_loss += loss.item()
+
+        avg_train_loss = total_train_loss / len(train_loader)
+        return avg_train_loss
+
+    def _process_batch(self, data):
+        input_matrices, targets = data
+        input_matrices, targets = input_matrices.to(self.device), targets.to(self.device)
         targets = targets.unsqueeze(1)
+        outputs = self.model(input_matrices)
+        loss = self._compute_loss(outputs, targets)
+        self._update_parameters(loss)
+        return loss
 
-        outputs = model(input_matrices)
-        loss = criterion(outputs, targets)
+    def _process_batch_with_query(self, data, query_array):
+        input_matrices, targets, matrix_indices = data
+        query_vectors = query_array[matrix_indices]
+        query_vectors = torch.from_numpy(query_vectors).float().to(self.device)
+        input_matrices, targets = input_matrices.to(self.device), targets.to(self.device)
+        targets = targets.unsqueeze(1)
+        outputs = self.model(input_matrices, query_vectors)
+        loss = self._compute_loss(outputs, targets)
+        self._update_parameters(loss)
+        return loss
 
-        optimizer.zero_grad()
+    def _compute_loss(self, outputs, targets):
+        return self.criterion(outputs, targets)
+
+    def _update_parameters(self, loss):
+        self.optimizer.zero_grad()
         loss.backward()
-        optimizer.step()
-
-        total_train_loss += loss.item()
-
-    avg_train_loss = total_train_loss / len(train_loader)
-    return avg_train_loss
+        self.optimizer.step()
 
 
-def evaluate(test_loader, model, criterion, device):
-    model.eval()  # Set the model to evaluation mode
-    total_val_loss = 0
+class Evaluator:
+    def __init__(self, model, criterion, device):
+        self.model = model
+        self.criterion = criterion
+        self.device = device
 
-    with torch.no_grad():
-        for input_matrices, targets in test_loader:
-            input_matrices, targets = input_matrices.to(device), targets.to(device)
+    def evaluate(self, test_loader, query_array=None):
+        self.model.eval()  # Set the model to evaluation mode
+        total_val_loss = 0
 
-            # Adjust shape for MSE loss, if needed
-            targets = targets.unsqueeze(1)
+        with torch.no_grad():
+            for data in test_loader:
+                if query_array is not None:
+                    # Process with query vectors
+                    loss = self._process_batch_with_query(data, query_array)
+                else:
+                    # Process as originally
+                    loss = self._process_batch(data)
 
-            outputs = model(input_matrices)
-            loss = criterion(outputs, targets)
+                total_val_loss += loss.item()
 
-            total_val_loss += loss.item()
+        avg_val_loss = total_val_loss / len(test_loader)
+        return avg_val_loss
 
-    avg_val_loss = total_val_loss / len(test_loader)
-    return avg_val_loss
+    def _process_batch(self, data):
+        input_matrices, targets = data
+        input_matrices, targets = input_matrices.to(self.device), targets.to(self.device)
+        targets = targets.unsqueeze(1)
+        outputs = self.model(input_matrices)
+        loss = self._compute_loss(outputs, targets)
+        return loss
+
+    def _process_batch_with_query(self, data, query_array):
+        input_matrices, targets, matrix_indices = data
+        query_vectors = query_array[matrix_indices]
+        query_vectors = torch.from_numpy(query_vectors).float().to(self.device)
+        input_matrices, targets = input_matrices.to(self.device), targets.to(self.device)
+        targets = targets.unsqueeze(1)
+        outputs = self.model(input_matrices, query_vectors)
+        loss = self._compute_loss(outputs, targets)
+        return loss
+
+    def _compute_loss(self, outputs, targets):
+        return self.criterion(outputs, targets)
+
 
 def save_checkpoint(epoch, model, optimizer, training_losses, validation_losses, file_path):
     """
