@@ -172,6 +172,10 @@ def main():
 
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
+    # Initialize the Trainer
+    trainer = Trainer(model, criterion, optimizer, device)
+    # Initialize the Evaluator
+    evaluator = Evaluator(model, criterion, device)
 
     # Optionally, load from checkpoint
     if args.load_checkpoint:
@@ -184,10 +188,10 @@ def main():
         start_time = time.time()  # Capture the start time
 
     for epoch in range(start_epoch, args.epochs):
-        avg_train_loss = train_one_epoch(train_loader, model, criterion, optimizer, epoch, device)
+        avg_train_loss = trainer.train_one_epoch(train_loader, epoch, query_array)
         training_losses.append(avg_train_loss)
 
-        avg_val_loss = evaluate(val_loader, model, criterion, device)
+        avg_val_loss = evaluator.evaluate(val_loader, query_array)
         validation_losses.append(avg_val_loss)
 
         # Print training status
