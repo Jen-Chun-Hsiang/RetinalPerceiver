@@ -258,7 +258,7 @@ class RetinalPerceiverIO(nn.Module):
 
         # The process (self-attention) part, applied multiple times
         self.process_layers = nn.ModuleList([
-            PerceiverIOSelfAttention(self.latent_dim, self.heads, self.use_layer_norm).to(self.deive) for _ in range(depth)
+            PerceiverIOSelfAttention(self.latent_dim, self.heads, self.use_layer_norm).to(self.device) for _ in range(self.depth)
         ])
 
         # The decoder part
