@@ -10,13 +10,13 @@ import time
 import os
 from io import StringIO
 import sys
-from torchsummary import summary
+from torchinfo import summary
 
 from datasets.simulated_target_rf import MultiTargetMatrixGenerator, CellClassLevel, ExperimentalLevel, IntegratedLevel
 from utils.utils import plot_and_save_3d_matrix_with_timestamp as plot3dmat
 from utils.utils import SeriesEncoder
-from datasets.simulated_dataset import MatrixDataset
-from models.perceiver3d import RetinalPerceiver
+from datasets.simulated_dataset import MultiMatrixDataset
+from models.perceiver3d import RetinalPerceiverIO
 from models.cnn3d import RetinalCNN
 from utils.training_procedure import Trainer, Evaluator, save_checkpoint, load_checkpoint
 
@@ -109,29 +109,25 @@ def main():
                                  sf_cov_surround=np.array([[0.24, 0.05], [0.04, 0.06]]),
                                  sf_weight_surround=0.5, num_cells=2, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
 
-    cell_class2 = CellClassLevel(sf_cov_center=np.array([[0.08, 0.03], [0.06, 0.16]]),
-                                 sf_cov_surround=np.array([[0.16, 0.03], [0.06, 0.32]]),
-                                 sf_weight_surround=0.3, num_cells=3, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
-
     # Create experimental level with cell classes
     experimental = ExperimentalLevel(tf_weight_surround=0.2, tf_sigma_center=0.05,
                                      tf_sigma_surround=0.12, tf_mean_center=0.08,
                                      tf_mean_surround=0.12, tf_weight_center=1,
-                                     tf_offset=0, cell_classes=[cell_class1, cell_class2])
+                                     tf_offset=0, cell_classes=[cell_class1])
 
     # Create integrated level with experimental levels
-    Integrated_list = IntegratedLevel([experimental])
+    integrated_list = IntegratedLevel([experimental])
 
     # Generate param_list
-    param_list, series_ids = Integrated_list.generate_combined_param_list()
+    param_list, series_ids = integrated_list.generate_combined_param_list()
 
     # Encode series_ids into query arrays
     max_values = {'Experiment': 10, 'Type': 10, 'Cell': 10}
     lengths = {'Experiment': 2, 'Type': 2, 'Cell': 2}
     shuffle_components = ['Cell']
     queryencoder = SeriesEncoder(max_values, lengths, shuffle_components=shuffle_components)
-    queryarray = queryencoder.encode(series_ids)
-
+    query_array = queryencoder.encode(series_ids)
+    logging.info(f'query_array size:{query_array.shape} \n')
     # Use param_list in MultiTargetMatrixGenerator
     multi_target_gen = MultiTargetMatrixGenerator(param_list)
     target_matrix = multi_target_gen.create_3d_target_matrices(
@@ -141,7 +137,6 @@ def main():
     # plot and save the target_matrix figure
     plot3dmat(target_matrix[0, :, :, :], args.num_cols, savefig_dir, file_prefix='plot_3D_matrix')
     plot3dmat(target_matrix[2, :, :, :], args.num_cols, savefig_dir, file_prefix='plot_3D_matrix')
-
 
     # Initialize the dataset with the device
     dataset = MultiMatrixDataset(target_matrix, length=args.total_length, device=device,
@@ -157,16 +152,19 @@ def main():
 
     # Model, Loss, and Optimizer
     if args.model == 'RetinalPerceiver':
-        model = RetinalPerceiver(args.input_channels, args.hidden_size, args.output_size, args.num_latent, args.num_head,
-                          args.num_iter, args.input_depth, args.input_height, args.input_width, args.num_band,
-                          device=device, use_layer_norm=args.use_layer_norm)
+        model = RetinalPerceiverIO(input_dim = args.input_channels, latent_dim= args.hidden_size, output_dim=args.output_size,
+                                   num_latents=args.num_latent, heads=args.num_head,depth=args.num_iter, query_dim=query_array.shape[1],
+                                   depth_dim=args.input_depth, height=args.input_height, width=args.input_width,
+                                   num_bands=args.num_band, device=device, use_layer_norm=args.use_layer_norm)
     elif args.model == 'RetinalCNN':
         model = RetinalCNN(args.input_depth, args.input_height, args.input_width, args.output_size,
-                           hidden_size=args.hidden_size, device=device, conv3d_out_channels=args.conv3d_out_channels)  # Add necessary arguments
+                           hidden_size=args.hidden_size, device=device, conv3d_out_channels=args.conv3d_out_channels)
     logging.info(f'Model: {args.model} \n')
     old_stdout = sys.stdout
     sys.stdout = buffer = StringIO()
-    summary(model, (args.input_channels, args.input_depth, args.input_height, args.input_width))
+    model_input = [torch.rand(1, args.input_channels, args.input_depth, args.input_height, args.input_width),
+                   torch.rand(1, 1, query_array.shape[1])]
+    summary(model, input_data=model_input)
     sys.stdout = old_stdout
     logging.info(buffer.getvalue())
 
