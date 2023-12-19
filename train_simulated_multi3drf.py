@@ -136,7 +136,7 @@ def main():
     logging.info(f'target matrix: cov2:{args.cov2} spatial surround weight:{args.sf_surround_weight} \n')
     # plot and save the target_matrix figure
     plot3dmat(target_matrix[0, :, :, :], args.num_cols, savefig_dir, file_prefix='plot_3D_matrix')
-    plot3dmat(target_matrix[2, :, :, :], args.num_cols, savefig_dir, file_prefix='plot_3D_matrix')
+    #plot3dmat(target_matrix[2, :, :, :], args.num_cols, savefig_dir, file_prefix='plot_3D_matrix')
 
     # Initialize the dataset with the device
     dataset = MultiMatrixDataset(target_matrix, length=args.total_length, device=device,
