@@ -153,8 +153,10 @@ def main():
     check_loader = DataLoader(train_dataset, batch_size=2, shuffle=True)
     dataiter = iter(check_loader)
     movie, labels, index = next(dataiter)
+    queryvec = query_array.unsqueeze(1)
+    queryvec = queryvec[index]
     logging.info(f'movie clip: {movie.shape} labels:{labels} index:{index} \n')
-
+    logging.info(f'query vector: {queryvec.shape} \n')
     # Model, Loss, and Optimizer
     if args.model == 'RetinalPerceiver':
         model = RetinalPerceiverIO(input_dim = args.input_channels, latent_dim= args.hidden_size, output_dim=args.output_size,
