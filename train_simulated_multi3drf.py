@@ -150,6 +150,11 @@ def main():
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
 
+    check_loader = DataLoader(train_dataset, batch_size=1, shuffle=True)
+    dataiter = iter(check_loader)
+    movie, labels, index = next(dataiter)
+    logging.info(f'movie clip: {movie.shape} labels:{labels} index:{index} \n')
+
     # Model, Loss, and Optimizer
     if args.model == 'RetinalPerceiver':
         model = RetinalPerceiverIO(input_dim = args.input_channels, latent_dim= args.hidden_size, output_dim=args.output_size,
