@@ -93,7 +93,9 @@ def main():
 
     # Generate param_list
     param_list, series_ids = integrated_list.generate_combined_param_list()
+    logging.info(f'parameter list:{param_list} \n')
     param_list = param_list[presented_cell_id]
+    logging.info(f'parameter list (selected):{param_list} \n')
     # Encode series_ids into query arrays
     max_values = {'Experiment': 10, 'Type': 10, 'Cell': 10}
     lengths = {'Experiment': 2, 'Type': 2, 'Cell': 2}
