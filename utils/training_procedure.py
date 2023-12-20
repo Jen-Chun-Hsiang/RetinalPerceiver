@@ -176,7 +176,7 @@ def forward_model(model, dataset, query_array=None, batch_size=32):
             all_labels.extend(labels.cpu().tolist() if torch.is_tensor(labels) else labels)
 
     # Normalize weights
-    weights_tensor = torch.tensor(all_weights)
+    weights_tensor = torch.tensor(all_labels)
     weights_mean = weights_tensor.mean()
     weights_std = weights_tensor.std()
     normalized_weights = (weights_tensor - weights_mean) / weights_std
