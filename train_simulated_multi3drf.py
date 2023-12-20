@@ -159,7 +159,7 @@ def main():
     logging.info(f'query vector: {queryvec.shape} \n')
     # Model, Loss, and Optimizer
     if args.model == 'RetinalPerceiver':
-        model = RetinalPerceiverIO(input_dim = args.input_channels, latent_dim= args.hidden_size, output_dim=args.output_size,
+        model = RetinalPerceiverIO(input_dim=args.input_channels, latent_dim= args.hidden_size, output_dim=args.output_size,
                                    num_latents=args.num_latent, heads=args.num_head,depth=args.num_iter, query_dim=query_array.shape[1],
                                    depth_dim=args.input_depth, height=args.input_height, width=args.input_width,
                                    num_bands=args.num_band, device=device, use_layer_norm=args.use_layer_norm)
