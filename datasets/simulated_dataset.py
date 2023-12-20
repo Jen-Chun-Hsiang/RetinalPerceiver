@@ -189,7 +189,7 @@ class MultiMatrixDataset(MatrixDataset):
         self.target_matrix = selected_matrix  # Update the target matrix in the base class
 
         selected_type = random.choice(self.combination_set)
-        random_matrix = self.generate_matrix(selected_type, selected_matrix.shape)
+        random_matrix = self.generate_matrix(selected_type)
 
         random_matrix = random_matrix.unsqueeze(0)
         output_matrix = random_matrix.squeeze(0) * selected_matrix
