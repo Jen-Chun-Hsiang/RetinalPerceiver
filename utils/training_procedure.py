@@ -36,7 +36,8 @@ class Trainer:
 
     def _process_batch_with_query(self, data, query_array):
         input_matrices, targets, matrix_indices = data
-        query_vectors = query_array[matrix_indices]
+        query_vectors = torch.from_numpy(query_array).unsqueeze(1)
+        query_vectors = query_vectors[matrix_indices]
         query_vectors = torch.from_numpy(query_vectors).float().to(self.device)
         input_matrices, targets = input_matrices.to(self.device), targets.to(self.device)
         targets = targets.unsqueeze(1)
