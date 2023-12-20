@@ -102,7 +102,7 @@ def main():
     shuffle_components = ['Cell']
     query_encoder = SeriesEncoder(max_values, lengths, shuffle_components=shuffle_components)
     query_array = query_encoder.encode(series_ids)
-    query_array = query_array[presented_cell_id]
+    query_array = query_array[presented_cell_id:presented_cell_id+1, :]
     logging.info(f'query_array size:{query_array.shape} \n')
     # Use param_list in MultiTargetMatrixGenerator
     multi_target_gen = MultiTargetMatrixGenerator(param_list)
