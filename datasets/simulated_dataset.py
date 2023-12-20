@@ -151,31 +151,29 @@ class SharpenFilter(nn.Module):
 class MultiMatrixDataset(MatrixDataset):
     def __init__(self, target_matrices, length, device, combination_set=None, ratio_for_one=0.5):
         """
-        Args:
-            target_matrices (list of numpy.ndarray or torch.Tensor): A list of target 3D matrices.
-            length (int): Number of samples in the dataset.
-            device (torch.device): Device where the tensors will be stored.
-            combination_set (list): Set of matrix types to use for generating random matrices.
-            ratio_for_one (float): Ratio for generating binary matrices (Type 2).
-        """
+                Args:
+                    target_matrices (numpy.ndarray or torch.Tensor): A 4D matrix.
+                    length (int): Number of samples in the dataset.
+                    device (torch.device): Device where the tensors will be stored.
+                    combination_set (list): Set of matrix types to use for generating random matrices.
+                    ratio_for_one (float): Ratio for generating binary matrices (Type 2).
+                """
 
-        # Check if only a single matrix is provided and convert to a list
-        if isinstance(target_matrices, (np.ndarray, torch.Tensor)):
-            target_matrices = [target_matrices]
+        # Ensure target_matrices is a torch tensor
+        if isinstance(target_matrices, np.ndarray):
+            target_matrices = torch.tensor(target_matrices, dtype=torch.float32, device=device)
+        elif isinstance(target_matrices, torch.Tensor):
+            target_matrices = target_matrices.to(device)
+        else:
+            raise ValueError("target_matrices must be either a numpy array or a torch tensor")
 
         # Initialize the base MatrixDataset with the first matrix (as a placeholder)
         super().__init__(target_matrices[0], length, device, combination_set, ratio_for_one)
 
-        # Normalize and store all matrices
+        # Normalize and store each matrix in the first dimension of target_matrices
         self.target_matrices = []
-        for matrix in target_matrices:
-            if isinstance(matrix, np.ndarray):
-                matrix = torch.tensor(matrix, dtype=torch.float32, device=device)
-            elif isinstance(matrix, torch.Tensor):
-                matrix = matrix.to(device)
-            else:
-                raise ValueError("Target matrices must be either numpy arrays or torch tensors")
-
+        for i in range(target_matrices.shape[0]):
+            matrix = target_matrices[i]
             norm_factor = torch.sum(torch.abs(matrix))
             normalized_matrix = matrix / norm_factor if norm_factor != 0 else matrix
             self.target_matrices.append(normalized_matrix)
