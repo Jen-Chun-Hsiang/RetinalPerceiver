@@ -150,7 +150,7 @@ def main():
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
 
-    check_loader = DataLoader(train_dataset, batch_size=1, shuffle=True)
+    check_loader = DataLoader(train_dataset, batch_size=2, shuffle=True)
     dataiter = iter(check_loader)
     movie, labels, index = next(dataiter)
     logging.info(f'movie clip: {movie.shape} labels:{labels} index:{index} \n')
