@@ -133,7 +133,7 @@ def main():
     target_matrix = multi_target_gen.create_3d_target_matrices(
         input_height=args.input_height, input_width=args.input_width, input_depth=args.input_depth)
 
-    logging.info(f'target matrix: cov2:{args.cov2} spatial surround weight:{args.sf_surround_weight} \n')
+    logging.info(f'target matrix: {target_matrix.shape}  \n')
     # plot and save the target_matrix figure
     plot3dmat(target_matrix[0, :, :, :], args.num_cols, savefig_dir, file_prefix='plot_3D_matrix')
     #plot3dmat(target_matrix[2, :, :, :], args.num_cols, savefig_dir, file_prefix='plot_3D_matrix')
