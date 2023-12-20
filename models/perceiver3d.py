@@ -75,6 +75,36 @@ class FourierFeaturePositionalEncoding3D(nn.Module):
         fourier_features = basis.repeat(x.shape[0], 1, 1, 1, 1)
         return torch.cat([x, fourier_features], dim=1)
 
+
+class FourierFeaturePositionalEncoding3Dindep(nn.Module):
+    def __init__(self, num_frames, height, width, num_bands, device=None):
+        super().__init__()
+        self.num_frames = num_frames
+        self.height = height
+        self.width = width
+        self.num_bands = num_bands
+        self.device = device if device is not None else torch.device("cpu")
+
+    def get_fourier_features(self, dimension_size):
+        # Create a grid of 1D coordinates
+        coord = torch.linspace(-1, 1, dimension_size, device=self.device)
+        coord = coord.unsqueeze(0)  # Shape: [1, dimension_size]
+
+        # Apply Fourier Feature Mapping
+        frequencies = 2.0 ** torch.linspace(0., self.num_bands - 1, self.num_bands, device=self.device)
+        frequencies = frequencies.reshape(-1, 1)  # Shape: [num_bands, 1]
+        fourier_basis = torch.cat([torch.sin(coord * frequencies), torch.cos(coord * frequencies)], dim=0)
+
+        return fourier_basis
+
+    def forward(self):
+        temporal_features = self.get_fourier_features(self.num_frames)  # Shape: [2*num_bands, num_frames]
+        spatial_features_height = self.get_fourier_features(self.height)  # Shape: [2*num_bands, height]
+        spatial_features_width = self.get_fourier_features(self.width)  # Shape: [2*num_bands, width]
+
+        return temporal_features, spatial_features_height, spatial_features_width
+
+
 class RetinalPerceiver(nn.Module):
     def __init__(self, input_dim=1, latent_dim=128, output_dim=1, num_latents=16, heads=4, depth=1,
                  depth_dim=20, height=30, width=40, num_bands=10, device=None, use_layer_norm=False):
@@ -109,7 +139,6 @@ class RetinalPerceiver(nn.Module):
 class PerceiverIOEncoder(nn.Module):
     def __init__(self, input_dim, latent_dim, heads, use_layer_norm=False):
         super().__init__()
-        self.input_dim = input_dim
         self.latent_dim = latent_dim
         self.heads = heads
         self.use_layer_norm = use_layer_norm
@@ -149,8 +178,8 @@ class PerceiverIOEncoder(nn.Module):
         # Revert transpose operation
         updated_latent_array = rearrange(updated_latent_array, 'n b d -> b n d')
 
-        # Return the updated latent array and the attention scores
-        return updated_latent_array+q, attention_scores
+        # Add the residual connection
+        return updated_latent_array + latent_array, attention_scores
 
 
 class PerceiverIOSelfAttention(nn.Module):
@@ -236,12 +265,19 @@ class PerceiverIODecoder(nn.Module):
         # Apply the output projection
         return self.out_proj(attn_output)
 
+
 class RetinalPerceiverIO(nn.Module):
     def __init__(self, input_dim=1, latent_dim=128, output_dim=1, depth_dim=20, height=30, width=40,
                  query_dim=6, num_latents=16, heads=4, depth=1, num_bands=10, device=None, use_layer_norm=False):
         super().__init__()
         self.device = device if device is not None else torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        total_channels = input_dim + num_bands * 2 * 3  # 2 for sin & cos, 3 for depth, height & width
+
+        # Initialize positional encoding
+        self.positional_encoding = FourierFeaturePositionalEncoding3Dindep(depth_dim, height, width, num_bands, self.device)
+
+        # Calculate the size of the Fourier features for each dimension
+        fourier_feature_size = (1 + height + width) * num_bands * 2  # 2 for sin & cos
+        self.total_channels = input_dim * height * width + fourier_feature_size
         self.latent_dim = latent_dim
         self.output_dim = output_dim
         self.query_dim = query_dim
@@ -250,15 +286,14 @@ class RetinalPerceiverIO(nn.Module):
         self.depth = depth
         self.use_layer_norm = use_layer_norm
 
-        # Positional encoding for the input
-        self.positional_encoding = FourierFeaturePositionalEncoding3D(depth_dim, height, width, num_bands, self.device)
-
         # The encoder part
-        self.encoder = PerceiverIOEncoder(total_channels, self.latent_dim, self.heads, self.use_layer_norm).to(self.device)
+        self.encoder = PerceiverIOEncoder(self.total_channels, self.latent_dim, self.heads, self.use_layer_norm).to(
+            self.device)
 
         # The process (self-attention) part, applied multiple times
         self.process_layers = nn.ModuleList([
-            PerceiverIOSelfAttention(self.latent_dim, self.heads, self.use_layer_norm).to(self.device) for _ in range(self.depth)
+            PerceiverIOSelfAttention(self.latent_dim, self.heads, self.use_layer_norm).to(self.device) for _ in
+            range(self.depth)
         ])
 
         # The decoder part
@@ -270,20 +305,32 @@ class RetinalPerceiverIO(nn.Module):
         self.latents = nn.Parameter(torch.randn(num_latents, self.latent_dim)).to(self.device)
 
     def forward(self, input_array, query_array):
-        # Apply positional encoding to the input
         query_array = query_array.to(self.device)
         input_array = input_array.to(self.device)
-        encoded_input = self.positional_encoding(input_array)
-        encoded_input = rearrange(encoded_input, 'b c d h w -> b (d h w) c')
 
+        # Apply positional encoding to the input
+        temporal_encoding, spatial_encoding_height, spatial_encoding_width = self.positional_encoding()
+
+        B, C, T, H, W = input_array.shape
+        input_array = rearrange(input_array, 'b c t h w -> b t (c h w)')
+        # Adjust spatial encoding: repeat for each frame in each batch
+        spatial_encoding = torch.cat([spatial_encoding_height, spatial_encoding_width], dim=1)
+        spatial_encoding = spatial_encoding.unsqueeze(0).unsqueeze(0)  # [1, 1, height + width, num_bands * 2]
+        spatial_encoding = spatial_encoding.repeat(B, T, 1, 1)  # [B, T, height + width, num_bands * 2]
+        spatial_encoding = spatial_encoding.view(B, T, -1)  # [B, T, (height + width) * num_bands * 2]
+        # Adjust temporal encoding: repeat for each batch
+        temporal_encoding = temporal_encoding.unsqueeze(0).repeat(B, 1, 1)  # [B, num_frames, num_bands * 2]
+        temporal_encoding = rearrange(temporal_encoding, 'b c t -> b t c')
+        # Concatenate with input
+        encoded_input = torch.cat([input_array, spatial_encoding, temporal_encoding], dim=2)
         # Encode stage
-        latents = self.encoder(encoded_input, self.latents)
+        latents = self.latents.unsqueeze(0).repeat(B, 1, 1)
+
+        latents, _ = self.encoder(encoded_input, latents)
 
         # Process stage
         for layer in self.process_layers:
             latents, _ = layer(latents)
 
         # Decode stage
-        output = self.decoder(latents, query_array)
-
-        return output
+        return self.decoder(latents, query_array)
