@@ -149,19 +149,29 @@ def load_checkpoint(checkpoint_path, model, optimizer, device):
 
     return start_epoch, model, optimizer, training_losses, validation_losses
 
-def forward_model(model, dataset, batch_size=32):
+def forward_model(model, dataset, query_array=None, batch_size=32):
     model.eval()  # Set the model to evaluation mode
 
     all_weights = []
     all_labels = []
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
 
+    # Prepare query array if provided
+    query_array_tensor = torch.from_numpy(query_array).unsqueeze(1).float() if query_array is not None else None
+    use_query = query_array_tensor is not None
+
     # First pass: Compute weights for all images
     with torch.no_grad():
-        for images, labels in dataloader:
-            images = images.to(next(model.parameters()).device)
-            weights = model(images).squeeze()
+        for data in dataloader:
+            if use_query:
+                images, labels, matrix_indices = data
+                query_vectors = query_array_tensor[matrix_indices].to(images.device)
+                weights = model(images, query_vectors).squeeze()
+            else:
+                images, labels = data
+                weights = model(images).squeeze()
 
+            images = images.to(next(model.parameters()).device)
             all_weights.extend(weights.cpu().tolist())
             all_labels.extend(labels.cpu().tolist() if torch.is_tensor(labels) else labels)
 
@@ -180,10 +190,18 @@ def forward_model(model, dataset, batch_size=32):
         raise ValueError(f'Unexpected image dimensions {sample_shape}')
 
     idx = 0  # Index to track position in normalized weights
-    for images, _ in dataloader:
-        images = images.to(next(model.parameters()).device)
-        weights_batch = normalized_weights[idx:idx + images.size(0)].to(images.device).view(-1, 1, 1, 1, 1)
-        weighted_images = images * weights_batch
+    for data in dataloader:
+        if use_query:
+            images, _, matrix_indices = data
+            query_vectors = query_array_tensor[matrix_indices].to(images.device)
+            weights_batch = normalized_weights[idx:idx + images.size(0)].to(images.device).view(-1, 1, 1, 1, 1)
+            weighted_images = images * weights_batch
+        else:
+            images, _ = data
+            images = images.to(next(model.parameters()).device)
+            weights_batch = normalized_weights[idx:idx + images.size(0)].to(images.device).view(-1, 1, 1, 1)
+            weighted_images = images * weights_batch
+
         batch_sum = weighted_images.sum(dim=0)  # Sum over the batch
 
         if weighted_sum is None:
@@ -194,5 +212,6 @@ def forward_model(model, dataset, batch_size=32):
         idx += images.size(0)
 
     return weighted_sum, all_weights, all_labels
+
 
 
