@@ -23,18 +23,16 @@ def weightedsum_image_plot(output_image_np):
 
 def main():
     # experiment specific parameters
+    presented_cell_id = 0
     height = 20
     width = 24
     timepoint = 20
     query_dim = 6
-    tf_surround_weight = 0.2
-    sf_surround_weight = 0.5
     conv3d_out_channels = 10  # default 1
     use_layer_norm = True
-    num_bands = 10  # default 10
-    stimulus_type = 'combo20000tfsfstim123LYnormfc'
+    stimulus_type = 'combo20000tfsfstim123LYnorm'
     model_type = 'RetinalPerceiver'
-    checkpoint_filename = f'Perceiver_{timepoint}tp{stimulus_type}_checkpoint_epoch_200'
+    checkpoint_filename = f'PerceiverIO_{timepoint}tp{stimulus_type}_checkpoint_epoch_200'
 
     # default parameters
     total_length = 10000  # Replace with your actual dataset length
@@ -68,7 +66,7 @@ def main():
 
     if model_type == 'RetinalPerceiver':
         model = RetinalPerceiverIO(query_dim=query_dim, depth_dim=timepoint, height=height, width=width,
-                                   device=device, use_layer_norm=True)
+                                   device=device, use_layer_norm=use_layer_norm)
     elif model_type == 'RetinalCNN':
         model = RetinalCNN(timepoint, height, width, conv3d_out_channels=conv3d_out_channels).to(device)
 
@@ -95,18 +93,19 @@ def main():
 
     # Generate param_list
     param_list, series_ids = integrated_list.generate_combined_param_list()
-
+    param_list = param_list[presented_cell_id]
     # Encode series_ids into query arrays
     max_values = {'Experiment': 10, 'Type': 10, 'Cell': 10}
     lengths = {'Experiment': 2, 'Type': 2, 'Cell': 2}
     shuffle_components = ['Cell']
     query_encoder = SeriesEncoder(max_values, lengths, shuffle_components=shuffle_components)
     query_array = query_encoder.encode(series_ids)
+    query_array = query_array[presented_cell_id]
     logging.info(f'query_array size:{query_array.shape} \n')
     # Use param_list in MultiTargetMatrixGenerator
     multi_target_gen = MultiTargetMatrixGenerator(param_list)
     target_matrix = multi_target_gen.create_3d_target_matrices(
-        input_height=args.input_height, input_width=args.input_width, input_depth=args.input_depth)
+        input_height=height, input_width=width, input_depth=timepoint)
 
     logging.info(f'target matrix: {target_matrix.shape}  \n')
 
@@ -116,7 +115,7 @@ def main():
 
     sample_data, sample_label, sample_index = dataset_test[0]
     logging.info(f"dataset size: {sample_data.shape}")
-    output_image, weights, labels = forward_model(model, dataset_test, batch_size=batch_size)
+    output_image, weights, labels = forward_model(model, dataset_test, query_array=query_array, batch_size=batch_size)
     output_image_np = output_image.squeeze().cpu().numpy()
     visualizer_est_rf.plot_and_save(output_image_np, plot_type='3D_matrix', num_cols=5)
     visualizer_inout_corr.plot_and_save(None, plot_type='scatter', x_data=labels, y_data=weights,
