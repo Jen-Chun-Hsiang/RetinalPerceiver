@@ -71,6 +71,11 @@ class MultiTargetMatrixGenerator(TargetMatrixGenerator):
 
     def create_3d_target_matrices(self, input_height, input_width, input_depth):
         all_matrices = []
+
+        # Ensure self.param_list is always a list of dictionaries
+        if isinstance(self.param_list, dict):
+            self.param_list = [self.param_list]
+
         for params in self.param_list:
             self.mean1, self.cov1, self.mean2, self.cov2, self.surround_weight = (
                 params['sf_mean_center'], params['sf_cov_center'], params['sf_mean_surround'],
