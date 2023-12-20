@@ -6,12 +6,12 @@ import numpy as np
 import logging
 from datetime import datetime
 
-from datasets.simulated_target_rf import TargetMatrixGenerator
-from datasets.simulated_dataset import MatrixDataset
+from datasets.simulated_target_rf import MultiTargetMatrixGenerator, CellClassLevel, ExperimentalLevel, IntegratedLevel
+from datasets.simulated_dataset import MultiMatrixDataset
 from models.perceiver3d import RetinalPerceiverIO
 from models.cnn3d import RetinalCNN
 from utils.training_procedure import load_checkpoint, forward_model
-from utils.utils import DataVisualizer
+from utils.utils import DataVisualizer, SeriesEncoder
 
 
 def weightedsum_image_plot(output_image_np):
