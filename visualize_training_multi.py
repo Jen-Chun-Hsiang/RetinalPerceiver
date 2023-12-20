@@ -23,14 +23,14 @@ def weightedsum_image_plot(output_image_np):
 
 def main():
     # experiment specific parameters
-    presented_cell_id = 1
+    presented_cell_id = 0
     height = 20
     width = 24
     timepoint = 20
     query_dim = 6
     conv3d_out_channels = 10  # default 1
     use_layer_norm = True
-    stimulus_type = 'combo20000tfsfstim123LYnorm'
+    stimulus_type = 'combo20000tfsfstim123LYnorm1c'
     model_type = 'RetinalPerceiver'
     checkpoint_filename = f'PerceiverIO_{timepoint}tp{stimulus_type}_checkpoint_epoch_200'
 
