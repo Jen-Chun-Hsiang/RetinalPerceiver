@@ -162,9 +162,10 @@ def main():
     logging.info(f'Model: {args.model} \n')
     old_stdout = sys.stdout
     sys.stdout = buffer = StringIO()
-    model_input = [torch.rand(1, args.input_channels, args.input_depth, args.input_height, args.input_width),
-                   torch.rand(1, 1, query_array.shape[1])]
-    summary(model, input_data=model_input)
+
+    summary(model, input_data=(torch.rand(1, args.input_channels, args.input_depth, args.input_height, args.input_width),
+                               torch.rand(1, 1, query_array.shape[1])))
+
     sys.stdout = old_stdout
     logging.info(buffer.getvalue())
 
