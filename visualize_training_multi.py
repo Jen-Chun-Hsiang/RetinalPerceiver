@@ -73,7 +73,7 @@ def main():
         model = RetinalPerceiverIOWithCNN(input_depth=timepoint, input_height=height,
                                           input_width=width, latent_dim=hidden_size,
                                           query_dim=query_dim, num_latents=num_latents,
-                                          use_layer_norm=args.use_layer_norm, device=device,
+                                          use_layer_norm=use_layer_norm, device=device,
                                           conv3d_out_channels=conv3d_out_channels)
 
     optimizer = optim.Adam(model.parameters(), lr=0.001)
