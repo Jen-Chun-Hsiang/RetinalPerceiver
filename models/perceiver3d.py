@@ -230,7 +230,8 @@ class PerceiverIODecoder(nn.Module):
         self.query_proj = nn.Linear(query_dim, latent_dim)
         self.key_proj = nn.Linear(latent_dim, latent_dim)
         self.value_proj = nn.Linear(latent_dim, latent_dim)
-        self.out_proj = nn.Linear(latent_dim, output_dim)
+        self.out_proj1 = nn.Linear(latent_dim, latent_dim)
+        self.out_proj2 = nn.Linear(latent_dim, output_dim)
 
         # Cross-attention
         self.attention = nn.MultiheadAttention(latent_dim, heads)
@@ -263,7 +264,8 @@ class PerceiverIODecoder(nn.Module):
         attn_output = rearrange(attn_output, 'n b d -> b n d')
 
         # Apply the output projection
-        return self.out_proj(attn_output)
+        attn_output = F.gelu(self.out_proj1(attn_output))
+        return self.out_proj2(attn_output)
 
 
 class RetinalPerceiverIO(nn.Module):
@@ -333,4 +335,6 @@ class RetinalPerceiverIO(nn.Module):
             latents, _ = layer(latents)
 
         # Decode stage
+        x = F.relu(self.fc1(x))
+        x = self.fc2(x)
         return self.decoder(latents, query_array)
