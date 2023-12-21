@@ -17,7 +17,7 @@ from utils.utils import plot_and_save_3d_matrix_with_timestamp as plot3dmat
 from utils.utils import SeriesEncoder
 from datasets.simulated_dataset import MultiMatrixDataset
 from models.perceiver3d import RetinalPerceiverIO
-from models.cnn3d import RetinalCNN
+from models.cnn3d import RetinalPerceiverIOWithCNN
 from utils.training_procedure import Trainer, Evaluator, save_checkpoint, load_checkpoint
 
 def parse_covariance(string):
@@ -50,6 +50,7 @@ def parse_args():
     parser.add_argument('--hidden_size', type=int, default=128, help='Number of hidden nodes (information bottleneck)')
     parser.add_argument('--output_size', type=int, default=1, help='Number of neurons for prediction')
     parser.add_argument('--conv3d_out_channels', type=int, default=10, help='Number of temporal in CNN3D')
+    parser.add_argument('--conv2_out_channels', type=int, default=64, help='Number of output in 2nd convolution layer')
     # Training procedure
     parser.add_argument('--epochs', type=int, default=100, help='Number of training epochs')
     parser.add_argument('--batch_size', type=int, default=64, help='Batch size for training')
@@ -164,8 +165,12 @@ def main():
                                    depth_dim=args.input_depth, height=args.input_height, width=args.input_width,
                                    num_bands=args.num_band, device=device, use_layer_norm=args.use_layer_norm)
     elif args.model == 'RetinalCNN':
-        model = RetinalCNN(args.input_depth, args.input_height, args.input_width, args.output_size,
-                           hidden_size=args.hidden_size, device=device, conv3d_out_channels=args.conv3d_out_channels)
+        model = RetinalPerceiverIOWithCNN(input_depth=args.input_depth, input_height=args.input_height,
+                                    input_width=args.input_width, output_dim=args.output_size, latent_dim=args.hidden_size,
+                                    query_dim=query_array.shape[1], num_latents=args.num_latent, heads=args.num_head,
+                                    latent_dim=args.hidden_size,  use_layer_norm=args.use_layer_norm, device=device,
+                                    num_bands=args.num_band, conv3d_out_channels=args.conv3d_out_channels,
+                                    conv2_out_channels=args.conv2_out_channels)
     logging.info(f'Model: {args.model} \n')
     old_stdout = sys.stdout
     sys.stdout = buffer = StringIO()
