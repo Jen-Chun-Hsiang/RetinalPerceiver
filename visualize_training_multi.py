@@ -28,10 +28,12 @@ def main():
     width = 24
     timepoint = 20
     query_dim = 6
+    hidden_size = 128
+    num_latents = 16
     conv3d_out_channels = 10  # default 1
     use_layer_norm = True
-    stimulus_type = 'combo100000tfsfstim123LYnorm1c'
-    model_type = 'RetinalPerceiver'
+    stimulus_type = 'cnncombo10000tfsfstim123LYnorm1c128bt'
+    model_type = 'RetinalCNN'
     checkpoint_filename = f'PerceiverIO_{timepoint}tp{stimulus_type}_checkpoint_epoch_200'
 
     # default parameters
@@ -68,7 +70,11 @@ def main():
         model = RetinalPerceiverIO(query_dim=query_dim, depth_dim=timepoint, height=height, width=width,
                                    device=device, use_layer_norm=use_layer_norm)
     elif model_type == 'RetinalCNN':
-        model = RetinalCNN(timepoint, height, width, conv3d_out_channels=conv3d_out_channels).to(device)
+        model = RetinalPerceiverIOWithCNN(input_depth=timepoint, input_height=height,
+                                          input_width=width, latent_dim=hidden_size,
+                                          query_dim=query_dim, num_latents=num_latents,
+                                          use_layer_norm=args.use_layer_norm, device=device,
+                                          conv3d_out_channels=conv3d_out_channels)
 
     optimizer = optim.Adam(model.parameters(), lr=0.001)
 
