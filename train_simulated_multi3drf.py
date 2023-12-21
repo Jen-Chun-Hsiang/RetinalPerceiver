@@ -168,9 +168,9 @@ def main():
         model = RetinalPerceiverIOWithCNN(input_depth=args.input_depth, input_height=args.input_height,
                                     input_width=args.input_width, output_dim=args.output_size, latent_dim=args.hidden_size,
                                     query_dim=query_array.shape[1], num_latents=args.num_latent, heads=args.num_head,
-                                    latent_dim=args.hidden_size,  use_layer_norm=args.use_layer_norm, device=device,
-                                    num_bands=args.num_band, conv3d_out_channels=args.conv3d_out_channels,
-                                    conv2_out_channels=args.conv2_out_channels)
+                                    use_layer_norm=args.use_layer_norm, device=device, num_bands=args.num_band,
+                                    conv3d_out_channels=args.conv3d_out_channels, conv2_out_channels=args.conv2_out_channels)
+
     logging.info(f'Model: {args.model} \n')
     old_stdout = sys.stdout
     sys.stdout = buffer = StringIO()
