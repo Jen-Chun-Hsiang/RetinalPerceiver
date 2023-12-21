@@ -9,7 +9,7 @@ from datetime import datetime
 from datasets.simulated_target_rf import MultiTargetMatrixGenerator, CellClassLevel, ExperimentalLevel, IntegratedLevel
 from datasets.simulated_dataset import MultiMatrixDataset
 from models.perceiver3d import RetinalPerceiverIO
-from models.cnn3d import RetinalCNN
+from models.cnn3d import RetinalPerceiverIOWithCNN
 from utils.training_procedure import load_checkpoint, forward_model
 from utils.utils import DataVisualizer, SeriesEncoder
 
@@ -26,7 +26,7 @@ def main():
     presented_cell_id = 0
     height = 20
     width = 24
-    timepoint = 20
+    time_point = 20
     query_dim = 6
     hidden_size = 128
     num_latents = 16
@@ -34,7 +34,7 @@ def main():
     use_layer_norm = True
     stimulus_type = 'cnncombo10000tfsfstim123LYnorm1c128bt'
     model_type = 'RetinalCNN'
-    checkpoint_filename = f'PerceiverIO_{timepoint}tp{stimulus_type}_checkpoint_epoch_200'
+    checkpoint_filename = f'PerceiverIO_{time_point}tp{stimulus_type}_checkpoint_epoch_200'
 
     # default parameters
     total_length = 10000  # Replace with your actual dataset length
@@ -67,10 +67,11 @@ def main():
     visualizer_inout_corr = DataVisualizer(savefig_dir, file_prefix=f'{stimulus_type}_Input_output_correlation')
 
     if model_type == 'RetinalPerceiver':
-        model = RetinalPerceiverIO(query_dim=query_dim, depth_dim=timepoint, height=height, width=width,
-                                   device=device, use_layer_norm=use_layer_norm)
+        model = RetinalPerceiverIO(query_dim=query_dim, depth_dim=time_point, height=height, width=width,
+                                   device=device, use_layer_norm=use_layer_norm, latent_dim=hidden_size,
+                                   num_latents=num_latents)
     elif model_type == 'RetinalCNN':
-        model = RetinalPerceiverIOWithCNN(input_depth=timepoint, input_height=height,
+        model = RetinalPerceiverIOWithCNN(input_depth=time_point, input_height=height,
                                           input_width=width, latent_dim=hidden_size,
                                           query_dim=query_dim, num_latents=num_latents,
                                           use_layer_norm=use_layer_norm, device=device,
