@@ -28,12 +28,12 @@ def main():
     width = 24
     time_point = 20
     query_dim = 6
-    hidden_size = 128
-    num_latents = 16
+    hidden_size = 16
+    num_latents = 128
     conv3d_out_channels = 10  # default 1
     use_layer_norm = True
-    stimulus_type = 'cnncombo10000tfsfstim123LYnorm1c128bt'
-    model_type = 'RetinalCNN'
+    stimulus_type = 'combo50000tfsfstim123LYnorm1c128btswitch'
+    model_type = 'RetinalPerceiver'
     checkpoint_filename = f'PerceiverIO_{time_point}tp{stimulus_type}_checkpoint_epoch_200'
 
     # default parameters
