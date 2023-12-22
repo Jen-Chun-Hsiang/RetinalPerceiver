@@ -169,7 +169,8 @@ class RetinalPerceiverIOWithCNN(nn.Module):
 
         # Initialize latent array
         self.latents = nn.Parameter(torch.randn(self.num_latents, self.latent_dim)).to(self.device)
-
+        # cheap linear decoder
+        self.fc = nn.Linear(latent_dim, output_dim).to(self.device)
     def forward(self, input_array, query_array):
         # Pass input through the Front End CNN
         query_array = query_array.to(self.device)
@@ -187,7 +188,10 @@ class RetinalPerceiverIOWithCNN(nn.Module):
         # Project the channels to latent_dim
         latents_projected = latents_projected.view(batch_size, self.num_latents, -1)
         latents_projected = self.linear_to_latent_dim(latents_projected)
+
+        # cheap way to skip decoder and make sure everything above is fine
+        return self.fc(latents_projected.mean(dim=1))
         # Decode stage
-        return self.decoder(latents_projected, query_array)
+        #return self.decoder(latents_projected, query_array)
 
 
