@@ -306,7 +306,8 @@ class RetinalPerceiverIO(nn.Module):
 
         # Initialize latent array
         self.latents = nn.Parameter(torch.randn(num_latents, self.latent_dim)).to(self.device)
-
+        # cheap linear decoder
+        self.fc = nn.Linear(latent_dim, output_dim).to(self.device)
     def forward(self, input_array, query_array):
         query_array = query_array.to(self.device)
         input_array = input_array.to(self.device)
@@ -335,5 +336,7 @@ class RetinalPerceiverIO(nn.Module):
         for layer in self.process_layers:
             latents, _ = layer(latents)
 
+        # cheap way to skip decoder and make sure everything above is fine
+        return self.fc(latents.mean(dim=1))
         # Decode stage
-        return self.decoder(latents, query_array)
+        #return self.decoder(latents, query_array)
