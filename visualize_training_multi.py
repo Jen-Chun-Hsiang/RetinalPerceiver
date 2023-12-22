@@ -32,8 +32,8 @@ def main():
     num_latents = 16
     conv3d_out_channels = 10  # default 1
     use_layer_norm = True
-    stimulus_type = 'cnncombo50000tfsfstim123LYnorm1c1Gelu'
-    model_type = 'RetinalCNN'
+    stimulus_type = 'combo100000tfsfstim123LYnorm1cGelu'
+    model_type = 'RetinalPerceiver'
     checkpoint_filename = f'PerceiverIO_{time_point}tp{stimulus_type}_checkpoint_epoch_200'
 
     # default parameters
