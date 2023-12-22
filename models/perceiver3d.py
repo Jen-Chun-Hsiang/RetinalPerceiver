@@ -335,6 +335,4 @@ class RetinalPerceiverIO(nn.Module):
             latents, _ = layer(latents)
 
         # Decode stage
-        x = F.relu(self.fc1(x))
-        x = self.fc2(x)
         return self.decoder(latents, query_array)
