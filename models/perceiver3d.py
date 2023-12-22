@@ -247,6 +247,7 @@ class PerceiverIODecoder(nn.Module):
         q = self.query_proj(query)
         k = self.key_proj(latents)
         v = self.value_proj(latents)
+        saved_q = q.clone()
 
         # Apply optional normalization
         if self.use_layer_norm:
@@ -262,7 +263,7 @@ class PerceiverIODecoder(nn.Module):
 
         # Revert transpose operation
         attn_output = rearrange(attn_output, 'n b d -> b n d')
-
+        attn_output = attn_output + saved_q
         # Apply the output projection
         attn_output = F.gelu(self.out_proj1(attn_output))
         return self.out_proj2(attn_output)
