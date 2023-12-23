@@ -263,7 +263,7 @@ class PerceiverIODecoder(nn.Module):
 
         # Revert transpose operation
         attn_output = rearrange(attn_output, 'n b d -> b n d')
-        attn_output = attn_output + saved_q
+        #attn_output = attn_output + saved_q
         # Apply the output projection
         attn_output = F.gelu(self.out_proj1(attn_output))
         return self.out_proj2(attn_output)
@@ -337,6 +337,6 @@ class RetinalPerceiverIO(nn.Module):
             latents, _ = layer(latents)
 
         # cheap way to skip decoder and make sure everything above is fine
-        return self.fc(latents.mean(dim=1))
+        #return self.fc(latents.mean(dim=1))
         # Decode stage
-        #return self.decoder(latents, query_array)
+        return self.decoder(latents, query_array)
