@@ -244,7 +244,7 @@ class PerceiverIODecoder(nn.Module):
 
     def forward(self, latents, query):
         # Project the query, key, and value
-        q = self.query_proj(query)
+        q = self.query_proj(query).abs()
         k = self.key_proj(latents)
         v = self.value_proj(latents)
         saved_q = q.clone()
