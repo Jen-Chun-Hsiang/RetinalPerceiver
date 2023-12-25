@@ -244,14 +244,15 @@ class PerceiverIODecoder(nn.Module):
 
     def forward(self, latents, query):
         # Project the query, key, and value
-        q = self.query_proj(query).abs()
+        q = self.query_proj(torch.ones(query.shape))
+        #q = self.query_proj(query).abs()
         k = self.key_proj(latents)
         v = self.value_proj(latents)
         saved_q = q.clone()
 
         # Apply optional normalization
         if self.use_layer_norm:
-            q = self.norm_q(q)
+            #q = self.norm_q(q)
             k = self.norm_k(k)
             v = self.norm_v(v)
 
