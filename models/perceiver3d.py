@@ -337,6 +337,6 @@ class RetinalPerceiverIO(nn.Module):
             latents, _ = layer(latents)
 
         # cheap way to skip decoder and make sure everything above is fine
-        #return self.fc(latents.mean(dim=1))
+        return self.fc(latents.mean(dim=1))
         # Decode stage
-        return self.decoder(latents, query_array)
+        #return self.decoder(latents, query_array)
