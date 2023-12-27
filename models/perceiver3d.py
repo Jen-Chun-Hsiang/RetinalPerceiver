@@ -309,7 +309,7 @@ class RetinalPerceiverIO(nn.Module):
         # cheap linear decoder
         self.fc = nn.Linear(latent_dim, output_dim).to(self.device)
     def forward(self, input_array, query_array):
-        query_array = query_array.to(self.device)
+        query_array = query_array.to(self.device).repeat(1, self.num_latents, 1)
         input_array = input_array.to(self.device)
 
         # Apply positional encoding to the input
