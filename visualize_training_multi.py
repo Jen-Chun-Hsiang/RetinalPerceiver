@@ -28,8 +28,8 @@ def main():
     width = 24
     time_point = 20
     query_dim = 6
-    hidden_size = 128
-    num_latents = 16
+    hidden_size = 18
+    num_latents = 256
     conv3d_out_channels = 10  # default 1
     use_layer_norm = True
     stimulus_type = '50000tl123ss1c256nl8hs'
