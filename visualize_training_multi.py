@@ -28,7 +28,7 @@ def main():
     width = 24
     time_point = 20
     query_dim = 6
-    hidden_size = 18
+    hidden_size = 8
     num_latents = 256
     conv3d_out_channels = 10  # default 1
     use_layer_norm = True
