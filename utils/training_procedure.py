@@ -39,7 +39,7 @@ class Trainer:
         query_vectors = torch.from_numpy(query_array).unsqueeze(1)
         query_vectors = query_vectors[matrix_indices]
         query_vectors = query_vectors.float().to(self.device)
-        query_vectors = torch.ones(query_vectors.shape).to(self.device)
+        #query_vectors = torch.ones(query_vectors.shape).to(self.device)
         input_matrices, targets = input_matrices.to(self.device), targets.to(self.device)
         targets = targets.unsqueeze(1)
         outputs = self.model(input_matrices, query_vectors)
@@ -93,7 +93,7 @@ class Evaluator:
         query_vectors = torch.from_numpy(query_array).unsqueeze(1)
         query_vectors = query_vectors[matrix_indices]
         query_vectors = query_vectors.float().to(self.device)
-        query_vectors = torch.ones(query_vectors.shape).to(self.device)
+        #query_vectors = torch.ones(query_vectors.shape).to(self.device)
         input_matrices, targets = input_matrices.to(self.device), targets.to(self.device)
         targets = targets.unsqueeze(1)
         outputs = self.model(input_matrices, query_vectors)
