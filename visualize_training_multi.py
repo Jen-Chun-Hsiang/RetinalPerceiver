@@ -24,7 +24,7 @@ def weightedsum_image_plot(output_image_np):
 
 def main():
     # experiment specific parameters
-    presented_cell_id = 1
+    presented_cell_ids = 1
     height = 20
     width = 24
     time_point = 20
@@ -100,42 +100,46 @@ def main():
     integrated_list = IntegratedLevel([experimental])
 
     # Generate param_list
-    param_list, series_ids = integrated_list.generate_combined_param_list()
-    logging.info(f'parameter list:{param_list} \n')
-    param_list = param_list[presented_cell_id]
-    logging.info(f'parameter list (selected):{param_list} \n')
+    param_lists, series_ids = integrated_list.generate_combined_param_list()
+    logging.info(f'parameter list:{param_lists} \n')
+
+    #logging.info(f'parameter list (selected):{param_list} \n')
     # Encode series_ids into query arrays
     max_values = {'Experiment': 10, 'Type': 10, 'Cell': 10}
     lengths = {'Experiment': 2, 'Type': 2, 'Cell': 2}
     shuffle_components = ['Cell']
     query_encoder = SeriesEncoder(max_values, lengths, shuffle_components=shuffle_components)
-    query_array = query_encoder.encode(series_ids)
-    query_array = query_array[presented_cell_id:presented_cell_id+1, :]
-    logging.info(f'query array: {query_array} \n')
-    logging.info(f'query_array size:{query_array.shape} \n')
-    # Use param_list in MultiTargetMatrixGenerator
-    multi_target_gen = MultiTargetMatrixGenerator(param_list)
-    target_matrix = multi_target_gen.create_3d_target_matrices(
-        input_height=height, input_width=width, input_depth=time_point)
 
-    logging.info(f'target matrix: {target_matrix.shape}  \n')
-
-    # Initialize the dataset with the device
     num_cols = 5
-    plot3dmat(target_matrix[0, :, :, :], num_cols, savefig_dir, file_prefix='plot_3D_matrix')
-    dataset_test = MultiMatrixDataset(target_matrix, length=total_length, device=device,
-                                 combination_set=[1])
+    for presented_cell_id in presented_cell_ids:
+        query_array = query_encoder.encode(series_ids)
+        query_array = query_array[presented_cell_id:presented_cell_id+1, :]
+        #logging.info(f'query array: {query_array} \n')
+        #logging.info(f'query_array size:{query_array.shape} \n')
+        # Use param_list in MultiTargetMatrixGenerator
+        param_list = param_lists[presented_cell_id]
+        multi_target_gen = MultiTargetMatrixGenerator(param_list)
+        target_matrix = multi_target_gen.create_3d_target_matrices(
+            input_height=height, input_width=width, input_depth=time_point)
 
-    sample_data, sample_label, sample_index = dataset_test[0]
-    logging.info(f"dataset size: {sample_data.shape}")
-    output_image, weights, labels = forward_model(model, dataset_test, query_array=query_array, batch_size=batch_size)
-    output_image_np = output_image.squeeze().cpu().numpy()
-    visualizer_est_rf.plot_and_save(output_image_np, plot_type='3D_matrix', num_cols=5)
-    visualizer_inout_corr.plot_and_save(None, plot_type='scatter', x_data=labels, y_data=weights,
-                                                 xlabel='Labels', ylabel='Weights',
-                                                 title='Relationship between Weights and Labels')
-    output_image_np_std = np.std(output_image_np, axis=0)
-    visualizer_est_rfstd.plot_and_save(output_image_np_std, plot_type='2D_matrix')
+        logging.info(f'target matrix: {target_matrix.shape}  \n')
+
+        # Initialize the dataset with the device
+
+        plot3dmat(target_matrix[0, :, :, :], num_cols, savefig_dir, file_prefix=f'plot_3D_matrix_{presented_cell_id}')
+        dataset_test = MultiMatrixDataset(target_matrix, length=total_length, device=device,
+                                     combination_set=[1])
+
+        sample_data, sample_label, sample_index = dataset_test[0]
+        logging.info(f"dataset size: {sample_data.shape}")
+        output_image, weights, labels = forward_model(model, dataset_test, query_array=query_array, batch_size=batch_size)
+        output_image_np = output_image.squeeze().cpu().numpy()
+        visualizer_est_rf.plot_and_save(output_image_np, plot_type='3D_matrix', num_cols=5)
+        visualizer_inout_corr.plot_and_save(None, plot_type='scatter', x_data=labels, y_data=weights,
+                                                     xlabel='Labels', ylabel='Weights',
+                                                     title='Relationship between Weights and Labels')
+        output_image_np_std = np.std(output_image_np, axis=0)
+        visualizer_est_rfstd.plot_and_save(output_image_np_std, plot_type='2D_matrix')
 
 if __name__ == "__main__":
     main()
