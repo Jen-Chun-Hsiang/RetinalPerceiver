@@ -12,6 +12,7 @@ from models.perceiver3d import RetinalPerceiverIO
 from models.cnn3d import RetinalPerceiverIOWithCNN
 from utils.training_procedure import load_checkpoint, forward_model
 from utils.utils import DataVisualizer, SeriesEncoder
+from utils.utils import plot_and_save_3d_matrix_with_timestamp as plot3dmat
 
 
 def weightedsum_image_plot(output_image_np):
@@ -120,6 +121,8 @@ def main():
     logging.info(f'target matrix: {target_matrix.shape}  \n')
 
     # Initialize the dataset with the device
+    num_cols = 5
+    plot3dmat(target_matrix[0, :, :, :], num_cols, savefig_dir, file_prefix='plot_3D_matrix')
     dataset_test = MultiMatrixDataset(target_matrix, length=total_length, device=device,
                                  combination_set=[1])
 

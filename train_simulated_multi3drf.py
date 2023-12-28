@@ -137,7 +137,6 @@ def main():
     logging.info(f'target matrix: {target_matrix.shape}  \n')
     # plot and save the target_matrix figure
     plot3dmat(target_matrix[0, :, :, :], args.num_cols, savefig_dir, file_prefix='plot_3D_matrix')
-    #plot3dmat(target_matrix[2, :, :, :], args.num_cols, savefig_dir, file_prefix='plot_3D_matrix')
 
     # Initialize the dataset with the device
     dataset = MultiMatrixDataset(target_matrix, length=args.total_length, device=device,
