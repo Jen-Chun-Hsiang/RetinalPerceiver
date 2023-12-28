@@ -251,7 +251,7 @@ class PerceiverIODecoder(nn.Module):
 
         # Apply optional normalization
         if self.use_layer_norm:
-            q = self.norm_q(q)
+            #q = self.norm_q(q)
             k = self.norm_k(k)
             v = self.norm_v(v)
 
