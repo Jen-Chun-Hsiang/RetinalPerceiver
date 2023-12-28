@@ -23,7 +23,7 @@ def weightedsum_image_plot(output_image_np):
 
 def main():
     # experiment specific parameters
-    presented_cell_id = 1
+    presented_cell_id = 0
     height = 20
     width = 24
     time_point = 20
@@ -87,7 +87,7 @@ def main():
     # Create cells and cell classes
     cell_class1 = CellClassLevel(sf_cov_center=np.array([[0.12, 0.05], [0.04, 0.03]]),
                                  sf_cov_surround=np.array([[0.24, 0.05], [0.04, 0.06]]),
-                                 sf_weight_surround=0.5, num_cells=1, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
+                                 sf_weight_surround=0.5, num_cells=2, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
 
     # Create experimental level with cell classes
     experimental = ExperimentalLevel(tf_weight_surround=0.2, tf_sigma_center=0.05,
