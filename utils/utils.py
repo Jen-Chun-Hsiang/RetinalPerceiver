@@ -300,3 +300,28 @@ class SeriesEncoder:
         return np.stack(encoded_vectors)
 
 
+def add_gradient(tensor, dim, start=-1, end=1):
+    """
+    Adds a gradient along a specified dimension of the tensor.
+
+    :param tensor: Input tensor.
+    :param dim: Dimension along which the gradient is added.
+    :param start: Start value of the gradient (default -1).
+    :param end: End value of the gradient (default 1).
+    :return: Tensor with added gradient.
+    """
+    # Number of steps along the dimension
+    num_steps = tensor.shape[dim]
+
+    # Create a gradient vector
+    gradient = torch.linspace(start, end, steps=num_steps, device=tensor.device, dtype=tensor.dtype)
+
+    # Reshape the gradient to be broadcastable to the tensor shape
+    shape = [1] * len(tensor.shape)
+    shape[dim] = num_steps
+    gradient = gradient.view(shape)
+
+    # Add the gradient to the tensor
+    return tensor + gradient
+
+

@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from einops import rearrange
 import torch.nn.functional as F
+from utils.utils import add_gradient
 
 
 class CrossAttention(nn.Module):
@@ -311,6 +312,7 @@ class RetinalPerceiverIO(nn.Module):
 
     def forward(self, input_array, query_array):
         query_array = query_array.to(self.device).repeat(1, self.num_latents, 1)
+        query_array = add_gradient(query_array, dim=1, start=-1, end=1)
         input_array = input_array.to(self.device)
 
         # Apply positional encoding to the input
