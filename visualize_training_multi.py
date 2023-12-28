@@ -24,7 +24,7 @@ def weightedsum_image_plot(output_image_np):
 
 def main():
     # experiment specific parameters
-    presented_cell_ids = [0]
+    presented_cell_ids = list(range(6))
     height = 20
     width = 24
     time_point = 20
