@@ -33,7 +33,7 @@ def main():
     num_latents = 256
     conv3d_out_channels = 10  # default 1
     use_layer_norm = True
-    stimulus_type = 'cnn100000tl123ss2e3c256nl8hs'
+    stimulus_type = '100000tl123ss2e3c256nl8hs36ec'
     model_type = 'RetinalCNN'
     checkpoint_filename = f'PerceiverIO_{time_point}tp{stimulus_type}_checkpoint_epoch_200'
 
@@ -132,8 +132,8 @@ def main():
 
     #logging.info(f'parameter list (selected):{param_list} \n')
     # Encode series_ids into query arrays
-    max_values = {'Experiment': 10, 'Type': 10, 'Cell': 10}
-    lengths = {'Experiment': 2, 'Type': 2, 'Cell': 2}
+    max_values = {'Experiment': 100, 'Type': 100, 'Cell': 10000}
+    lengths = {'Experiment': 6, 'Type': 6, 'Cell': 24}
     shuffle_components = ['Cell']
     query_encoder = SeriesEncoder(max_values, lengths, shuffle_components=shuffle_components)
 
