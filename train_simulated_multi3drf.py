@@ -152,8 +152,8 @@ def main():
     param_list, series_ids = integrated_list.generate_combined_param_list()
 
     # Encode series_ids into query arrays
-    max_values = {'Experiment': 10, 'Type': 10, 'Cell': 10}
-    lengths = {'Experiment': 2, 'Type': 2, 'Cell': 2}
+    max_values = {'Experiment': 100, 'Type': 100, 'Cell': 10000}
+    lengths = {'Experiment': 6, 'Type': 6, 'Cell': 24}
     shuffle_components = ['Cell']
     query_encoder = SeriesEncoder(max_values, lengths, shuffle_components=shuffle_components)
     query_array = query_encoder.encode(series_ids)
