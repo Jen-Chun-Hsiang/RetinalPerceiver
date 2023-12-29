@@ -61,29 +61,7 @@ def main():
         raise RuntimeError("CUDA is not available. Please check your GPU and CUDA installation.")
     device = torch.device("cuda")
 
-    # Initialize the DataVisualizer
-    visualizer_prog = DataVisualizer(savefig_dir, file_prefix=f'{stimulus_type}_Training_progress')
-    visualizer_est_rf = DataVisualizer(savefig_dir, file_prefix=f'{stimulus_type}_Estimate_RF')
-    visualizer_est_rfstd = DataVisualizer(savefig_dir, file_prefix=f'{stimulus_type}_Estimate_RF_std')
-    visualizer_inout_corr = DataVisualizer(savefig_dir, file_prefix=f'{stimulus_type}_Input_output_correlation')
 
-    if model_type == 'RetinalPerceiver':
-        model = RetinalPerceiverIO(query_dim=query_dim, depth_dim=time_point, height=height, width=width,
-                                   device=device, use_layer_norm=use_layer_norm, latent_dim=hidden_size,
-                                   num_latents=num_latents)
-    elif model_type == 'RetinalCNN':
-        model = RetinalPerceiverIOWithCNN(input_depth=time_point, input_height=height,
-                                          input_width=width, latent_dim=hidden_size,
-                                          query_dim=query_dim, num_latents=num_latents,
-                                          use_layer_norm=use_layer_norm, device=device,
-                                          conv3d_out_channels=conv3d_out_channels)
-
-    optimizer = optim.Adam(model.parameters(), lr=0.001)
-
-    start_epoch, model, optimizer, training_losses, validation_losses = load_checkpoint(checkpoint_path, model,
-                                                                                        optimizer, device)
-    visualizer_prog.plot_and_save(None, plot_type='line', line1=training_losses, line2=validation_losses,
-                                        xlabel='Epochs', ylabel='Loss')
     '''
     # Create cells and cell classes
     cell_class1 = CellClassLevel(sf_cov_center=np.array([[0.12, 0.05], [0.04, 0.03]]),
@@ -137,6 +115,33 @@ def main():
     query_encoder = SeriesEncoder(max_values, lengths, shuffle_components=shuffle_components)
     query_arrays = query_encoder.encode(series_ids)
     logging.info(f'query_arrays example 1:{query_arrays.shape} \n')
+
+    # Initialize the DataVisualizer
+    visualizer_prog = DataVisualizer(savefig_dir, file_prefix=f'{stimulus_type}_Training_progress')
+    visualizer_est_rf = DataVisualizer(savefig_dir, file_prefix=f'{stimulus_type}_Estimate_RF')
+    visualizer_est_rfstd = DataVisualizer(savefig_dir, file_prefix=f'{stimulus_type}_Estimate_RF_std')
+    visualizer_inout_corr = DataVisualizer(savefig_dir, file_prefix=f'{stimulus_type}_Input_output_correlation')
+
+    if model_type == 'RetinalPerceiver':
+        model = RetinalPerceiverIO(latent_dim=hidden_size, num_latents=num_latents, query_dim=query_arrays.shape[1],
+                                   depth_dim=time_point, height=height, width=width,
+                                   device=device, use_layer_norm=use_layer_norm)
+    elif model_type == 'RetinalCNN':
+        model = RetinalPerceiverIOWithCNN(input_depth=time_point, input_height=height,
+                                          input_width=width, latent_dim=hidden_size,
+                                          query_dim=query_dim, num_latents=num_latents,
+                                          use_layer_norm=use_layer_norm, device=device,
+                                          conv3d_out_channels=conv3d_out_channels)
+
+    optimizer = optim.Adam(model.parameters(), lr=0.001)
+
+    start_epoch, model, optimizer, training_losses, validation_losses = load_checkpoint(checkpoint_path, model,
+                                                                                        optimizer, device)
+    visualizer_prog.plot_and_save(None, plot_type='line', line1=training_losses, line2=validation_losses,
+                                  xlabel='Epochs', ylabel='Loss')
+
+
+
     num_cols = 5
     for presented_cell_id in presented_cell_ids:
         query_array = query_arrays[presented_cell_id:presented_cell_id+1, :]
