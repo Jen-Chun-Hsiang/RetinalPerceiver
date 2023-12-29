@@ -136,7 +136,7 @@ def main():
     lengths = {'Experiment': 6, 'Type': 6, 'Cell': 24}
     shuffle_components = ['Cell']
     query_encoder = SeriesEncoder(max_values, lengths, shuffle_components=shuffle_components)
-
+    logging.info(f'query_encoder:{query_encoder} \n')
     num_cols = 5
     for presented_cell_id in presented_cell_ids:
         query_array = query_encoder.encode(series_ids)
