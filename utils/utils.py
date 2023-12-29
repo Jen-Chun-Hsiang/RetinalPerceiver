@@ -292,9 +292,9 @@ class SeriesEncoder:
                 max_value = self.max_values[component]
                 length = self.lengths[component]
                 base = self.bases[component]
-                randomize = component in self.shuffle_components
-                encoded_vector.append(self.encode_component(value, max_value, length, base, component))
-            encoded_vectors.append(np.concatenate(encoded_vector))
+                # randomize = component in self.shuffle_components
+                encoded_vector.extend(self.encode_component(value, max_value, length, base, component))
+            encoded_vectors.append(np.array(encoded_vector))
 
         # Concatenate along a new dimension
         return np.stack(encoded_vectors)
