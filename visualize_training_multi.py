@@ -141,8 +141,6 @@ def main():
     for presented_cell_id in presented_cell_ids:
         query_array = query_arrays[presented_cell_id:presented_cell_id+1, :]
         logging.info(f'query_encoder example 1:{query_array.shape} \n')
-        #logging.info(f'query array: {query_array} \n')
-        #logging.info(f'query_array size:{query_array.shape} \n')
         # Use param_list in MultiTargetMatrixGenerator
         param_list = param_lists[presented_cell_id]
         multi_target_gen = MultiTargetMatrixGenerator(param_list)
