@@ -24,7 +24,7 @@ def weightedsum_image_plot(output_image_np):
 
 def main():
     # experiment specific parameters
-    presented_cell_ids = list(range(5))
+    presented_cell_ids = list(range(32))
     height = 20
     width = 24
     time_point = 20
@@ -33,7 +33,7 @@ def main():
     num_latents = 256
     conv3d_out_channels = 10  # default 1
     use_layer_norm = True
-    stimulus_type = '50000tl123ss5c256nl8hsAddgq'
+    stimulus_type = '50000tl123ss2e3c256nl8hsAddgq'
     model_type = 'RetinalPerceiver'
     checkpoint_filename = f'PerceiverIO_{time_point}tp{stimulus_type}_checkpoint_epoch_200'
 
@@ -84,7 +84,7 @@ def main():
                                                                                         optimizer, device)
     visualizer_prog.plot_and_save(None, plot_type='line', line1=training_losses, line2=validation_losses,
                                         xlabel='Epochs', ylabel='Loss')
-
+    '''
     # Create cells and cell classes
     cell_class1 = CellClassLevel(sf_cov_center=np.array([[0.12, 0.05], [0.04, 0.03]]),
                                  sf_cov_surround=np.array([[0.24, 0.05], [0.04, 0.06]]),
@@ -98,7 +98,34 @@ def main():
 
     # Create integrated level with experimental levels
     integrated_list = IntegratedLevel([experimental])
+    '''
+    # Create cells and cell classes
+    cell_class1 = CellClassLevel(sf_cov_center=np.array([[0.12, 0.05], [0.04, 0.03]]),
+                                 sf_cov_surround=np.array([[0.24, 0.05], [0.04, 0.06]]),
+                                 sf_weight_surround=0.5, num_cells=6, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
 
+    cell_class2 = CellClassLevel(sf_cov_center=np.array([[0.08, 0.03], [0.06, 0.16]]),
+                                 sf_cov_surround=np.array([[0.16, 0.03], [0.06, 0.32]]),
+                                 sf_weight_surround=0.3, num_cells=10, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
+
+    cell_class3 = CellClassLevel(sf_cov_center=np.array([[0.1, 0.01], [0.01, 0.1]]),
+                                 sf_cov_surround=np.array([[0.2, 0.01], [0.01, 0.2]]),
+                                 sf_weight_surround=0.5, num_cells=16, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
+
+    # Create experimental level with cell classes
+    experimental = ExperimentalLevel(tf_weight_surround=0.2, tf_sigma_center=0.05,
+                                     tf_sigma_surround=0.12, tf_mean_center=0.08,
+                                     tf_mean_surround=0.12, tf_weight_center=1,
+                                     tf_offset=0, cell_classes=[cell_class1, cell_class2])
+
+    # Create experimental level with cell classes
+    experimental2 = ExperimentalLevel(tf_weight_surround=0.3, tf_sigma_center=0.04,
+                                      tf_sigma_surround=0.10, tf_mean_center=0.07,
+                                      tf_mean_surround=0.10, tf_weight_center=1,
+                                      tf_offset=0, cell_classes=[cell_class3])
+
+    # Create integrated level with experimental levels
+    integrated_list = IntegratedLevel([experimental, experimental2])
     # Generate param_list
     param_lists, series_ids = integrated_list.generate_combined_param_list()
     logging.info(f'parameter list:{param_lists} \n')
