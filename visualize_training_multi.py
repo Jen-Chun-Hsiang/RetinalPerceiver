@@ -128,7 +128,6 @@ def main():
     integrated_list = IntegratedLevel([experimental, experimental2])
     # Generate param_list
     param_lists, series_ids = integrated_list.generate_combined_param_list()
-    logging.info(f'parameter list:{param_lists} \n')
 
     #logging.info(f'parameter list (selected):{param_list} \n')
     # Encode series_ids into query arrays
@@ -136,11 +135,11 @@ def main():
     lengths = {'Experiment': 6, 'Type': 6, 'Cell': 24}
     shuffle_components = ['Cell']
     query_encoder = SeriesEncoder(max_values, lengths, shuffle_components=shuffle_components)
+    query_arrays = query_encoder.encode(series_ids)
 
     num_cols = 5
     for presented_cell_id in presented_cell_ids:
-        query_array = query_encoder.encode(series_ids)
-        query_array = query_array[presented_cell_id:presented_cell_id+1, :]
+        query_array = query_arrays[presented_cell_id:presented_cell_id+1, :]
         logging.info(f'query_encoder example 1:{query_array.shape} \n')
         #logging.info(f'query array: {query_array} \n')
         #logging.info(f'query_array size:{query_array.shape} \n')
