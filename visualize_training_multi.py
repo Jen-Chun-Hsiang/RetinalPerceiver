@@ -35,7 +35,7 @@ def main():
     use_layer_norm = True
     stimulus_type = '100000tl123ss2e3c256nl8hs36ec'
     model_type = 'RetinalPerceiver'
-    checkpoint_filename = f'PerceiverIO_{time_point}tp{stimulus_type}_checkpoint_epoch_200'
+    checkpoint_filename = f'PerceiverIO_{time_point}tp{stimulus_type}_checkpoint_epoch_800'
 
     # default parameters
     total_length = 10000  # Replace with your actual dataset length
