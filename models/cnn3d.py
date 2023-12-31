@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 from models.perceiver3d import PerceiverIODecoder
+from utils.utils import add_gradient
 
 class RetinalCNN(nn.Module):
     def __init__(self, input_depth, input_height, input_width, output_size=1, hidden_size=128,
@@ -171,9 +172,13 @@ class RetinalPerceiverIOWithCNN(nn.Module):
         self.latents = nn.Parameter(torch.randn(self.num_latents, self.latent_dim)).to(self.device)
         # cheap linear decoder
         self.fc = nn.Linear(latent_dim, output_dim).to(self.device)
+
     def forward(self, input_array, query_array):
         # Pass input through the Front End CNN
         query_array = query_array.to(self.device)
+        query_array = query_array.to(self.device).repeat(1, self.num_latents, 1)
+        query_array = add_gradient(query_array, dim=1, start=-1, end=1)
+
         cnn_output = self.front_end_cnn(input_array)
         # Apply positional encoding
         pos_encoding = self.positional_encoding().unsqueeze(0).repeat(cnn_output.size(0), 1, 1, 1)
