@@ -29,11 +29,11 @@ def main():
     width = 24
     time_point = 20
     query_dim = 6
-    hidden_size = 8
-    num_latents = 512
+    hidden_size = 32
+    num_latents = 256
     conv3d_out_channels = 10  # default 1
     use_layer_norm = True
-    stimulus_type = '100000tl123ss2e3c512nl8hs36ec'
+    stimulus_type = '100000tl123ss2e3c256nl32hs36ec'
     model_type = 'RetinalPerceiver'
     checkpoint_filename = f'PerceiverIO_{time_point}tp{stimulus_type}_checkpoint_epoch_800'
 
