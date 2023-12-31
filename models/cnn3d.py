@@ -142,7 +142,7 @@ class RetinalPerceiverIOWithCNN(nn.Module):
                                                 input_height=input_height,
                                                 input_width=input_width,
                                                 conv3d_out_channels=conv3d_out_channels,
-                                                conv2_out_channels = conv2_out_channels, device=self.device)
+                                                conv2_out_channels=conv2_out_channels, device=self.device)
 
         # Get the output dimensions of FrontEndRetinalCNN
         cnn_output_height, cnn_output_width = self.front_end_cnn.get_output_dimensions(input_depth, input_height,
@@ -190,8 +190,8 @@ class RetinalPerceiverIOWithCNN(nn.Module):
         latents_projected = self.linear_to_latent_dim(latents_projected)
 
         # cheap way to skip decoder and make sure everything above is fine
-        return self.fc(latents_projected.mean(dim=1))
+        #return self.fc(latents_projected.mean(dim=1))
         # Decode stage
-        #return self.decoder(latents_projected, query_array)
+        return self.decoder(latents_projected, query_array).mean(dim=1)
 
 
