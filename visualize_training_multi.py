@@ -32,6 +32,7 @@ def main():
     hidden_size = 8
     num_latents = 256
     conv3d_out_channels = 10  # default 1
+    conv2_out_channels = 64
     use_layer_norm = True
     stimulus_type = 'cnn100000tl123ss2e3c256nl8hs36ec'
     model_type = 'RetinalCNN'
@@ -129,9 +130,10 @@ def main():
     elif model_type == 'RetinalCNN':
         model = RetinalPerceiverIOWithCNN(input_depth=time_point, input_height=height,
                                           input_width=width, latent_dim=hidden_size,
-                                          query_dim=query_dim, num_latents=num_latents,
+                                          query_dim=query_arrays.shape[1], num_latents=num_latents,
                                           use_layer_norm=use_layer_norm, device=device,
-                                          conv3d_out_channels=conv3d_out_channels)
+                                          conv3d_out_channels=conv3d_out_channels,
+                                          conv2_out_channels=conv2_out_channels)
 
     optimizer = optim.Adam(model.parameters(), lr=0.001)
 
