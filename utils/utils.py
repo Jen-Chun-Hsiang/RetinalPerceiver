@@ -325,3 +325,69 @@ def add_gradient(tensor, dim, start=-1, end=1):
     return tensor + gradient
 
 
+class VideoPatcher:
+    def __init__(self, video_shape, kernel_size, stride):
+        """
+        Initialize the VideoPatcher with video shape, kernel size, and stride.
+
+        Parameters:
+        video_shape (tuple): Shape of the video tensor [C, T, H, W].
+        kernel_size (tuple): Size of each patch (T, H, W).
+        stride (tuple): Stride in each dimension (T, H, W).
+        """
+        self.video_shape = video_shape
+        self.kernel_size = kernel_size
+        self.stride = stride
+
+        # Pre-calculate padding and the number of patches in each dimension
+        _, T, H, W = video_shape
+        self.pad_T = (-(T - kernel_size[0]) % stride[0])
+        self.pad_H = (-(H - kernel_size[1]) % stride[1])
+        self.pad_W = (-(W - kernel_size[2]) % stride[2])
+
+        self.t_patches = (T + self.pad_T - kernel_size[0]) // stride[0] + 1
+        self.h_patches = (H + self.pad_H - kernel_size[1]) // stride[1] + 1
+        self.w_patches = (W + self.pad_W - kernel_size[2]) // stride[2] + 1
+
+    def video_to_patches(self, video):
+        """
+        Convert a video to overlapping 3D patches with automatic padding if necessary.
+
+        Parameters:
+        video (tensor): Video tensor of shape [C, T, H, W].
+
+        Returns:
+        patches (tensor): Tensor of patches.
+        """
+        # Pad the video if necessary
+        if self.pad_T > 0 or self.pad_H > 0 or self.pad_W > 0:
+            video = torch.nn.functional.pad(video, (0, self.pad_W, 0, self.pad_H, 0, self.pad_T))
+
+        # Unfold the tensor along the temporal, height, and width dimensions
+        patches = video.unfold(1, self.kernel_size[0], self.stride[0]) \
+                       .unfold(2, self.kernel_size[1], self.stride[1]) \
+                       .unfold(3, self.kernel_size[2], self.stride[2])
+
+        # Reshape to merge patch dimensions and channel dimension
+        patches = patches.permute(1, 2, 3, 0, 4, 5, 6).contiguous()
+        patches = patches.reshape(-1, *self.kernel_size, video.size(0))
+
+        return patches
+
+    def generate_patch_indices(self):
+        """
+        Generate patch indices for spatial-reserved positional encoding.
+
+        Returns:
+        patch_indices (tensor): Tensor of patch indices in the format [patch_num, 3 (T, H, W)].
+        """
+        # Create an array for storing patch indices
+        patch_indices = torch.tensor([[t * self.stride[0], h * self.stride[1], w * self.stride[2]]
+                                      for t in range(self.t_patches)
+                                      for h in range(self.h_patches)
+                                      for w in range(self.w_patches)])
+
+        return patch_indices
+
+
+
