@@ -340,7 +340,7 @@ class VideoPatcher:
         self.stride = stride
 
         # Pre-calculate padding and the number of patches in each dimension
-        _, T, H, W = video_shape
+        _, _, T, H, W = video_shape
         self.pad_T = (-(T - kernel_size[0]) % stride[0])
         self.pad_H = (-(H - kernel_size[1]) % stride[1])
         self.pad_W = (-(W - kernel_size[2]) % stride[2])
@@ -349,28 +349,31 @@ class VideoPatcher:
         self.h_patches = (H + self.pad_H - kernel_size[1]) // stride[1] + 1
         self.w_patches = (W + self.pad_W - kernel_size[2]) // stride[2] + 1
 
-    def video_to_patches(self, video):
+    def video_to_patches(self, videos):
         """
-        Convert a video to overlapping 3D patches with automatic padding if necessary.
+        Convert a batch of videos to overlapping 3D patches with automatic padding if necessary.
+        Output shape: [B, C, number of patches, flatten patch].
 
         Parameters:
-        video (tensor): Video tensor of shape [C, T, H, W].
+        videos (tensor): Batch of video tensors of shape [B, C, T, H, W].
 
         Returns:
-        patches (tensor): Tensor of patches.
+        patches (tensor): Tensor of patches in the specified shape for each video in the batch.
         """
-        # Pad the video if necessary
+        B, C, T, H, W = videos.shape
+
+        # Pad the videos if necessary
         if self.pad_T > 0 or self.pad_H > 0 or self.pad_W > 0:
-            video = torch.nn.functional.pad(video, (0, self.pad_W, 0, self.pad_H, 0, self.pad_T))
+            videos = torch.nn.functional.pad(videos, (0, self.pad_W, 0, self.pad_H, 0, self.pad_T))
 
         # Unfold the tensor along the temporal, height, and width dimensions
-        patches = video.unfold(1, self.kernel_size[0], self.stride[0]) \
-                       .unfold(2, self.kernel_size[1], self.stride[1]) \
-                       .unfold(3, self.kernel_size[2], self.stride[2])
+        patches = videos.unfold(2, self.kernel_size[0], self.stride[0]) \
+            .unfold(3, self.kernel_size[1], self.stride[1]) \
+            .unfold(4, self.kernel_size[2], self.stride[2])
 
-        # Reshape to merge patch dimensions and channel dimension
-        patches = patches.permute(1, 2, 3, 0, 4, 5, 6).contiguous()
-        patches = patches.reshape(-1, *self.kernel_size, video.size(0))
+        # Reshape and flatten each patch
+        patches = patches.contiguous()
+        patches = patches.view(B, C, -1, self.kernel_size[0] * self.kernel_size[1] * self.kernel_size[2])
 
         return patches
 
