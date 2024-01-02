@@ -326,7 +326,7 @@ def add_gradient(tensor, dim, start=-1, end=1):
 
 
 class VideoPatcher:
-    def __init__(self, video_shape, kernel_size, stride):
+    def __init__(self, video_shape, kernel_size=(2, 2, 2), stride=(1, 1, 1)):
         """
         Initialize the VideoPatcher with video shape, kernel size, and stride.
 
