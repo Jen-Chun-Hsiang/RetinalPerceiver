@@ -104,7 +104,7 @@ class Evaluator:
         return self.criterion(outputs, targets)
 
 
-def save_checkpoint(epoch, model, optimizer, training_losses, validation_losses, file_path):
+def save_checkpoint(epoch, model, optimizer, args, training_losses, validation_losses, file_path):
     """
     Saves a checkpoint of the training process.
 
@@ -120,6 +120,7 @@ def save_checkpoint(epoch, model, optimizer, training_losses, validation_losses,
         'epoch': epoch,
         'model_state_dict': model.state_dict(),
         'optimizer_state_dict': optimizer.state_dict(),
+        'args': args,
         'training_losses': training_losses,
         'validation_losses': validation_losses
     }

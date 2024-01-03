@@ -242,7 +242,7 @@ def main():
         avg_train_loss = trainer.train_one_epoch(train_loader, epoch, query_array)
         training_losses.append(avg_train_loss)
 
-        torch.cuda.empty_cache()
+        #torch.cuda.empty_cache()
         avg_val_loss = evaluator.evaluate(val_loader, query_array)
         validation_losses.append(avg_val_loss)
 
@@ -256,7 +256,7 @@ def main():
         # Save checkpoint
         if (epoch + 1) % 10 == 0:  # Example: Save every 10 epochs
             checkpoint_filename = f'{filename_fixed}_checkpoint_epoch_{epoch+1}.pth'
-            save_checkpoint(epoch, model, optimizer, training_losses, validation_losses, os.path.join(savemodel_dir, checkpoint_filename))
+            save_checkpoint(epoch, model, optimizer, args, training_losses, validation_losses, os.path.join(savemodel_dir, checkpoint_filename))
 
 if __name__ == '__main__':
     main()
