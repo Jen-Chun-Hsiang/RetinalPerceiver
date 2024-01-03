@@ -76,6 +76,13 @@ def parse_args():
     parser.add_argument('--num_latent', type=int, default=16, help='Number of latent length (encoding)')
     parser.add_argument('--num_band', type=int, default=10, help='Number of bands in positional encoding')
     parser.add_argument('--use_layer_norm', action='store_true', help='Enable layer normalization')
+    parser.add_argument('--concatenate_positional_encoding', action='store_true',
+                        help='Enable concatenation for positional encoding')
+    parser.add_argument('--kernel_size', nargs=3, type=int, default=[2, 2, 2],
+                        help='Input kernel size as three separate integers. Default is (2, 2, 2)')
+    parser.add_argument('--stride', nargs=3, type=int, default=[1, 1, 1],
+                        help='Input stride as three separate integers. Default is (1, 1, 1)')
+
     # Plot parameters
     parser.add_argument('--num_cols', type=int, default=5, help='Number of columns in a figure')
 
@@ -191,7 +198,8 @@ def main():
         model = RetinalPerceiverIO(input_dim=args.input_channels, latent_dim=args.hidden_size, output_dim=args.output_size,
                                    num_latents=args.num_latent, heads=args.num_head, depth=args.num_iter, query_dim=query_array.shape[1],
                                    depth_dim=args.input_depth, height=args.input_height, width=args.input_width,
-                                   num_bands=args.num_band, device=device, use_layer_norm=args.use_layer_norm)
+                                   num_bands=args.num_band, device=device, use_layer_norm=args.use_layer_norm, kernel_size=args.kernel_size,
+                                   stride=args.stride, concatenate_positional_encoding=args.concatenate_positional_encoding)
     elif args.model == 'RetinalCNN':
         model = RetinalPerceiverIOWithCNN(input_depth=args.input_depth, input_height=args.input_height,
                                     input_width=args.input_width, output_dim=args.output_size, latent_dim=args.hidden_size,

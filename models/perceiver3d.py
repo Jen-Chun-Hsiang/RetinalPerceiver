@@ -80,27 +80,38 @@ class FourierFeaturePositionalEncoding3D(nn.Module):
 
 
 class FourierFeaturePositionalEncoding3Dindep(nn.Module):
-    def __init__(self, num_frames, height, width, num_bands, device=None):
+    def __init__(self, num_frames, height, width, seed=35, num_bands, device=None):
         super().__init__()
         self.num_frames = num_frames
         self.height = height
         self.width = width
         self.num_bands = num_bands
+        self.seed = seed
         self.device = device if device is not None else torch.device("cpu")
+
+        frequencies = 2.0 ** torch.linspace(0., self.num_bands - 1, self.num_bands, device=self.device)
+        frequencies = frequencies.reshape(-1, 1)  # Shape: [num_bands, 1]
+
+        # Generate and shuffle phase shifts
+        self.phase_shifts = np.linspace(0, torch.pi, self.num_bands)
 
     def get_fourier_features(self, dimension_size):
         # Create a grid of 1D coordinates
         coord = torch.linspace(-1, 1, dimension_size, device=self.device)
         coord = coord.unsqueeze(0)  # Shape: [1, dimension_size]
 
+        phase_shifts = self.phase_shifts
+        np.random.shuffle(self.phase_shifts)
+        # Phase shifts linearly spaced over 180 degrees (π radians)
+        phase_shift = torch.tensor(phase_shifts, device=self.device, dtype=torch.float32).reshape(-1, 1)
         # Apply Fourier Feature Mapping
-        frequencies = 2.0 ** torch.linspace(0., self.num_bands - 1, self.num_bands, device=self.device)
-        frequencies = frequencies.reshape(-1, 1)  # Shape: [num_bands, 1]
-        fourier_basis = torch.cat([torch.sin(coord * frequencies), torch.cos(coord * frequencies)], dim=0)
-
+        fourier_basis = torch.cat(
+            [torch.sin(coord * self.frequencies + phase_shift), torch.cos(coord * self.frequencies + phase_shift)],
+            dim=0)
         return fourier_basis
 
     def forward(self):
+        np.random.seed(self.seed)
         temporal_features = self.get_fourier_features(self.num_frames)  # Shape: [2*num_bands, num_frames]
         spatial_features_height = self.get_fourier_features(self.height)  # Shape: [2*num_bands, height]
         spatial_features_width = self.get_fourier_features(self.width)  # Shape: [2*num_bands, width]
