@@ -90,7 +90,7 @@ class FourierFeaturePositionalEncoding3Dindep(nn.Module):
         self.device = device if device is not None else torch.device("cpu")
 
         frequencies = 2.0 ** torch.linspace(0., self.num_bands - 1, self.num_bands, device=self.device)
-        frequencies = frequencies.reshape(-1, 1)  # Shape: [num_bands, 1]
+        self.frequencies = frequencies.reshape(-1, 1)  # Shape: [num_bands, 1]
 
         # Generate and shuffle phase shifts
         self.phase_shifts = np.linspace(0, torch.pi, self.num_bands)
