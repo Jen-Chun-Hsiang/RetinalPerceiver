@@ -80,7 +80,7 @@ class FourierFeaturePositionalEncoding3D(nn.Module):
 
 
 class FourierFeaturePositionalEncoding3Dindep(nn.Module):
-    def __init__(self, num_frames, height, width, seed=35, num_bands, device=None):
+    def __init__(self, num_frames, height, width, num_bands, seed=35, device=None):
         super().__init__()
         self.num_frames = num_frames
         self.height = height
