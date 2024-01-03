@@ -10,7 +10,7 @@ from datasets.simulated_target_rf import MultiTargetMatrixGenerator, CellClassLe
 from datasets.simulated_dataset import MultiMatrixDataset
 from models.perceiver3d import RetinalPerceiverIO
 from models.cnn3d import RetinalPerceiverIOWithCNN
-from utils.training_procedure import load_checkpoint, forward_model
+from utils.training_procedure import CheckpointLoader, forward_model
 from utils.utils import DataVisualizer, SeriesEncoder
 from utils.utils import plot_and_save_3d_matrix_with_timestamp as plot3dmat
 
@@ -142,8 +142,9 @@ def main():
 
     optimizer = optim.Adam(model.parameters(), lr=0.001)
 
-    start_epoch, model, optimizer, training_losses, validation_losses = load_checkpoint(checkpoint_path, model,
-                                                                                        optimizer, device)
+    checkpoint_loader = CheckpointLoader(checkpoint_path=checkpoint_path)
+    checkpoint_loader.load_checkpoint(model, optimizer, device)
+    training_losses, validation_losses = checkpoint_loader.get_training_losses(), checkpoint_loader.get_validation_losses()
     visualizer_prog.plot_and_save(None, plot_type='line', line1=training_losses, line2=validation_losses,
                                   xlabel='Epochs', ylabel='Loss')
 

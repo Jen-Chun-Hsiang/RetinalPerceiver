@@ -126,31 +126,53 @@ def save_checkpoint(epoch, model, optimizer, args, training_losses, validation_l
     }
     torch.save(checkpoint, file_path)
 
-def load_checkpoint(checkpoint_path, model, optimizer, device):
-    """
-    Load a training checkpoint.
 
-    Args:
-    checkpoint_path (str): Path to the checkpoint file.
-    model (torch.nn.Module): The model to load the state into.
-    optimizer (torch.optim.Optimizer): The optimizer to load the state into.
-    device (torch.device): The device to map the model to.
+class CheckpointLoader:
+    def __init__(self, checkpoint_path):
+        self.checkpoint_path = checkpoint_path
+        self.checkpoint = None
+        self.start_epoch = None
+        self.training_losses = None
+        self.validation_losses = None
+        self.args = None
 
-    Returns:
-    int: The epoch at which training was interrupted.
-    model: The model with loaded state.
-    optimizer: The optimizer with loaded state.
-    list: The list of recorded training losses.
-    list: The list of recorded validation losses.
-    """
-    checkpoint = torch.load(checkpoint_path, map_location=device)
-    model.load_state_dict(checkpoint['model_state_dict'])
-    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-    start_epoch = checkpoint['epoch']
-    training_losses = checkpoint.get('training_losses', [])
-    validation_losses = checkpoint.get('validation_losses', [])
+    def load_args(self):
+        """
+        Load and return the 'args' from the checkpoint.
 
-    return start_epoch, model, optimizer, training_losses, validation_losses
+        Returns:
+        dict: The 'args' used to create the model and optimizer.
+        """
+        self.checkpoint = torch.load(self.checkpoint_path)
+        self.args = self.checkpoint['args']
+        return self.args
+
+    def load_checkpoint(self, model, optimizer, device):
+        """
+        Load a training checkpoint into the model and optimizer.
+
+        Args:
+        model (torch.nn.Module): The model to load the state into.
+        optimizer (torch.optim.Optimizer): The optimizer to load the state into.
+        device (torch.device): The device to map the model to.
+        """
+        model.load_state_dict(self.checkpoint['model_state_dict'])
+        optimizer.load_state_dict(self.checkpoint['optimizer_state_dict'])
+        self.start_epoch = self.checkpoint['epoch']
+        self.training_losses = self.checkpoint.get('training_losses', [])
+        self.validation_losses = self.checkpoint.get('validation_losses', [])
+
+    def get_epoch(self):
+        """ Return the epoch at which training was interrupted. """
+        return self.start_epoch
+
+    def get_training_losses(self):
+        """ Return the list of recorded training losses. """
+        return self.training_losses
+
+    def get_validation_losses(self):
+        """ Return the list of recorded validation losses. """
+        return self.validation_losses
 
 def forward_model(model, dataset, query_array=None, batch_size=32):
     model.eval()  # Set the model to evaluation mode
