@@ -242,6 +242,7 @@ def main():
         avg_train_loss = trainer.train_one_epoch(train_loader, epoch, query_array)
         training_losses.append(avg_train_loss)
 
+        torch.cuda.empty_cache()
         avg_val_loss = evaluator.evaluate(val_loader, query_array)
         validation_losses.append(avg_val_loss)
 
