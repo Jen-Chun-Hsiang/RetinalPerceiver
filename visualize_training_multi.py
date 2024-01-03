@@ -33,7 +33,10 @@ def main():
     num_latents = 256
     conv3d_out_channels = 10  # default 1
     conv2_out_channels = 64
+    kernel_size = (2, 2, 2)
+    stride = (1, 1, 1)
     use_layer_norm = True
+    concatenate_positional_encoding = True
     stimulus_type = 'cnn100000tl123ss2e3c256nl8hs36ec'
     model_type = 'RetinalCNN'
     checkpoint_filename = f'PerceiverIO_{time_point}tp{stimulus_type}_checkpoint_epoch_800'
@@ -126,7 +129,9 @@ def main():
     if model_type == 'RetinalPerceiver':
         model = RetinalPerceiverIO(latent_dim=hidden_size, num_latents=num_latents, query_dim=query_arrays.shape[1],
                                    depth_dim=time_point, height=height, width=width,
-                                   device=device, use_layer_norm=use_layer_norm)
+                                   device=device, use_layer_norm=use_layer_norm,
+                                   kernel_size=kernel_size, stride=stride,
+                                   concatenate_positional_encoding=concatenate_positional_encoding)
     elif model_type == 'RetinalCNN':
         model = RetinalPerceiverIOWithCNN(input_depth=time_point, input_height=height,
                                           input_width=width, latent_dim=hidden_size,

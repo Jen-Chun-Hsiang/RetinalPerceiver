@@ -89,6 +89,8 @@ def parse_args():
     return parser.parse_args()
 
 def main():
+    os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:256'
+
     args = parse_args()
     filename_fixed = args.experiment_name
     savemodel_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/CheckPoints/'
