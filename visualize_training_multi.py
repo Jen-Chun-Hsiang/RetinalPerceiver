@@ -28,17 +28,16 @@ def main():
     height = 20
     width = 24
     time_point = 20
-    query_dim = 6
-    hidden_size = 8
-    num_latents = 256
+    hidden_size = 16
+    num_latents = 128
     conv3d_out_channels = 10  # default 1
     conv2_out_channels = 64
     kernel_size = (2, 2, 2)
     stride = (1, 1, 1)
     use_layer_norm = True
     concatenate_positional_encoding = True
-    stimulus_type = 'cnn100000tl123ss2e3c256nl8hs36ec'
-    model_type = 'RetinalCNN'
+    stimulus_type = '100000tl123ss2e3c128nl16hs1cpe'
+    model_type = 'RetinalPerceiver'
     checkpoint_filename = f'PerceiverIO_{time_point}tp{stimulus_type}_checkpoint_epoch_800'
 
     # default parameters
