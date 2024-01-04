@@ -120,6 +120,7 @@ def main():
 
     # Initialize the process group
     dist.init_process_group(backend='nccl')
+    #rank = dist.get_rank()
 
     # Set up the distributed environment
     local_rank = torch.distributed.get_rank()
