@@ -22,7 +22,7 @@ from utils.utils import SeriesEncoder
 from datasets.simulated_dataset import MultiMatrixDataset
 from models.perceiver3d import RetinalPerceiverIO
 from models.cnn3d import RetinalPerceiverIOWithCNN
-from utils.training_procedure import Trainer, Evaluator, save_checkpoint, load_checkpoint
+from utils.training_procedure import Trainer, Evaluator, save_checkpoint, CheckpointLoader
 
 def parse_covariance(string):
     try:
@@ -230,8 +230,10 @@ def main():
 
     # Optionally, load from checkpoint
     if args.load_checkpoint:
-        start_epoch, model, optimizer, training_losses, validation_losses = load_checkpoint(args.checkpoint_path, model,
-                                                                                            optimizer, device)
+        checkpoint_loader = CheckpointLoader(checkpoint_path=args.checkpoint_path, device=device)
+        model, optimizer = checkpoint_loader.load_checkpoint(model, optimizer)
+        start_epoch = checkpoint_loader.get_epoch()
+        training_losses, validation_losses = checkpoint_loader.get_training_losses(), checkpoint_loader.get_validation_losses()
     else:
         start_epoch = 0
         training_losses = []
