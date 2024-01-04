@@ -128,13 +128,13 @@ def save_checkpoint(epoch, model, optimizer, args, training_losses, validation_l
 
 
 class CheckpointLoader:
-    def __init__(self, checkpoint_path):
-        self.checkpoint_path = checkpoint_path
+    def __init__(self, checkpoint_path, device):
         self.checkpoint = None
         self.start_epoch = None
         self.training_losses = None
         self.validation_losses = None
         self.args = None
+        self.checkpoint = torch.load(checkpoint_path, map_location=device)
 
     def load_args(self):
         """
@@ -143,11 +143,11 @@ class CheckpointLoader:
         Returns:
         dict: The 'args' used to create the model and optimizer.
         """
-        self.checkpoint = torch.load(self.checkpoint_path)
+
         self.args = self.checkpoint['args']
         return self.args
 
-    def load_checkpoint(self, model, optimizer, device):
+    def load_checkpoint(self, model, optimizer):
         """
         Load a training checkpoint into the model and optimizer.
 
@@ -161,6 +161,8 @@ class CheckpointLoader:
         self.start_epoch = self.checkpoint['epoch']
         self.training_losses = self.checkpoint.get('training_losses', [])
         self.validation_losses = self.checkpoint.get('validation_losses', [])
+
+        return model, optimizer
 
     def get_epoch(self):
         """ Return the epoch at which training was interrupted. """

@@ -141,8 +141,8 @@ def main():
 
     optimizer = optim.Adam(model.parameters(), lr=0.001)
 
-    checkpoint_loader = CheckpointLoader(checkpoint_path=checkpoint_path)
-    checkpoint_loader.load_checkpoint(model, optimizer, device)
+    checkpoint_loader = CheckpointLoader(checkpoint_path=checkpoint_path, device=device)
+    model, optimizer = checkpoint_loader.load_checkpoint(model, optimizer)
     training_losses, validation_losses = checkpoint_loader.get_training_losses(), checkpoint_loader.get_validation_losses()
     visualizer_prog.plot_and_save(None, plot_type='line', line1=training_losses, line2=validation_losses,
                                   xlabel='Epochs', ylabel='Loss')
