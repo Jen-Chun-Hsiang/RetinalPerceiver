@@ -35,8 +35,8 @@ def main():
     kernel_size = (2, 2, 2)
     stride = (1, 1, 1)
     use_layer_norm = True
-    concatenate_positional_encoding = True
-    stimulus_type = '100000tl123ss2e3c128nl16hs1cpe'
+    concatenate_positional_encoding = False
+    stimulus_type = '100000tl123ss2e3c128nl16hs0cpe'
     model_type = 'RetinalPerceiver'
     checkpoint_filename = f'PerceiverIO_{time_point}tp{stimulus_type}_checkpoint_epoch_200'
 
