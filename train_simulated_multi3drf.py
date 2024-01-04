@@ -15,6 +15,8 @@ import time
 from io import StringIO
 import sys
 from torchinfo import summary
+import torch.distributed as dist
+from torch.nn.parallel import DistributedDataParallel
 
 from datasets.simulated_target_rf import MultiTargetMatrixGenerator, CellClassLevel, ExperimentalLevel, IntegratedLevel
 from utils.utils import plot_and_save_3d_matrix_with_timestamp as plot3dmat
@@ -116,6 +118,13 @@ def main():
     # If CUDA is available, continue with the rest of the script
     device = torch.device("cuda")
 
+    # Initialize the process group
+    dist.init_process_group(backend='nccl')
+
+    # Set up the distributed environment
+    local_rank = torch.distributed.get_rank()
+    world_size = torch.distributed.get_world_size()
+
     '''
     # Create cells and cell classes
     cell_class1 = CellClassLevel(sf_cov_center=np.array([[0.12, 0.05], [0.04, 0.03]]),
@@ -211,6 +220,8 @@ def main():
                                     use_layer_norm=args.use_layer_norm, device=device, num_bands=args.num_band,
                                     conv3d_out_channels=args.conv3d_out_channels, conv2_out_channels=args.conv2_out_channels)
 
+    model = DistributedDataParallel(model, device_ids=[local_rank])
+
     logging.info(f'Model: {args.model} \n')
     old_stdout = sys.stdout
     sys.stdout = buffer = StringIO()
@@ -262,6 +273,9 @@ def main():
                          f"Max memory allocated: {torch.cuda.max_memory_allocated() / 1e6} MB \n")
             save_checkpoint(epoch, model, optimizer, args, training_losses, validation_losses,
                             os.path.join(savemodel_dir, checkpoint_filename))
+
+    # Clean up
+    dist.destroy_process_group()
 
 if __name__ == '__main__':
     main()
