@@ -38,7 +38,7 @@ def main():
     concatenate_positional_encoding = True
     stimulus_type = '100000tl123ss2e3c128nl16hs1cpe'
     model_type = 'RetinalPerceiver'
-    checkpoint_filename = f'PerceiverIO_{time_point}tp{stimulus_type}_checkpoint_epoch_800'
+    checkpoint_filename = f'PerceiverIO_{time_point}tp{stimulus_type}_checkpoint_epoch_200'
 
     # default parameters
     total_length = 10000  # Replace with your actual dataset length
