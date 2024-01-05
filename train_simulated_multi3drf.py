@@ -88,7 +88,9 @@ def parse_args():
                         help='Input kernel size as three separate integers. Default is (2, 2, 2)')
     parser.add_argument('--stride', nargs=3, type=int, default=[1, 1, 1],
                         help='Input stride as three separate integers. Default is (1, 1, 1)')
-
+    # System computing enhancement
+    parser.add_argument('--parallel_processing', action='store_true',
+                        help='Enable parallel_processing')
     # Plot parameters
     parser.add_argument('--num_cols', type=int, default=5, help='Number of columns in a figure')
 
@@ -118,13 +120,14 @@ def main():
     # If CUDA is available, continue with the rest of the script
     device = torch.device("cuda")
 
-    # Initialize the process group
-    dist.init_process_group(backend='nccl')
-    #rank = dist.get_rank()
+    if args.parallel_processing:
+        # Initialize the process group
+        dist.init_process_group(backend='nccl')
+        #rank = dist.get_rank()
 
-    # Set up the distributed environment
-    local_rank = torch.distributed.get_rank()
-    world_size = torch.distributed.get_world_size()
+        # Set up the distributed environment
+        local_rank = torch.distributed.get_rank()
+        world_size = torch.distributed.get_world_size()
 
     '''
     # Create cells and cell classes
@@ -221,7 +224,8 @@ def main():
                                     use_layer_norm=args.use_layer_norm, device=device, num_bands=args.num_band,
                                     conv3d_out_channels=args.conv3d_out_channels, conv2_out_channels=args.conv2_out_channels)
 
-    model = DistributedDataParallel(model, device_ids=[local_rank])
+    if args.parallel_processing:
+        model = DistributedDataParallel(model, device_ids=[local_rank])
 
     logging.info(f'Model: {args.model} \n')
     old_stdout = sys.stdout
@@ -275,8 +279,9 @@ def main():
             save_checkpoint(epoch, model, optimizer, args, training_losses, validation_losses,
                             os.path.join(savemodel_dir, checkpoint_filename))
 
-    # Clean up
-    dist.destroy_process_group()
+    if args.parallel_processing:
+        # Clean up
+        dist.destroy_process_group()
 
 if __name__ == '__main__':
     main()
