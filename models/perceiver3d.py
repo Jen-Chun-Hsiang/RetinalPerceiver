@@ -332,23 +332,25 @@ class RetinalPerceiverIO(nn.Module):
         # Initialize VideoPatcher
         self.video_patcher = VideoPatcher(video_shape=(1, input_dim, depth_dim, height, width),
                                           kernel_size=kernel_size, stride=stride)
-        self.patch_dim = kernel_size[0] * kernel_size[1] * kernel_size[2] * input_dim
+        self.patch_dim = torch.prod(torch.tensor(kernel_size)) * input_dim
+        self.patch_indices = self.video_patcher.generate_patch_indices()
+        fourier_feature_size = num_bands * 2 * 3  # 2 for sin & cos, 3 for frames, height and width
 
-        # Initialize positional encoding
-        num_patches = self.video_patcher.t_patches * self.video_patcher.h_patches * self.video_patcher.w_patches
-        if self.concatenate_positional_encoding:
-            positional_encoder = FourierFeaturePositionalEncoding3Dindep(
-                num_frames=self.video_patcher.t_patches, height=self.video_patcher.h_patches,
-                width=self.video_patcher.w_patches, num_bands=num_bands, device=self.device)
-        else:
-            positional_encoder = FourierFeaturePositionalEncoding3Dadd(
-                num_frames=self.video_patcher.t_patches, height=self.video_patcher.h_patches,
-                width=self.video_patcher.w_patches, num_bands=num_bands, device=self.device)
+        # Calculate the size of the Fourier features and Positional Encoding
+        positional_encoder_class = FourierFeaturePositionalEncoding3Dindep
+        self.positional_encoder = positional_encoder_class(
+            num_frames=self.video_patcher.t_patches, height=self.video_patcher.h_patches,
+            width=self.video_patcher.w_patches, num_bands=num_bands, device=self.device
+        )
 
-        self.positional_encoding = positional_encoder()
-        # Calculate the size of the Fourier features for each dimension
-        fourier_feature_size = num_patches * num_bands * 2  # 2 for sin & cos
-        self.total_channels = self.patch_dim
+        self.total_channels = self.patch_dim + (fourier_feature_size if concatenate_positional_encoding else 0)
+        if not concatenate_positional_encoding:
+            self.position_encoding_proj = nn.Linear(fourier_feature_size, self.patch_dim).to(self.device)
+
+        self._initialize_layers(latent_dim, output_dim, query_dim, num_latents, heads, depth, use_layer_norm)
+
+    def _initialize_layers(self, latent_dim, output_dim, query_dim, num_latents, heads, depth, use_layer_norm):
+        """ Helper function to initialize layers """
         self.latent_dim = latent_dim
         self.output_dim = output_dim
         self.query_dim = query_dim
@@ -357,62 +359,68 @@ class RetinalPerceiverIO(nn.Module):
         self.depth = depth
         self.use_layer_norm = use_layer_norm
 
-        # The encoder part
+        # The encoder, process, and decoder parts
         self.encoder = PerceiverIOEncoder(self.total_channels, self.latent_dim, self.heads, self.use_layer_norm).to(
             self.device)
-
-        # The process (self-attention) part, applied multiple times
-        self.process_layers = nn.ModuleList([
-            PerceiverIOSelfAttention(self.latent_dim, self.heads, self.use_layer_norm).to(self.device) for _ in
-            range(self.depth)
-        ])
-
-        # The decoder part
+        self.process_layers = nn.ModuleList(
+            [PerceiverIOSelfAttention(self.latent_dim, self.heads, self.use_layer_norm).to(self.device) for _ in
+                range(self.depth)])
         self.decoder = PerceiverIODecoder(latent_dim=self.latent_dim, query_dim=self.query_dim,
                                           output_dim=self.output_dim, heads=self.heads,
                                           use_layer_norm=self.use_layer_norm).to(self.device)
 
         # Initialize latent array
         self.latents = nn.Parameter(torch.randn(num_latents, self.latent_dim)).to(self.device)
-        # cheap linear decoder
-        self.fc = nn.Linear(latent_dim, output_dim).to(self.device)
 
     def forward(self, input_array, query_array):
         query_array = query_array.to(self.device).repeat(1, self.num_latents, 1)
-        query_array = add_gradient(query_array, dim=1, start=-1, end=1)
         input_array = input_array.to(self.device)
 
         # Convert input array to patches
         patches = self.video_patcher.video_to_patches(input_array)
-        B, C, num_patches, patch_values = patches.shape
+        num_batches, C, num_patches, patch_values = patches.shape
 
-        # Apply positional encoding to the patches
-        if self.concatenate_positional_encoding:
-            temporal_encoding, spatial_encoding_height, spatial_encoding_width = self.positional_encoding
-            positional_encoding = torch.cat([temporal_encoding, spatial_encoding_height, spatial_encoding_width], dim=1)
-            # Apply positional encoding to the patches
-            positional_encoding = positional_encoding.unsqueeze(0).view(1, -1, 1)
-            positional_encoding = positional_encoding.repeat(B, 1, patch_values)
-            # Expand and concatenate positional encoding for each batch
-            encoded_input = torch.cat([patches.view(B, num_patches, -1), positional_encoding],
-                                      dim=1)  # Concatenating along sequence dimension
-        else:
-            positional_encoding = self.positional_encoding
-            positional_encoding = positional_encoding.view(1, -1, 1)
-            # Add positional encoding to the patches
-            patches = patches.view(B, num_patches, -1)
-            encoded_input = patches + positional_encoding
+        # Process positional encoding
+        encoded_input = self._process_positional_encoding(num_batches, num_patches, patches)
 
-        # Encode stage
+        # Encode, Process, and Decode stages
         latents = self.latents.unsqueeze(0).repeat(B, 1, 1)
         latents, _ = self.encoder(encoded_input, latents)
 
-        # Process stage
         for layer in self.process_layers:
             latents, _ = layer(latents)
 
-        # cheap way to skip decoder and make sure everything above is fine
-        #return self.fc(latents.mean(dim=1))
-
-        # Decode stage
         return self.decoder(latents, query_array).mean(dim=1)
+
+    def _process_positional_encoding(self, num_batches, num_patches, patches):
+        """ Helper function to process positional encoding """
+        temporal_encoding, spatial_encoding_height, spatial_encoding_width = self.positional_encoder()
+        encoded_input = patches.view(num_batches, num_patches, -1)
+        if self.concatenate_positional_encoding:
+            encoded_input = self._concatenate_positional_encoding(encoded_input, num_batches, temporal_encoding,
+                                                                  self.patch_indices)
+        else:
+            positional_encoding = self._add_positional_encoding(num_batches, num_patches, temporal_encoding,
+                                                                self.patch_indices)
+            encoded_input += positional_encoding
+        return encoded_input
+
+    def _concatenate_positional_encoding(self, encoded_input, num_batches, temporal_encoding, patch_indices):
+        """ Helper function to concatenate positional encoding """
+        for i in range(3):
+            a = temporal_encoding[:, patch_indices[:, 0]]
+            a = rearrange(a, 'a b -> 1 b a').repeat(num_batches, 1, 1)
+            encoded_input = torch.cat([encoded_input, a], dim=2)
+        return encoded_input
+
+    def _add_positional_encoding(self, num_batches, num_patches, temporal_encoding, patch_indices):
+        """ Helper function to add positional encoding """
+        positional_encoding = torch.empty(num_batches, num_patches, 0).to(self.device)
+        for i in range(3):
+            a = temporal_encoding[:, patch_indices[:, 0]]
+            a = rearrange(a, 'a b -> 1 b a').repeat(num_batches, 1, 1)
+            positional_encoding = torch.cat([positional_encoding, a], dim=2)
+
+        positional_encoding = self.position_encoding_proj(positional_encoding)
+
+        return positional_encoding
