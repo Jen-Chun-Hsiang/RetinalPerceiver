@@ -384,7 +384,7 @@ class RetinalPerceiverIO(nn.Module):
         encoded_input = self._process_positional_encoding(num_batches, num_patches, patches)
 
         # Encode, Process, and Decode stages
-        latents = self.latents.unsqueeze(0).repeat(B, 1, 1)
+        latents = self.latents.unsqueeze(0).repeat(num_batches, 1, 1)
         latents, _ = self.encoder(encoded_input, latents)
 
         for layer in self.process_layers:
