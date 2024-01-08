@@ -144,14 +144,13 @@ def main():
                                    concatenate_positional_encoding=args.concatenate_positional_encoding)
 
     elif args.model == 'RetinalCNN':
-        '''
-        model = RetinalPerceiverIOWithCNN(input_depth=time_point, input_height=height,
-                                          input_width=width, latent_dim=hidden_size,
-                                          query_dim=query_arrays.shape[1], num_latents=num_latents,
-                                          use_layer_norm=use_layer_norm, device=device,
-                                          conv3d_out_channels=conv3d_out_channels,
-                                          conv2_out_channels=conv2_out_channels)
-        '''
+         model = RetinalPerceiverIOWithCNN(input_depth=args.input_depth, input_height=args.input_height,
+                                           input_width=args.input_width, output_dim=args.output_size,
+                                           latent_dim=args.hidden_size, query_dim=query_array.shape[1],
+                                           num_latents=args.num_latent, heads=args.num_head,
+                                           use_layer_norm=args.use_layer_norm, device=device,
+                                           num_bands=args.num_band, conv3d_out_channels=args.conv3d_out_channels,
+                                           conv2_out_channels=args.conv2_out_channels)
 
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     model, optimizer = checkpoint_loader.load_checkpoint(model, optimizer)
