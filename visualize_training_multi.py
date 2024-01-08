@@ -24,10 +24,16 @@ def weightedsum_image_plot(output_image_np):
 
 def main():
     # experiment specific parameters
+
+    stimulus_type = '100000tl123ss2e3c256nl32hs1cpe3kn1st'
     presented_cell_ids = list(range(32))
+    checkpoint_filename = f'PerceiverIO_20tp{stimulus_type}_checkpoint_epoch_400'
+
+    '''
+    time_point = 20
+    checkpoint_filename = f'PerceiverIO_{time_point}tp{stimulus_type}_checkpoint_epoch_400'
     height = 20
     width = 24
-    time_point = 20
     hidden_size = 32
     num_latents = 128
     conv3d_out_channels = 10  # default 1
@@ -36,9 +42,8 @@ def main():
     stride = (1, 1, 1)
     use_layer_norm = True
     concatenate_positional_encoding = False
-    stimulus_type = '100000tl123ss2e3c128nl32hs0cpe3kn1st'
     model_type = 'RetinalPerceiver'
-    checkpoint_filename = f'PerceiverIO_{time_point}tp{stimulus_type}_checkpoint_epoch_400'
+    '''
 
     # default parameters
     total_length = 10000  # Replace with your actual dataset length
@@ -125,23 +130,30 @@ def main():
     visualizer_est_rfstd = DataVisualizer(savefig_dir, file_prefix=f'{stimulus_type}_Estimate_RF_std')
     visualizer_inout_corr = DataVisualizer(savefig_dir, file_prefix=f'{stimulus_type}_Input_output_correlation')
 
-    if model_type == 'RetinalPerceiver':
-        model = RetinalPerceiverIO(latent_dim=hidden_size, num_latents=num_latents, query_dim=query_arrays.shape[1],
-                                   depth_dim=time_point, height=height, width=width,
-                                   device=device, use_layer_norm=use_layer_norm,
-                                   kernel_size=kernel_size, stride=stride,
-                                   concatenate_positional_encoding=concatenate_positional_encoding)
-    elif model_type == 'RetinalCNN':
+    checkpoint_loader = CheckpointLoader(checkpoint_path=checkpoint_path, device=device)
+    args = checkpoint_loader.load_args()
+
+    if args.model == 'RetinalPerceiver':
+        model = RetinalPerceiverIO(input_dim=args.input_channels, latent_dim=args.hidden_size,
+                                   output_dim=args.output_size,
+                                   num_latents=args.num_latent, heads=args.num_head, depth=args.num_iter,
+                                   query_dim=query_arrays.shape[1],
+                                   depth_dim=args.input_depth, height=args.input_height, width=args.input_width,
+                                   num_bands=args.num_band, device=device, use_layer_norm=args.use_layer_norm,
+                                   kernel_size=args.kernel_size, stride=args.stride,
+                                   concatenate_positional_encoding=args.concatenate_positional_encoding)
+
+    elif args.model == 'RetinalCNN':
+        '''
         model = RetinalPerceiverIOWithCNN(input_depth=time_point, input_height=height,
                                           input_width=width, latent_dim=hidden_size,
                                           query_dim=query_arrays.shape[1], num_latents=num_latents,
                                           use_layer_norm=use_layer_norm, device=device,
                                           conv3d_out_channels=conv3d_out_channels,
                                           conv2_out_channels=conv2_out_channels)
+        '''
 
     optimizer = optim.Adam(model.parameters(), lr=0.001)
-
-    checkpoint_loader = CheckpointLoader(checkpoint_path=checkpoint_path, device=device)
     model, optimizer = checkpoint_loader.load_checkpoint(model, optimizer)
     training_losses, validation_losses = checkpoint_loader.get_training_losses(), checkpoint_loader.get_validation_losses()
     visualizer_prog.plot_and_save(None, plot_type='line', line1=training_losses, line2=validation_losses,
@@ -157,15 +169,14 @@ def main():
         param_list = param_lists[presented_cell_id]
         multi_target_gen = MultiTargetMatrixGenerator(param_list)
         target_matrix = multi_target_gen.create_3d_target_matrices(
-            input_height=height, input_width=width, input_depth=time_point)
+            input_height=args.input_height, input_width=args.input_width, input_depth=args.input_depth)
 
         logging.info(f'target matrix: {target_matrix.shape}  \n')
 
         # Initialize the dataset with the device
 
         plot3dmat(target_matrix[0, :, :, :], num_cols, savefig_dir, file_prefix=f'plot_3D_matrix_{presented_cell_id}')
-        dataset_test = MultiMatrixDataset(target_matrix, length=total_length, device=device,
-                                     combination_set=[1])
+        dataset_test = MultiMatrixDataset(target_matrix, length=total_length, device=device, combination_set=[1])
 
         sample_data, sample_label, sample_index = dataset_test[0]
         logging.info(f"dataset size: {sample_data.shape}")
