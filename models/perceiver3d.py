@@ -342,8 +342,8 @@ class PerceiverIODecoder(nn.Module):
 class RetinalPerceiverIO(nn.Module):
     def __init__(self, input_dim=1, latent_dim=128, output_dim=1, depth_dim=20, height=30, width=40,
                  query_dim=6, num_latents=16, heads=4, depth=1, num_bands=10, kernel_size=(2, 2, 2),
-                 stride=(1, 1, 1), device=None, concatenate_positional_encoding=True, use_layer_norm=False,
-                 use_phase_shift=True, use_dense_frequency=False):
+                 stride=(1, 1, 1), device=None, concatenate_positional_encoding=False, use_layer_norm=False,
+                 use_phase_shift=False, use_dense_frequency=False):
         super().__init__()
         self.device = device if device is not None else torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.concatenate_positional_encoding = concatenate_positional_encoding
