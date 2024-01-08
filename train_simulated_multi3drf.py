@@ -93,8 +93,8 @@ def parse_args():
     parser.add_argument('--stride', nargs=3, type=int, default=[1, 1, 1],
                         help='Input stride as three separate integers. Default is (1, 1, 1)')
     # System computing enhancement
-    parser.add_argument('--parallel_processing', action='store_true',
-                        help='Enable parallel_processing')
+    parser.add_argument('--parallel_processing', action='store_true', help='Enable parallel_processing')
+    parser.add_argument('--accumulation_steps', action='store_true', help='Accumulate gradients')
     # Plot parameters
     parser.add_argument('--num_cols', type=int, default=5, help='Number of columns in a figure')
 
@@ -245,7 +245,7 @@ def main():
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
     # Initialize the Trainer
-    trainer = Trainer(model, criterion, optimizer, device)
+    trainer = Trainer(model, criterion, optimizer, device, args.accumulation_steps)
     # Initialize the Evaluator
     evaluator = Evaluator(model, criterion, device)
 
