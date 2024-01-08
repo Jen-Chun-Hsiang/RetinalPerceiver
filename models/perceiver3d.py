@@ -80,7 +80,8 @@ class FourierFeaturePositionalEncoding3D(nn.Module):
 
 
 class FourierFeaturePositionalEncoding3Dindep(nn.Module):
-    def __init__(self, num_frames, height, width, num_bands, seed=35, device=None):
+    def __init__(self, num_frames, height, width, num_bands, seed=35, device=None, use_phase_shift=True,
+                 use_dense_frequency=False):
         super().__init__()
         self.num_frames = num_frames
         self.height = height
@@ -88,26 +89,43 @@ class FourierFeaturePositionalEncoding3Dindep(nn.Module):
         self.num_bands = num_bands
         self.seed = seed
         self.device = device if device is not None else torch.device("cpu")
-
-        frequencies = 2.0 ** torch.linspace(0., self.num_bands - 1, self.num_bands, device=self.device)
-        self.frequencies = frequencies.reshape(-1, 1)  # Shape: [num_bands, 1]
+        self.use_phase_shift = use_phase_shift
+        self.use_dense_frequency = use_dense_frequency
 
         # Generate and shuffle phase shifts
         self.phase_shifts = np.linspace(0, torch.pi, self.num_bands)
 
+    def calculate_dense_frequencies(self, num_bands, dimension_size, device):
+        max_freq = dimension_size ** 2
+        power_constant = np.log(max_freq) / (num_bands - 1)
+        return torch.exp(torch.linspace(0, num_bands - 1, num_bands, device=device) * power_constant)
+
     def get_fourier_features(self, dimension_size):
+        if self.use_dense_frequency:
+            frequencies = self.calculate_dense_frequencies(self.num_bands, dimension_size, self.device)
+        else:
+            frequencies = 2.0 ** torch.linspace(0., self.num_bands - 1, self.num_bands, device=self.device)
+        frequencies = frequencies.reshape(-1, 1)  # Shape: [num_bands, 1]
+
         # Create a grid of 1D coordinates
         coord = torch.linspace(-1, 1, dimension_size, device=self.device)
         coord = coord.unsqueeze(0)  # Shape: [1, dimension_size]
 
-        phase_shifts = self.phase_shifts
-        np.random.shuffle(self.phase_shifts)
         # Phase shifts linearly spaced over 180 degrees (π radians)
-        phase_shift = torch.tensor(phase_shifts, device=self.device, dtype=torch.float32).reshape(-1, 1)
+        if self.use_phase_shift:
+            np.random.shuffle(self.phase_shifts)
+            phase_shift = torch.tensor(self.phase_shifts, device=self.device, dtype=torch.float32).reshape(-1, 1)
+        else:
+            phase_shift = torch.zeros_like(frequencies)
+
         # Apply Fourier Feature Mapping
         fourier_basis = torch.cat(
-            [torch.sin(coord * self.frequencies + phase_shift), torch.cos(coord * self.frequencies + phase_shift)],
+            [torch.sin(coord * frequencies + phase_shift), torch.cos(coord * frequencies + phase_shift)],
             dim=0)
+
+        # Normalize fourier_basis to [-1, 1]
+        fourier_basis = 2 * (fourier_basis - fourier_basis.min()) / (fourier_basis.max() - fourier_basis.min()) - 1
+
         return fourier_basis
 
     def forward(self):
