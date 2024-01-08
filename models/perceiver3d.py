@@ -342,10 +342,13 @@ class PerceiverIODecoder(nn.Module):
 class RetinalPerceiverIO(nn.Module):
     def __init__(self, input_dim=1, latent_dim=128, output_dim=1, depth_dim=20, height=30, width=40,
                  query_dim=6, num_latents=16, heads=4, depth=1, num_bands=10, kernel_size=(2, 2, 2),
-                 stride=(1, 1, 1), device=None, concatenate_positional_encoding=True, use_layer_norm=False):
+                 stride=(1, 1, 1), device=None, concatenate_positional_encoding=True, use_layer_norm=False,
+                 use_phase_shift=True, use_dense_frequency=False):
         super().__init__()
         self.device = device if device is not None else torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.concatenate_positional_encoding = concatenate_positional_encoding
+        self.use_phase_shift = use_phase_shift
+        self.use_dense_frequency = use_dense_frequency
 
         # Initialize VideoPatcher
         self.video_patcher = VideoPatcher(video_shape=(1, input_dim, depth_dim, height, width),
@@ -358,7 +361,8 @@ class RetinalPerceiverIO(nn.Module):
         positional_encoder_class = FourierFeaturePositionalEncoding3Dindep
         self.positional_encoder = positional_encoder_class(
             num_frames=self.video_patcher.t_patches, height=self.video_patcher.h_patches,
-            width=self.video_patcher.w_patches, num_bands=num_bands, device=self.device
+            width=self.video_patcher.w_patches, num_bands=num_bands, device=self.device,
+            use_phase_shift=self.use_phase_shift, use_dense_frequency=self.use_dense_frequency
         )
 
         self.total_channels = self.patch_dim + (fourier_feature_size if concatenate_positional_encoding else 0)
