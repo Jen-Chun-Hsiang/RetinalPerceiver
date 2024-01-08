@@ -7,20 +7,26 @@ class Trainer:
         self.criterion = criterion
         self.optimizer = optimizer
         self.device = device
+        self.accumulation_steps = accumulation_steps
 
     def train_one_epoch(self, train_loader, epoch, query_array=None):
         self.model.train()  # Set the model to training mode
         total_train_loss = 0
+        self.optimizer.zero_grad()  # Zero gradients at the start of the epoch
 
         for batch_idx, data in enumerate(train_loader):
             if query_array is not None:
-                # Process with query vectors
                 loss = self._process_batch_with_query(data, query_array)
             else:
-                # Process as originally
                 loss = self._process_batch(data)
 
+            loss = loss / self.accumulation_steps  # Normalize the loss
+            self._update_parameters(loss)  # Backward pass to accumulate gradients
             total_train_loss += loss.item()
+
+            if (batch_idx + 1) % self.accumulation_steps == 0:
+                self.optimizer.step()  # Perform optimization step
+                self.optimizer.zero_grad()  # Zero gradients for the next accumulation
 
         avg_train_loss = total_train_loss / len(train_loader)
         return avg_train_loss
@@ -31,7 +37,6 @@ class Trainer:
         targets = targets.unsqueeze(1)
         outputs = self.model(input_matrices)
         loss = self._compute_loss(outputs, targets)
-        self._update_parameters(loss)
         return loss
 
     def _process_batch_with_query(self, data, query_array):
@@ -39,21 +44,17 @@ class Trainer:
         query_vectors = torch.from_numpy(query_array).unsqueeze(1)
         query_vectors = query_vectors[matrix_indices]
         query_vectors = query_vectors.float().to(self.device)
-        #query_vectors = torch.ones(query_vectors.shape).to(self.device)
         input_matrices, targets = input_matrices.to(self.device), targets.to(self.device)
         targets = targets.unsqueeze(1)
         outputs = self.model(input_matrices, query_vectors)
         loss = self._compute_loss(outputs, targets)
-        self._update_parameters(loss)
         return loss
 
     def _compute_loss(self, outputs, targets):
         return self.criterion(outputs, targets)
 
     def _update_parameters(self, loss):
-        self.optimizer.zero_grad()
-        loss.backward()
-        self.optimizer.step()
+        loss.backward()  # Compute the backward pass only
 
 
 class Evaluator:

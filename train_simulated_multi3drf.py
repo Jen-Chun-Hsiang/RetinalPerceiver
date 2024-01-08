@@ -94,7 +94,7 @@ def parse_args():
                         help='Input stride as three separate integers. Default is (1, 1, 1)')
     # System computing enhancement
     parser.add_argument('--parallel_processing', action='store_true', help='Enable parallel_processing')
-    parser.add_argument('--accumulation_steps', action='store_true', help='Accumulate gradients')
+    parser.add_argument('--accumulation_steps', type=int, default=1, help='Accumulate gradients')
     # Plot parameters
     parser.add_argument('--num_cols', type=int, default=5, help='Number of columns in a figure')
 
