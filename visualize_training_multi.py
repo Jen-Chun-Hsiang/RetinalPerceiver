@@ -136,7 +136,7 @@ def main():
     if args.model == 'RetinalPerceiver':
         model = RetinalPerceiverIO(input_dim=args.input_channels, latent_dim=args.hidden_size,
                                    output_dim=args.output_size, num_latents=args.num_latent, heads=args.num_head,
-                                   depth=args.num_iter, query_dim=query_array.shape[1], depth_dim=args.input_depth,
+                                   depth=args.num_iter, query_dim=query_arrays.shape[1], depth_dim=args.input_depth,
                                    height=args.input_height, width=args.input_width, num_bands=args.num_band,
                                    device=device, use_layer_norm=args.use_layer_norm, kernel_size=args.kernel_size,
                                    stride=args.stride, concatenate_positional_encoding=args.concatenate_positional_encoding,
@@ -145,7 +145,7 @@ def main():
     elif args.model == 'RetinalCNN':
          model = RetinalPerceiverIOWithCNN(input_depth=args.input_depth, input_height=args.input_height,
                                            input_width=args.input_width, output_dim=args.output_size,
-                                           latent_dim=args.hidden_size, query_dim=query_array.shape[1],
+                                           latent_dim=args.hidden_size, query_dim=query_arrays.shape[1],
                                            num_latents=args.num_latent, heads=args.num_head,
                                            use_layer_norm=args.use_layer_norm, device=device,
                                            num_bands=args.num_band, conv3d_out_channels=args.conv3d_out_channels,
