@@ -25,9 +25,9 @@ def weightedsum_image_plot(output_image_np):
 def main():
     # experiment specific parameters
 
-    stimulus_type = '100000tl123ss2e3c128nl32hs0cpe3kn1st'
+    stimulus_type = '100000tl123ss2e3c256nl32hs1cpe3kn1st0ps'
     presented_cell_ids = list(range(32))
-    checkpoint_filename = f'PerceiverIO_20tp{stimulus_type}_checkpoint_epoch_400'
+    checkpoint_filename = f'PerceiverIO_20tp{stimulus_type}_checkpoint_epoch_200'
 
     '''
     time_point = 20
@@ -135,13 +135,12 @@ def main():
 
     if args.model == 'RetinalPerceiver':
         model = RetinalPerceiverIO(input_dim=args.input_channels, latent_dim=args.hidden_size,
-                                   output_dim=args.output_size,
-                                   num_latents=args.num_latent, heads=args.num_head, depth=args.num_iter,
-                                   query_dim=query_arrays.shape[1],
-                                   depth_dim=args.input_depth, height=args.input_height, width=args.input_width,
-                                   num_bands=args.num_band, device=device, use_layer_norm=args.use_layer_norm,
-                                   kernel_size=args.kernel_size, stride=args.stride,
-                                   concatenate_positional_encoding=args.concatenate_positional_encoding)
+                                   output_dim=args.output_size, num_latents=args.num_latent, heads=args.num_head,
+                                   depth=args.num_iter, query_dim=query_array.shape[1], depth_dim=args.input_depth,
+                                   height=args.input_height, width=args.input_width, num_bands=args.num_band,
+                                   device=device, use_layer_norm=args.use_layer_norm, kernel_size=args.kernel_size,
+                                   stride=args.stride, concatenate_positional_encoding=args.concatenate_positional_encoding,
+                                   use_phase_shift=args.use_phase_shift, use_dense_frequency=args.use_dense_frequency)
 
     elif args.model == 'RetinalCNN':
          model = RetinalPerceiverIOWithCNN(input_depth=args.input_depth, input_height=args.input_height,
