@@ -20,7 +20,7 @@ class Trainer:
             else:
                 loss = self._process_batch(data)
 
-            loss = loss / self.accumulation_steps  # Normalize the loss
+            # loss = loss / self.accumulation_steps  # Normalize the loss (no need for MSE loss)
             self._update_parameters(loss)  # Backward pass to accumulate gradients
             total_train_loss += loss.item()
 
@@ -58,11 +58,10 @@ class Trainer:
 
 
 class Evaluator:
-    def __init__(self, model, criterion, device, accumulation_steps):
+    def __init__(self, model, criterion, device):
         self.model = model
         self.criterion = criterion
         self.device = device
-        self.accumulation_steps = accumulation_steps
 
     def evaluate(self, test_loader, query_array=None):
         self.model.eval()  # Set the model to evaluation mode
@@ -80,7 +79,7 @@ class Evaluator:
                 total_val_loss += loss.item()
 
         avg_val_loss = total_val_loss / len(test_loader)
-        return avg_val_loss * self.accumulation_steps
+        return avg_val_loss
 
     def _process_batch(self, data):
         input_matrices, targets = data

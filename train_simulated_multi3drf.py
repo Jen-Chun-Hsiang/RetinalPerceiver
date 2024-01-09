@@ -247,7 +247,7 @@ def main():
     # Initialize the Trainer
     trainer = Trainer(model, criterion, optimizer, device, args.accumulation_steps)
     # Initialize the Evaluator
-    evaluator = Evaluator(model, criterion, device, args.accumulation_steps)
+    evaluator = Evaluator(model, criterion, device)
 
     # Optionally, load from checkpoint
     if args.load_checkpoint:
