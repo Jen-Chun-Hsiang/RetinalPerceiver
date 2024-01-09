@@ -58,10 +58,11 @@ class Trainer:
 
 
 class Evaluator:
-    def __init__(self, model, criterion, device):
+    def __init__(self, model, criterion, device, accumulation_steps):
         self.model = model
         self.criterion = criterion
         self.device = device
+        self.accumulation_steps = accumulation_steps
 
     def evaluate(self, test_loader, query_array=None):
         self.model.eval()  # Set the model to evaluation mode
@@ -79,7 +80,7 @@ class Evaluator:
                 total_val_loss += loss.item()
 
         avg_val_loss = total_val_loss / len(test_loader)
-        return avg_val_loss
+        return avg_val_loss * self.accumulation_steps
 
     def _process_batch(self, data):
         input_matrices, targets = data
@@ -94,7 +95,6 @@ class Evaluator:
         query_vectors = torch.from_numpy(query_array).unsqueeze(1)
         query_vectors = query_vectors[matrix_indices]
         query_vectors = query_vectors.float().to(self.device)
-        #query_vectors = torch.ones(query_vectors.shape).to(self.device)
         input_matrices, targets = input_matrices.to(self.device), targets.to(self.device)
         targets = targets.unsqueeze(1)
         outputs = self.model(input_matrices, query_vectors)
