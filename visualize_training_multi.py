@@ -159,7 +159,7 @@ def main():
                                   xlabel='Epochs', ylabel='Loss')
 
     if is_cross_level:
-        examine_list = [(9, 9, 7), (7, 7, 9)]  # List of tuples for row selection
+        examine_list = [(0, 0, 17), (17, 17, 0)]  # List of tuples for row selection
         query_partition_lengths = tuple(lengths.values())
         query_arrays = rearrange_array(query_arrays, query_partition_lengths, examine_list)
         presented_cell_ids = list(range(query_arrays.shape[0]))
