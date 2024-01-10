@@ -28,7 +28,7 @@ def main():
     #stimulus_type = '100ktl123ss2e3c256nl64hs1cpe3kn1st0ps8ag1df'
     stimulus_type = 'cnn100ktl123ss2e3c256nl64hs2ag'
     presented_cell_ids = list(range(32))
-    checkpoint_filename = f'PerceiverIO_20tp{stimulus_type}_checkpoint_epoch_200'
+    checkpoint_filename = f'PerceiverIO_20tp{stimulus_type}_checkpoint_epoch_400'
 
     '''
     time_point = 20
