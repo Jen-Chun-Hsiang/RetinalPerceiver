@@ -163,6 +163,9 @@ def main():
         query_partition_lengths = tuple(lengths.values())
         query_arrays = rearrange_array(query_arrays, query_partition_lengths, examine_list)
         presented_cell_ids = list(range(query_arrays.shape[0]))
+        cross_level_flag = 'Interpolation'
+    else:
+        cross_level_flag = 'Data'
 
 
     num_cols = 5
@@ -179,7 +182,7 @@ def main():
 
         # Initialize the dataset with the device
 
-        plot3dmat(target_matrix[0, :, :, :], num_cols, savefig_dir, file_prefix=f'plot_3D_matrix_{presented_cell_id}')
+        plot3dmat(target_matrix[0, :, :, :], num_cols, savefig_dir, file_prefix=f'plot_3D_matrix_{cross_level_flag}_{presented_cell_id}')
         dataset_test = MultiMatrixDataset(target_matrix, length=total_length, device=device, combination_set=[1])
 
         sample_data, sample_label, sample_index = dataset_test[0]
