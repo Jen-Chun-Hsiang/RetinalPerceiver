@@ -216,7 +216,7 @@ class ExperimentalLevel:
         self.tf_offset = tf_offset
         self.cell_classes = cell_classes
 
-    def generate_param_list(self):
+    def generate_param_list(self, global_class_id_start, global_cell_id_start):
         """
         Generates a parameter list for this experimental level, including cell class level information.
         Does not descend to the individual cell level.
