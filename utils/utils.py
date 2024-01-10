@@ -393,4 +393,27 @@ class VideoPatcher:
         return patch_indices
 
 
+def rearrange_array(input_array, partition_lengths, index_tuples):
+    # Validate the sum of partition lengths equals the number of features
+    if sum(partition_lengths) != input_array.shape[1]:
+        raise ValueError("Sum of partition lengths must equal the number of features in the input array.")
+
+    # Validate the number of partitions matches the length of each tuple in index_tuples
+    if any(len(t) != len(partition_lengths) for t in index_tuples):
+        raise ValueError("Length of each index tuple must match the number of partitions.")
+
+    # Initialize the output array
+    output_array = np.zeros((len(index_tuples), input_array.shape[1]))
+
+    # Define ending index for each partition
+    partition_end_indices = np.cumsum(partition_lengths)
+
+    # Extract and concatenate the specified rows and partitions
+    for i, (start, end) in enumerate(zip([0] + list(partition_end_indices[:-1]), partition_end_indices)):
+        indices = np.array([t[i] for t in index_tuples])
+        output_array[:, start:end] = input_array[indices, start:end]
+
+    return output_array
+
+
 

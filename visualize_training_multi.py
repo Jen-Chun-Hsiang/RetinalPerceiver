@@ -11,7 +11,7 @@ from datasets.simulated_dataset import MultiMatrixDataset
 from models.perceiver3d import RetinalPerceiverIO
 from models.cnn3d import RetinalPerceiverIOWithCNN
 from utils.training_procedure import CheckpointLoader, forward_model
-from utils.utils import DataVisualizer, SeriesEncoder
+from utils.utils import DataVisualizer, SeriesEncoder, rearrange_array
 from utils.utils import plot_and_save_3d_matrix_with_timestamp as plot3dmat
 
 
@@ -27,7 +27,7 @@ def main():
 
     #stimulus_type = '100ktl123ss2e3c256nl64hs1cpe3kn1st0ps8ag1df'
     stimulus_type = 'cnn100ktl123ss2e3c256nl64hs2ag'
-    presented_cell_ids = list(range(32))
+    is_cross_level = True
     checkpoint_filename = f'PerceiverIO_20tp{stimulus_type}_checkpoint_epoch_400'
 
     '''
@@ -158,6 +158,11 @@ def main():
     visualizer_prog.plot_and_save(None, plot_type='line', line1=training_losses, line2=validation_losses,
                                   xlabel='Epochs', ylabel='Loss')
 
+    if is_cross_level:
+        examine_list = [(31, 31, 0), (0, 0, 31)]  # List of tuples for row selection
+        query_partition_lengths = tuple(lengths.values())
+        query_arrays = rearrange_array(query_arrays, query_partition_lengths, examine_list)
+        presented_cell_ids = list(range(query_arrays.shape[0]))
 
 
     num_cols = 5
