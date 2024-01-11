@@ -137,20 +137,6 @@ def main():
     # Create cells and cell classes
     cell_class1 = CellClassLevel(sf_cov_center=np.array([[0.12, 0.05], [0.04, 0.03]]),
                                  sf_cov_surround=np.array([[0.24, 0.05], [0.04, 0.06]]),
-                                 sf_weight_surround=0.5, num_cells=5, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
-
-    # Create experimental level with cell classes
-    experimental = ExperimentalLevel(tf_weight_surround=0.2, tf_sigma_center=0.05,
-                                     tf_sigma_surround=0.12, tf_mean_center=0.08,
-                                     tf_mean_surround=0.12, tf_weight_center=1,
-                                     tf_offset=0, cell_classes=[cell_class1])
-
-    # Create integrated level with experimental levels
-    integrated_list = IntegratedLevel([experimental])
-    '''
-    # Create cells and cell classes
-    cell_class1 = CellClassLevel(sf_cov_center=np.array([[0.12, 0.05], [0.04, 0.03]]),
-                                 sf_cov_surround=np.array([[0.24, 0.05], [0.04, 0.06]]),
                                  sf_weight_surround=0.5, num_cells=6, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
 
     cell_class2 = CellClassLevel(sf_cov_center=np.array([[0.08, 0.03], [0.06, 0.16]]),
@@ -172,10 +158,59 @@ def main():
                                       tf_sigma_surround=0.10, tf_mean_center=0.07,
                                       tf_mean_surround=0.10, tf_weight_center=1,
                                       tf_offset=0, cell_classes=[cell_class3])
-
+    
     # Create integrated level with experimental levels
     integrated_list = IntegratedLevel([experimental, experimental2])
+    '''
 
+    # Create cells and cell classes
+    cell_class1_layout1 = CellClassLevel(sf_cov_center=np.array([[0.12, 0.05], [0.04, 0.03]]),
+                                 sf_cov_surround=np.array([[0.24, 0.05], [0.04, 0.06]]),
+                                 sf_weight_surround=0.5, num_cells=6, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
+
+    cell_class1_layout2 = CellClassLevel(sf_cov_center=np.array([[0.12, 0.05], [0.04, 0.03]]),
+                                         sf_cov_surround=np.array([[0.24, 0.05], [0.04, 0.06]]),
+                                         sf_weight_surround=0.5, num_cells=8, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
+
+    cell_class1_layout3 = CellClassLevel(sf_cov_center=np.array([[0.12, 0.05], [0.04, 0.03]]),
+                                         sf_cov_surround=np.array([[0.24, 0.05], [0.04, 0.06]]),
+                                         sf_weight_surround=0.5, num_cells=7, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
+
+    cell_class2_layout1 = CellClassLevel(sf_cov_center=np.array([[0.08, 0.03], [0.06, 0.16]]),
+                                 sf_cov_surround=np.array([[0.16, 0.03], [0.06, 0.32]]),
+                                 sf_weight_surround=0.3, num_cells=8, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
+
+    cell_class2_layout2 = CellClassLevel(sf_cov_center=np.array([[0.08, 0.03], [0.06, 0.16]]),
+                                 sf_cov_surround=np.array([[0.16, 0.03], [0.06, 0.32]]),
+                                 sf_weight_surround=0.3, num_cells=10, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
+
+    cell_class3_layout1 = CellClassLevel(sf_cov_center=np.array([[0.1, 0.01], [0.01, 0.1]]),
+                                 sf_cov_surround=np.array([[0.2, 0.01], [0.01, 0.2]]),
+                                 sf_weight_surround=0.5, num_cells=16, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
+
+    cell_class3_layout2 = CellClassLevel(sf_cov_center=np.array([[0.1, 0.01], [0.01, 0.1]]),
+                                         sf_cov_surround=np.array([[0.2, 0.01], [0.01, 0.2]]),
+                                         sf_weight_surround=0.5, num_cells=14, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
+
+    # Create experimental level with cell classes
+    experimental = ExperimentalLevel(tf_weight_surround=0.2, tf_sigma_center=0.05,
+                                     tf_sigma_surround=0.12, tf_mean_center=0.08,
+                                     tf_mean_surround=0.12, tf_weight_center=1,
+                                     tf_offset=0, cell_classes=[cell_class1_layout1, cell_class2_layout1])
+
+    experimental2 = ExperimentalLevel(tf_weight_surround=0.3, tf_sigma_center=0.04,
+                                      tf_sigma_surround=0.10, tf_mean_center=0.07,
+                                      tf_mean_surround=0.10, tf_weight_center=1,
+                                      tf_offset=0, cell_classes=[cell_class1_layout2, cell_class2_layout2,
+                                                                 cell_class3_layout1])
+
+    experimental3 = ExperimentalLevel(tf_weight_surround=0.4, tf_sigma_center=0.03,
+                                      tf_sigma_surround=0.09, tf_mean_center=0.06,
+                                      tf_mean_surround=0.11, tf_weight_center=1,
+                                      tf_offset=0, cell_classes=[cell_class1_layout3, cell_class3_layout2])
+
+    # Create integrated level with experimental levels
+    integrated_list = IntegratedLevel([experimental, experimental2, experimental3])
     # Generate param_list
     param_list, series_ids = integrated_list.generate_combined_param_list()
 
