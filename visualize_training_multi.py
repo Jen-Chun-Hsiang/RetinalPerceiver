@@ -28,7 +28,8 @@ def main():
     stimulus_type = '100ktl123ss2e3c256nl64hs0ln1cpe3kn1st0ps8ag1df'
     #stimulus_type = 'cnn100ktl123ss2e3c256nl64hs2ag'
     is_cross_level = False
-    checkpoint_filename = f'PerceiverIO_20tp{stimulus_type}_checkpoint_epoch_400'
+    epoch_end = 200
+    checkpoint_filename = f'PerceiverIO_20tp{stimulus_type}_checkpoint_epoch_{epoch_end}'
 
     '''
     time_point = 20
