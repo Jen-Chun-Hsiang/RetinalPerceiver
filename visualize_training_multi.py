@@ -27,7 +27,7 @@ def main():
 
     #stimulus_type = '100ktl123ss2e3c256nl64hs0ln1cpe3kn1st0ps8ag1df'
     stimulus_type = 'cnn200ktl123ss3e256nl64hs2ag'
-    is_cross_level = False
+    is_cross_level = True
     epoch_end = 400
     checkpoint_filename = f'PerceiverIO_20tp{stimulus_type}_checkpoint_epoch_{epoch_end}'
 
@@ -194,7 +194,7 @@ def main():
                                   xlabel='Epochs', ylabel='Loss')
 
     if is_cross_level:
-        examine_list = [(0, 0, 17), (17, 17, 0)]  # List of tuples for row selection
+        examine_list = [(0, 0, 15), (15, 15, 0), (34, 34, 3), (3, 3, 34)]  # List of tuples for row selection
         query_partition_lengths = tuple(lengths.values())
         query_arrays = rearrange_array(query_arrays, query_partition_lengths, examine_list)
         cross_level_flag = 'Interpolation'
