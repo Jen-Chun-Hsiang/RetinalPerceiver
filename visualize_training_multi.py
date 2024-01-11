@@ -162,10 +162,11 @@ def main():
         examine_list = [(0, 0, 17), (17, 17, 0)]  # List of tuples for row selection
         query_partition_lengths = tuple(lengths.values())
         query_arrays = rearrange_array(query_arrays, query_partition_lengths, examine_list)
-        presented_cell_ids = list(range(query_arrays.shape[0]))
         cross_level_flag = 'Interpolation'
     else:
         cross_level_flag = 'Data'
+
+    presented_cell_ids = list(range(query_arrays.shape[0]))
 
 
     num_cols = 5
