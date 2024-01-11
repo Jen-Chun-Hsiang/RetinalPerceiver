@@ -168,7 +168,6 @@ def main():
 
     presented_cell_ids = list(range(query_arrays.shape[0]))
 
-
     num_cols = 5
     for presented_cell_id in presented_cell_ids:
         query_array = query_arrays[presented_cell_id:presented_cell_id+1, :]
