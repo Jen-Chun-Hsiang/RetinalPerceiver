@@ -34,7 +34,7 @@ def main():
     conv3d_out_channels = 10  # default 1
     conv2_out_channels = 64
     use_layer_norm = True
-    stimulus_type = 'cnn100000tl123ss2e3c256nl8hs36ec'
+    stimulus_type = 'cnn100000tl123ss3e256nl8hs36ec'
     model_type = 'RetinalCNN'
     checkpoint_filename = f'PerceiverIO_{time_point}tp{stimulus_type}_checkpoint_epoch_800'
 
