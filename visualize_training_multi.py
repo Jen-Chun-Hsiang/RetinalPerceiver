@@ -26,7 +26,7 @@ def main():
     # experiment specific parameters
 
     #stimulus_type = '100ktl123ss2e3c256nl64hs0ln1cpe3kn1st0ps8ag1df'
-    stimulus_type = 'cnn200ktl123ss3e3c256nl64hs2ag'
+    stimulus_type = 'cnn200ktl123ss3e256nl64hs2ag'
     is_cross_level = False
     epoch_end = 400
     checkpoint_filename = f'PerceiverIO_20tp{stimulus_type}_checkpoint_epoch_{epoch_end}'
