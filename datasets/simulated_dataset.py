@@ -149,15 +149,19 @@ class SharpenFilter(nn.Module):
         return x
 
 class MultiMatrixDataset(MatrixDataset):
-    def __init__(self, target_matrices, length, device, combination_set=None, ratio_for_one=0.5):
+    def __init__(self, target_matrices, length, device, combination_set=None, ratio_for_one=0.5,
+                 add_noise=False, noise_level=0.1, use_sigmoid=False, output_offset=0.12):
         """
-                Args:
+        Args:
                     target_matrices (numpy.ndarray or torch.Tensor): A 4D matrix.
                     length (int): Number of samples in the dataset.
                     device (torch.device): Device where the tensors will be stored.
                     combination_set (list): Set of matrix types to use for generating random matrices.
                     ratio_for_one (float): Ratio for generating binary matrices (Type 2).
-                """
+                    add_noise (bool): Whether to add noise to the output values.
+                    noise_level (float): Standard deviation of the Gaussian noise.
+                    use_sigmoid (bool): Whether to apply sigmoid function to the output values.
+        """
 
         # Ensure target_matrices is a torch tensor
         if isinstance(target_matrices, np.ndarray):
@@ -178,6 +182,12 @@ class MultiMatrixDataset(MatrixDataset):
             normalized_matrix = matrix / norm_factor if norm_factor != 0 else matrix
             self.target_matrices.append(normalized_matrix)
 
+        # Additional attributes for noise and sigmoid
+        self.add_noise = add_noise
+        self.noise_level = noise_level
+        self.use_sigmoid = use_sigmoid
+        self.output_offset = output_offset
+
     def __getitem__(self, idx):
         torch.manual_seed(self.seed + idx)
 
@@ -192,6 +202,16 @@ class MultiMatrixDataset(MatrixDataset):
         random_matrix = random_matrix.unsqueeze(0)
         output_matrix = random_matrix.squeeze(0) * selected_matrix
         output_value = output_matrix.sum()
+
+        # Add noise to output value if required
+        if self.add_noise:
+            noise = torch.randn((), device=self.device) * self.noise_level
+            output_value += noise
+
+        # Apply sigmoid function to output value if required
+        if self.use_sigmoid:
+            output_value += self.output_offset
+            output_value = torch.sigmoid(output_value)
 
         return random_matrix, output_value, matrix_index
 
