@@ -128,6 +128,7 @@ def main():
     # If CUDA is available, continue with the rest of the script
     device = torch.device("cuda")
 
+    '''
     if args.parallel_processing:
         # Initialize the process group
         dist.init_process_group(backend='nccl')
@@ -136,6 +137,7 @@ def main():
         # Set up the distributed environment
         local_rank = torch.distributed.get_rank()
         world_size = torch.distributed.get_world_size()
+    '''
 
     '''
     # Create cells and cell classes
@@ -270,7 +272,9 @@ def main():
                                     conv3d_out_channels=args.conv3d_out_channels, conv2_out_channels=args.conv2_out_channels)
 
     if args.parallel_processing:
-        model = DistributedDataParallel(model, device_ids=[local_rank])
+        model = nn.DataParallel(model)
+        #model = DistributedDataParallel(model, device_ids=[local_rank])
+        logging.info(f'Initial parallel processing on on {torch.cuda.device_count()} \n')
 
     logging.info(f'Model: {args.model} \n')
     old_stdout = sys.stdout
