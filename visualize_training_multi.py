@@ -11,7 +11,7 @@ from datasets.simulated_dataset import MultiMatrixDataset
 from models.perceiver3d import RetinalPerceiverIO
 from models.cnn3d import RetinalPerceiverIOWithCNN
 from utils.training_procedure import CheckpointLoader, forward_model
-from utils.utils import DataVisualizer, SeriesEncoder, rearrange_array
+from utils.utils import DataVisualizer, SeriesEncoder, rearrange_array, calculate_correlation
 from utils.utils import plot_and_save_3d_matrix_with_timestamp as plot3dmat
 
 
@@ -233,8 +233,7 @@ def main():
         output_image_np_std = np.std(output_image_np, axis=0)
         visualizer_est_rfstd.plot_and_save(output_image_np_std, plot_type='2D_matrix')
 
-        stacked_tensors = torch.cat((labels.view(-1, 1), weights.view(-1, 1)), dim=1)
-        corrcoef_vals[ii, :] = torch.corrcoef(stacked_tensors.t())[1, 0].item()
+        corrcoef_vals[ii, :] = calculate_correlation(labels, weights)
         ii += 1
 
     logging.info(f'correlation coefficient: {corrcoef_vals} \n')

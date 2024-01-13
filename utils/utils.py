@@ -415,5 +415,32 @@ def rearrange_array(input_array, partition_lengths, index_tuples):
 
     return output_array
 
+def calculate_correlation(list1, list2):
+    """
+    Calculate the Pearson correlation coefficient between two lists
+    using PyTorch.
+
+    Args:
+    list1 (list): The first list of numerical values.
+    list2 (list): The second list of numerical values.
+
+    Returns:
+    float: The Pearson correlation coefficient between the two lists.
+    """
+    # Convert lists to 1D PyTorch tensors
+    tensor1 = torch.tensor(list1, dtype=torch.float32)
+    tensor2 = torch.tensor(list2, dtype=torch.float32)
+
+    # Ensure the tensors are 1D before stacking
+    tensor1_flat = tensor1.view(-1)
+    tensor2_flat = tensor2.view(-1)
+
+    # Stacking the tensors and calculating the correlation matrix
+    stacked_tensors = torch.stack((tensor1_flat, tensor2_flat))
+    correlation_matrix = torch.corrcoef(stacked_tensors)
+
+    # The correlation coefficient is the element at (1, 0) of the matrix
+    return correlation_matrix[1, 0].item()
+
 
 
