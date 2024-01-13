@@ -60,7 +60,7 @@ def main():
     timestr = datetime.now().strftime('%Y%m%d_%H%M%S')
     log_name = 'visualize_model'
     # Construct the full path for the log file
-    log_filename = os.path.join(saveprint_dir, f'{log_name}_training_log_{timestr}.txt')
+    log_filename = os.path.join(saveprint_dir, f'{checkpoint_filename}_training_log_{timestr}.txt')
 
     # Setup logging
     logging.basicConfig(filename=log_filename,
@@ -204,6 +204,8 @@ def main():
     presented_cell_ids = list(range(query_arrays.shape[0]))
 
     num_cols = 5
+    corrcoef_vals = np.zeros((query_arrays.shape[0], 1))
+    ii = 0
     for presented_cell_id in presented_cell_ids:
         query_array = query_arrays[presented_cell_id:presented_cell_id+1, :]
         logging.info(f'query_encoder example 1:{query_array.shape} \n')
@@ -231,5 +233,10 @@ def main():
         output_image_np_std = np.std(output_image_np, axis=0)
         visualizer_est_rfstd.plot_and_save(output_image_np_std, plot_type='2D_matrix')
 
+        stacked_tensors = torch.cat((labels.view(-1, 1), weights.view(-1, 1)), dim=1)
+        corrcoef_vals[ii, :] = torch.corrcoef(stacked_tensors.t())[1, 0].item()
+        ii += 1
+
+    logging.info(f'correlation coefficient: {corrcoef_vals} \n')
 if __name__ == "__main__":
     main()
