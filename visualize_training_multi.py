@@ -5,6 +5,7 @@ import os
 import numpy as np
 import logging
 from datetime import datetime
+from scipy.io import savemat
 
 from datasets.simulated_target_rf import MultiTargetMatrixGenerator, CellClassLevel, ExperimentalLevel, IntegratedLevel
 from datasets.simulated_dataset import MultiMatrixDataset
@@ -29,6 +30,7 @@ def main():
     stimulus_type = 'cnn200ktl123ss3e256nl64hs2ag1ns04'
     is_cross_level = False
     epoch_end = 400
+    is_full_figure_draw = False
     checkpoint_filename = f'PerceiverIO_20tp{stimulus_type}_checkpoint_epoch_{epoch_end}'
 
     '''
@@ -62,7 +64,8 @@ def main():
     log_name = 'visualize_model'
     # Construct the full path for the log file
     log_filename = os.path.join(saveprint_dir, f'{checkpoint_filename}_training_log_{timestr}.txt')
-    savedata_filename = os.path.join(savedata_dir, f'{checkpoint_filename}_data.npy')
+    savedata_filename_npy = os.path.join(savedata_dir, f'{checkpoint_filename}_data.npy')
+    savedata_filename_mat = os.path.join(savedata_dir, f'{checkpoint_filename}_data.mat')
 
     # Setup logging
     logging.basicConfig(filename=log_filename,
@@ -227,18 +230,24 @@ def main():
         sample_data, sample_label, sample_index = dataset_test[0]
         logging.info(f"dataset size: {sample_data.shape}")
         output_image, weights, labels = forward_model(model, dataset_test, query_array=query_array, batch_size=batch_size)
-        output_image_np = output_image.squeeze().cpu().numpy()
-        visualizer_est_rf.plot_and_save(output_image_np, plot_type='3D_matrix', num_cols=5)
-        visualizer_inout_corr.plot_and_save(None, plot_type='scatter', x_data=labels, y_data=weights,
-                                                     xlabel='Labels', ylabel='Weights',
-                                                     title='Relationship between Weights and Labels')
-        output_image_np_std = np.std(output_image_np, axis=0)
-        visualizer_est_rfstd.plot_and_save(output_image_np_std, plot_type='2D_matrix')
+
+        if is_full_figure_draw:
+            output_image_np = output_image.squeeze().cpu().numpy()
+            visualizer_est_rf.plot_and_save(output_image_np, plot_type='3D_matrix', num_cols=5)
+            visualizer_inout_corr.plot_and_save(None, plot_type='scatter', x_data=labels, y_data=weights,
+                                                xlabel='Labels', ylabel='Weights',
+                                                title='Relationship between Weights and Labels')
+            output_image_np_std = np.std(output_image_np, axis=0)
+            visualizer_est_rfstd.plot_and_save(output_image_np_std, plot_type='2D_matrix')
 
         corrcoef_vals[ii, :] = calculate_correlation(labels, weights)
         ii += 1
 
     logging.info(f'correlation coefficient: {corrcoef_vals} \n')
-    np.save(savedata_filename, corrcoef_vals)
+    np.save(savedata_filename_npy, corrcoef_vals)
+
+    # Save the dictionary as a .mat file
+    savemat(savedata_filename_mat, {'corrcoef_vals': corrcoef_vals})
+
 if __name__ == "__main__":
     main()
