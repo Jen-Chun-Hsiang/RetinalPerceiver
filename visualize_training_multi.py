@@ -53,6 +53,7 @@ def main():
     checkpoint_folder = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/CheckPoints/'
     savefig_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Figures/'
     saveprint_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Prints/'
+    savedata_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Data/'
     # Construct the full path for the checkpoint file
     checkpoint_path = os.path.join(checkpoint_folder, f'{checkpoint_filename}.pth')
 
@@ -61,6 +62,7 @@ def main():
     log_name = 'visualize_model'
     # Construct the full path for the log file
     log_filename = os.path.join(saveprint_dir, f'{checkpoint_filename}_training_log_{timestr}.txt')
+    savedata_filename = os.path.join(savedata_dir, f'{checkpoint_filename}_data.npy')
 
     # Setup logging
     logging.basicConfig(filename=log_filename,
@@ -237,5 +239,6 @@ def main():
         ii += 1
 
     logging.info(f'correlation coefficient: {corrcoef_vals} \n')
+    np.save(savedata_filename, corrcoef_vals)
 if __name__ == "__main__":
     main()
