@@ -150,7 +150,7 @@ class SharpenFilter(nn.Module):
 
 class MultiMatrixDataset(MatrixDataset):
     def __init__(self, target_matrices, length, device, combination_set=None, ratio_for_one=0.5,
-                 add_noise=False, noise_level=0.1, use_sigmoid=False, output_offset=0.12):
+                 add_noise=False, noise_level=0.1, use_relu=False, output_offset=0.12):
         """
         Args:
                     target_matrices (numpy.ndarray or torch.Tensor): A 4D matrix.
@@ -185,7 +185,7 @@ class MultiMatrixDataset(MatrixDataset):
         # Additional attributes for noise and sigmoid
         self.add_noise = add_noise
         self.noise_level = noise_level
-        self.use_sigmoid = use_sigmoid
+        self.use_relu = use_relu
         self.output_offset = output_offset
 
     def __getitem__(self, idx):
@@ -209,9 +209,9 @@ class MultiMatrixDataset(MatrixDataset):
             output_value += noise
 
         # Apply sigmoid function to output value if required
-        if self.use_sigmoid:
+        if self.use_relu:
             output_value += self.output_offset
-            output_value = torch.sigmoid(output_value)
+            output_value = torch.relu(output_value)
 
         return random_matrix, output_value, matrix_index
 

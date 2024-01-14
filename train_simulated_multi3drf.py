@@ -75,7 +75,7 @@ def parse_args():
                         help="Covariance matrix as four floats separated by commas (e.g., '0.12,0.05,0.04,0.03')")
     parser.add_argument('--add_noise', action='store_true', help='Enable adding noise to the output label')
     parser.add_argument('--noise_level', type=float, default=0.01, help='std of the noise, if added')
-    parser.add_argument('--use_sigmoid', action='store_true', help='Rectify the output label')
+    parser.add_argument('--use_relu', action='store_true', help='Rectify the output label')
     parser.add_argument('--output_offset', type=float, default=0.01, help='add value to offset for rectification')
     # Stimulus specificity
     parser.add_argument('--stimulus_type', type=int, default=4, help='Stimulus type')
@@ -239,7 +239,7 @@ def main():
     # Initialize the dataset with the device
     dataset = MultiMatrixDataset(target_matrix, length=args.total_length, device=device,
                                  combination_set=args.stimulus_type_set, add_noise=args.add_noise,
-                                 noise_level=args.noise_level, use_sigmoid=args.use_sigmoid, output_offset=args.output_offset)
+                                 noise_level=args.noise_level, use_relu=args.use_relu, output_offset=args.output_offset)
 
     # Splitting the dataset into training and validation sets
     train_length = int(0.8 * args.total_length)  # 80% for training
