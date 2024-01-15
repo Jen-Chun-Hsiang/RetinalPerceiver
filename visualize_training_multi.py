@@ -225,7 +225,10 @@ def main():
         # Initialize the dataset with the device
 
         plot3dmat(target_matrix[0, :, :, :], num_cols, savefig_dir, file_prefix=f'plot_3D_matrix_{cross_level_flag}_{presented_cell_id}')
-        dataset_test = MultiMatrixDataset(target_matrix, length=total_length, device=device, combination_set=[1])
+        #dataset_test = MultiMatrixDataset(target_matrix, length=total_length, device=device, combination_set=[1])
+        dataset_test = MultiMatrixDataset(target_matrix, length=args.total_length, device=device, combination_set=[1],
+                                     add_noise=args.add_noise, noise_level=args.noise_level, use_relu=args.use_relu,
+                                     output_offset=args.output_offset)
 
         sample_data, sample_label, sample_index = dataset_test[0]
         logging.info(f"dataset size: {sample_data.shape}")
