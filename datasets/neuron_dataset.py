@@ -4,6 +4,8 @@ import numpy as np
 from PIL import Image
 import os
 import random
+import pandas as pd
+from scipy.io import loadmat
 
 def precompute_image_paths(data_array, root_dir):
     precomputed_paths = {}
@@ -70,3 +72,75 @@ def train_val_split(data_length, chunk_size, test_size=0.2):
     val_indices = np.random.choice(indices, size=val_size, replace=False)
     train_indices = np.setdiff1d(indices, val_indices)
     return train_indices, val_indices
+
+
+def load_mat_to_dataframe(mat_file_path):
+    # Load the .mat file
+    mat_data = loadmat(mat_file_path)
+
+    # Assume the 2D array and cell array for column names are known
+    # Replace 'array_data' and 'column_names' with the actual variable names in the .mat file
+    array_data = mat_data['array_data']
+    column_names = mat_data['column_names']
+
+    # Convert MATLAB cell array to a list of strings for column names
+    # MATLAB cell arrays come as arrays of dtype=object, so we convert them to strings
+    column_names = [str(name[0]) for name in column_names[0]]
+
+    # Create a DataFrame
+    df = pd.DataFrame(array_data, columns=column_names)
+
+    return df
+
+def load_data_from_excel(file_path, sheet_name):
+    # Load each table from a separate sheet in the Excel file
+    table = pd.read_excel(file_path, sheet_name=sheet_name)
+    # Create a DataFrame
+    df = pd.DataFrame(table)
+
+    return df
+
+import pandas as pd
+
+def filter_and_merge_data(exp_session_table, exp_neuron_table, quality_threshold, selected_experiment_ids, selected_stimulus_types, excluded_session_table=None, excluded_neuron_table=None):
+    # Create compound keys for merging and exclusion
+    exp_session_table['experiment_session'] = exp_session_table['experiment_id'].astype(str) + '_' + exp_session_table['session_id'].astype(str)
+    exp_neuron_table['experiment_session'] = exp_neuron_table['experiment_id'].astype(str) + '_' + exp_neuron_table['session_id'].astype(str)
+    exp_neuron_table['experiment_neuron'] = exp_neuron_table['experiment_id'].astype(str) + '_' + exp_neuron_table['neuron_id'].astype(str)
+
+    # Handle excluded_session_table if provided
+    if excluded_session_table is not None:
+        excluded_sessions = pd.DataFrame(excluded_session_table)
+        excluded_sessions['experiment_session'] = excluded_sessions['experiment_id'].astype(str) + '_' + excluded_sessions['session_id'].astype(str)
+    else:
+        excluded_sessions = pd.DataFrame(columns=['experiment_session'])
+
+    # Handle excluded_neuron_table if provided
+    if excluded_neuron_table is not None:
+        excluded_neurons = pd.DataFrame(excluded_neuron_table)
+        excluded_neurons['experiment_neuron'] = excluded_neurons['experiment_id'].astype(str) + '_' + excluded_neurons['neuron_id'].astype(str)
+    else:
+        excluded_neurons = pd.DataFrame(columns=['experiment_neuron'])
+
+    # Merge DataFrames on 'experiment_session'
+    merged_df = pd.merge(exp_session_table, exp_neuron_table, on='experiment_session')
+
+    # Apply filters
+    if selected_experiment_ids:
+        merged_df = merged_df[merged_df['experiment_id'].isin(selected_experiment_ids)]
+    if selected_stimulus_types:
+        merged_df = merged_df[merged_df['stimulus_type_id'].isin(selected_stimulus_types)]
+
+    # Exclude sessions and neurons
+    merged_df = merged_df[~merged_df['experiment_session'].isin(excluded_sessions['experiment_session'])]
+    merged_df = merged_df[~merged_df['experiment_neuron'].isin(excluded_neurons['experiment_neuron'])]
+
+    # Filter by response quality
+    filtered_df = merged_df[merged_df['response_quality'] >= quality_threshold]
+
+    # Select specific columns to return
+    result_df = filtered_df[['neuron_id', 'experiment_id', 'session_id']]
+
+    return result_df
+
+
