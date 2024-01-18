@@ -144,3 +144,36 @@ def filter_and_merge_data(exp_session_table, exp_neuron_table, quality_threshold
     return result_df
 
 
+class TemporalArrayConstructor:
+    def __init__(self, time_id, seq_len, stride=2, flip_lr=False):
+        self.time_id = np.asarray(time_id)
+        self.seq_len = seq_len
+        self.stride = stride
+        self.flip_lr = flip_lr
+        self.valid_starts = self._compute_valid_starts()
+
+    def _compute_valid_starts(self):
+        """Compute valid start indices based on time_id, seq_len, and stride."""
+        diff = np.diff(self.time_id, prepend=0, append=0)
+        starts = np.where(diff == 1)[0]
+        ends = np.where(diff == -1)[0]
+
+        valid_starts = []
+        for start, end in zip(starts, ends):
+            valid_range = np.arange(start, min(end - self.seq_len + 1, len(self.time_id)), self.stride)
+            valid_starts.extend(valid_range)
+
+        return np.array(valid_starts)
+
+    def construct_array(self, stim_sequence):
+        """Construct temporal array for the given stim_sequence."""
+        # Preallocate array for efficiency
+        sequences = np.empty((len(self.valid_starts), self.seq_len), dtype=stim_sequence.dtype)
+
+        # Populate the array using vectorized operations
+        for idx, start in enumerate(self.valid_starts):
+            sequences[idx] = stim_sequence[start:start + self.seq_len][::-1 if self.flip_lr else 1]
+
+        return sequences
+
+
