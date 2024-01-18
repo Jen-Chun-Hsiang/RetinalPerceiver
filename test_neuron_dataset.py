@@ -24,6 +24,7 @@ filtered_data = filter_and_merge_data(
     excluded_neuron_table=None
 )
 
+constructor = TemporalArrayConstructor(time_id, seq_len, stride)
 # (1) use filtered_data and Link to create data_array (exp_id, ses_id, neu_id, frame_id-k, ..., frame_id-1)
 
 # (2) use filtered_data and the ExperimentSheets.xlsx to create quarry array

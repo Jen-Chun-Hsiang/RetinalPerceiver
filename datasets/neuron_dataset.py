@@ -74,23 +74,27 @@ def train_val_split(data_length, chunk_size, test_size=0.2):
     return train_indices, val_indices
 
 
-def load_mat_to_dataframe(mat_file_path):
+def load_mat_to_numpy(mat_file_path, variable_name):
     # Load the .mat file
     mat_data = loadmat(mat_file_path)
 
-    # Assume the 2D array and cell array for column names are known
-    # Replace 'array_data' and 'column_names' with the actual variable names in the .mat file
-    array_data = mat_data['array_data']
-    column_names = mat_data['column_names']
+    # Load the specified variable as a numpy array
+    return np.array(mat_data[variable_name])
 
-    # Convert MATLAB cell array to a list of strings for column names
-    # MATLAB cell arrays come as arrays of dtype=object, so we convert them to strings
-    column_names = [str(name[0]) for name in column_names[0]]
 
-    # Create a DataFrame
-    df = pd.DataFrame(array_data, columns=column_names)
+def load_mat_to_dataframe(mat_file_path, variable_name, column_names):
+    # Load the .mat file
+    mat_data = loadmat(mat_file_path)
 
-    return df
+    # Load the specified variable
+    array_data = mat_data[variable_name]
+
+    # Convert MATLAB cell array to a list of strings for column names if necessary
+    if isinstance(column_names, np.ndarray) and column_names.dtype == object:
+        column_names = [str(name[0]) for name in column_names[0]]
+
+    # Create and return a DataFrame
+    return pd.DataFrame(array_data, columns=column_names)
 
 def load_data_from_excel(file_path, sheet_name):
     # Load each table from a separate sheet in the Excel file
