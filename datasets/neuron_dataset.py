@@ -152,6 +152,14 @@ class TemporalArrayConstructor:
         self.flip_lr = flip_lr
         self.valid_starts = self._compute_valid_starts()
 
+    def _create_reference_ids(self, time_id):
+        """Create reference IDs corresponding to indices in stim_sequence."""
+        reference_ids = np.cumsum(time_id) * time_id
+        # Adjust to ensure indexing starts from 0 for stim_sequence
+        reference_ids -= 1
+
+        return reference_ids
+
     def _compute_valid_starts(self):
         """Compute valid start indices based on time_id, seq_len, and stride."""
         diff = np.diff(self.time_id, prepend=0, append=0)
@@ -165,8 +173,7 @@ class TemporalArrayConstructor:
 
         return np.array(valid_starts)
 
-    def construct_array(self, stim_sequence):
-        """Construct temporal array for the given stim_sequence."""
+    def _construct_array_full_length(self, stim_sequence):
         # Preallocate array for efficiency
         sequences = np.empty((len(self.valid_starts), self.seq_len), dtype=stim_sequence.dtype)
 
@@ -175,5 +182,15 @@ class TemporalArrayConstructor:
             sequences[idx] = stim_sequence[start:start + self.seq_len][::-1 if self.flip_lr else 1]
 
         return sequences
+
+    def construct_array(self, stim_sequence):
+        if len(stim_sequence) != len(self.time_id):
+            reference_ids = self._construct_array_full_length(self._create_reference_ids(self.time_id))
+            if np.any(reference_ids == -1):
+                raise ValueError("Array contains -1")
+            # Constructing the new array
+            return np.array([stim_sequence[index] for index in reference_ids])
+        else:
+            return self._construct_array_full_length(stim_sequence)
 
 
