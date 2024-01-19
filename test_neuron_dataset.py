@@ -1,6 +1,7 @@
 import torch
 from datasets.neuron_dataset import RetinalDataset
 from datasets.neuron_dataset import train_val_split, load_mat_to_dataframe, load_data_from_excel, filter_and_merge_data
+from torch.utils.data import DataLoader
 
 chunk_size = 50  # Example chunk size
 seq_len = 50
@@ -40,3 +41,7 @@ final_data = data_constructor.construct_data()
 # Creating datasets
 train_dataset = RetinalDataset(data_array, query_series, image_root_dir, train_indices, chunk_size, device='cuda', use_cache=True)
 val_dataset = RetinalDataset(data_array, query_series, image_root_dir, val_indices, chunk_size, device='cuda', use_cache=True)
+
+check_loader = DataLoader(train_dataset, batch_size=2, shuffle=True)
+dataiter = iter(check_loader)
+movie, labels, index = next(dataiter)
