@@ -6,6 +6,8 @@ import os
 import random
 import pandas as pd
 from scipy.io import loadmat
+import pandas as pd
+
 
 def precompute_image_paths(data_array, root_dir):
     precomputed_paths = {}
@@ -21,6 +23,7 @@ def precompute_image_paths(data_array, root_dir):
                                 f"frame_{image_frame_idx}.png")
             precomputed_paths[key] = path
     return precomputed_paths
+
 
 class RetinalDataset(Dataset):
     def __init__(self, data_array, query_series, image_root_dir, chunk_indices, chunk_size, device='cuda', use_cache=True):
@@ -65,6 +68,7 @@ class RetinalDataset(Dataset):
             self.image_tensor_cache[key] = image_tensor
         return image_tensor
 
+
 def train_val_split(data_length, chunk_size, test_size=0.2):
     total_chunks = (data_length - 1) // chunk_size + 1
     indices = np.arange(0, chunk_size * total_chunks, chunk_size)[:total_chunks]
@@ -96,6 +100,7 @@ def load_mat_to_dataframe(mat_file_path, variable_name, column_names):
     # Create and return a DataFrame
     return pd.DataFrame(array_data, columns=column_names)
 
+
 def load_data_from_excel(file_path, sheet_name):
     # Load each table from a separate sheet in the Excel file
     table = pd.read_excel(file_path, sheet_name=sheet_name)
@@ -104,7 +109,6 @@ def load_data_from_excel(file_path, sheet_name):
 
     return df
 
-import pandas as pd
 
 def filter_and_merge_data(exp_session_table, exp_neuron_table, quality_threshold, selected_experiment_ids, selected_stimulus_types, excluded_session_table=None, excluded_neuron_table=None):
     # Create compound keys for merging and exclusion
@@ -196,5 +200,69 @@ class TemporalArrayConstructor:
             return np.array([stim_sequence[index] for index in reference_ids])
         else:
             return self._construct_array_full_length(stim_sequence)
+
+
+class DataConstructor:
+    def __init__(self, input_table, seq_len, stride, link_dir, resp_dir):
+        self.input_table = input_table
+        self.seq_len = seq_len
+        self.stride = stride
+        self.link_dir = link_dir
+        self.resp_dir = resp_dir
+
+    def construct_data(self):
+        all_sessions_data = []
+        grouped = self.input_table.groupby(['experiment_id', 'session_id'])
+
+        for (experiment_id, session_id), group in grouped:
+            neurons = group['neuron_id'].unique()
+
+            file_path = os.path.join(self.link_dir, f'experiment_{experiment_id}/session_{session_id}.mat')
+            time_id = load_mat_to_numpy(file_path, 'time_id')
+            video_frame_id = load_mat_to_numpy(file_path, 'video_frame_id')
+
+            sequence_id = np.arange(len(video_frame_id))
+
+            constructor = TemporalArrayConstructor(time_id=time_id, seq_len=self.seq_len, stride=self.stride)
+            session_array = constructor.construct_array(video_frame_id)
+
+            file_path = os.path.join(self.resp_dir, f'experiment_{experiment_id}/session_{session_id}.mat')
+            firing_rate_array = load_mat_to_numpy(file_path, 'spike_smooth')
+
+            firing_rate_index = construct_temporal_array_imageid(sequence_id, self.seq_len, self.stride, flip_lr=True)
+
+            num_rows = len(session_array) * len(neurons)
+            session_data = np.empty((num_rows, 4 + self.seq_len - 1), dtype=session_array.dtype)
+
+            for i, neuron_id in enumerate(neurons):
+                start_row = i * len(session_array)
+                end_row = start_row + len(session_array)
+
+                session_data[start_row:end_row, :3] = [experiment_id, session_id, neuron_id]
+
+                # Firing rate data as the fourth column
+                firing_rate_data = firing_rate_array[firing_rate_index[:, 0], neuron_id]
+                session_data[start_row:end_row, 3] = firing_rate_data
+
+                # Remaining columns filled with session_array
+                session_data[start_row:end_row, 4:] = session_array
+
+            all_sessions_data.append(session_data)
+
+        final_data = np.vstack(all_sessions_data)
+        return final_data
+
+
+def construct_temporal_array_imageid(stim_sequence, seq_len, stride=2, flip_lr=False):
+    resp_seq_len = (len(stim_sequence) - seq_len) // stride + 1
+    imgids = np.zeros((resp_seq_len, seq_len), dtype=int)
+
+    for i in range(resp_seq_len):
+        start_idx = i * stride
+        sequence_slice = stim_sequence[start_idx:start_idx + seq_len]
+        imgids[i, :] = sequence_slice[::-1] if flip_lr else sequence_slice
+
+    return imgids
+
 
 
