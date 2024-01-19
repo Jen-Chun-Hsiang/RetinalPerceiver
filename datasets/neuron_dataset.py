@@ -6,7 +6,6 @@ import os
 import random
 import pandas as pd
 from scipy.io import loadmat
-import pandas as pd
 
 
 def precompute_image_paths(data_array, root_dir):
@@ -86,16 +85,21 @@ def load_mat_to_numpy(mat_file_path, variable_name):
     return np.array(mat_data[variable_name])
 
 
-def load_mat_to_dataframe(mat_file_path, variable_name, column_names):
+def load_mat_to_dataframe(mat_file_path, data_variable_name, column_names_variable):
     # Load the .mat file
     mat_data = loadmat(mat_file_path)
 
-    # Load the specified variable
-    array_data = mat_data[variable_name]
+    # Load the data using the specified variable name
+    array_data = mat_data[data_variable_name]
+
+    # Load the column names using the specified variable name
+    column_names_array = mat_data[column_names_variable]
 
     # Convert MATLAB cell array to a list of strings for column names if necessary
-    if isinstance(column_names, np.ndarray) and column_names.dtype == object:
-        column_names = [str(name[0]) for name in column_names[0]]
+    if isinstance(column_names_array, np.ndarray) and column_names_array.dtype == object:
+        column_names = [str(name[0]) for name in column_names_array.flatten()]
+    else:
+        raise ValueError("Column names should be provided in a MATLAB cell array format.")
 
     # Create and return a DataFrame
     return pd.DataFrame(array_data, columns=column_names)
@@ -110,54 +114,46 @@ def load_data_from_excel(file_path, sheet_name):
     return df
 
 
-def filter_and_merge_data(exp_session_table, exp_neuron_table, quality_threshold, selected_experiment_ids, selected_stimulus_types, excluded_session_table=None, excluded_neuron_table=None):
-    # Create compound keys for merging and exclusion
-    exp_session_table['experiment_session'] = exp_session_table['experiment_id'].astype(str) + '_' + exp_session_table['session_id'].astype(str)
-    exp_neuron_table['experiment_session'] = exp_neuron_table['experiment_id'].astype(str) + '_' + exp_neuron_table['session_id'].astype(str)
-    exp_neuron_table['experiment_neuron'] = exp_neuron_table['experiment_id'].astype(str) + '_' + exp_neuron_table['neuron_id'].astype(str)
+def filter_and_merge_data(exp_session_table, exp_neuron_table, selected_experiment_ids, selected_stimulus_types, excluded_session_table=None, excluded_neuron_table=None):
+    # Filter exp_session_table before merging
+    if selected_experiment_ids:
+        exp_session_table = exp_session_table[exp_session_table['experiment_id'].isin(selected_experiment_ids)]
+    if selected_stimulus_types:
+        exp_session_table = exp_session_table[exp_session_table['stimulus_type_id'].isin(selected_stimulus_types)]
+
+    # Merge DataFrames on 'experiment_id' and 'session_id'
+    merged_df = pd.merge(exp_session_table, exp_neuron_table, on=['experiment_id', 'session_id'])
 
     # Handle excluded_session_table if provided
     if excluded_session_table is not None:
-        excluded_sessions = pd.DataFrame(excluded_session_table)
-        excluded_sessions['experiment_session'] = excluded_sessions['experiment_id'].astype(str) + '_' + excluded_sessions['session_id'].astype(str)
-    else:
-        excluded_sessions = pd.DataFrame(columns=['experiment_session'])
+        excluded_sessions = excluded_session_table.copy()
+        excluded_sessions['exclude'] = True
+        merged_df = pd.merge(merged_df, excluded_sessions[['experiment_id', 'session_id', 'exclude']], on=['experiment_id', 'session_id'], how='left')
+        merged_df = merged_df[merged_df['exclude'] != True]
+        merged_df.drop(columns=['exclude'], inplace=True)
 
     # Handle excluded_neuron_table if provided
     if excluded_neuron_table is not None:
-        excluded_neurons = pd.DataFrame(excluded_neuron_table)
-        excluded_neurons['experiment_neuron'] = excluded_neurons['experiment_id'].astype(str) + '_' + excluded_neurons['neuron_id'].astype(str)
-    else:
-        excluded_neurons = pd.DataFrame(columns=['experiment_neuron'])
+        excluded_neurons = excluded_neuron_table.copy()
+        excluded_neurons['exclude'] = True
+        merged_df = pd.merge(merged_df, excluded_neurons[['experiment_id', 'neuron_id', 'exclude']], on=['experiment_id', 'neuron_id'], how='left')
+        merged_df = merged_df[merged_df['exclude'] != True]
+        merged_df.drop(columns=['exclude'], inplace=True)
 
-    # Merge DataFrames on 'experiment_session'
-    merged_df = pd.merge(exp_session_table, exp_neuron_table, on='experiment_session')
-
-    # Apply filters
-    if selected_experiment_ids:
-        merged_df = merged_df[merged_df['experiment_id'].isin(selected_experiment_ids)]
-    if selected_stimulus_types:
-        merged_df = merged_df[merged_df['stimulus_type_id'].isin(selected_stimulus_types)]
-
-    # Exclude sessions and neurons
-    merged_df = merged_df[~merged_df['experiment_session'].isin(excluded_sessions['experiment_session'])]
-    merged_df = merged_df[~merged_df['experiment_neuron'].isin(excluded_neurons['experiment_neuron'])]
-
-    # Filter by response quality
-    filtered_df = merged_df[merged_df['response_quality'] >= quality_threshold]
+    # Filter by response quality using quality_threshold from exp_session_table
+    filtered_df = merged_df[merged_df['quality'] >= merged_df['quality_threshold']]
 
     # Select specific columns to return
-    result_df = filtered_df[['neuron_id', 'experiment_id', 'session_id']]
+    result_df = filtered_df[['experiment_id', 'session_id', 'neuron_id']]
 
     return result_df
 
 
 class TemporalArrayConstructor:
-    def __init__(self, time_id, seq_len, stride=2, flip_lr=False):
-        self.time_id = np.asarray(time_id)
+    def __init__(self, time_id, seq_len, stride=2):
+        self.time_id = np.asarray(time_id).ravel()
         self.seq_len = seq_len
         self.stride = stride
-        self.flip_lr = flip_lr
         self.valid_starts = self._compute_valid_starts()
 
     def _create_reference_ids(self, time_id):
@@ -181,25 +177,26 @@ class TemporalArrayConstructor:
 
         return np.array(valid_starts)
 
-    def _construct_array_full_length(self, stim_sequence):
+    def _construct_array_full_length(self, stim_sequence, flip_lr):
         # Preallocate array for efficiency
         sequences = np.empty((len(self.valid_starts), self.seq_len), dtype=stim_sequence.dtype)
 
         # Populate the array using vectorized operations
         for idx, start in enumerate(self.valid_starts):
-            sequences[idx] = stim_sequence[start:start + self.seq_len][::-1 if self.flip_lr else 1]
+            sequences[idx] = stim_sequence[start:start + self.seq_len][::-1 if flip_lr else 1]
 
         return sequences
 
-    def construct_array(self, stim_sequence):
+    def construct_array(self, stim_sequence, flip_lr=False):
+        stim_sequence = stim_sequence.ravel()
         if len(stim_sequence) != len(self.time_id):
-            reference_ids = self._construct_array_full_length(self._create_reference_ids(self.time_id))
+            reference_ids = self._construct_array_full_length(self._create_reference_ids(self.time_id), flip_lr)
             if np.any(reference_ids == -1):
                 raise ValueError("Array contains -1")
             # Constructing the new array
             return np.array([stim_sequence[index] for index in reference_ids])
         else:
-            return self._construct_array_full_length(stim_sequence)
+            return self._construct_array_full_length(stim_sequence, flip_lr)
 
 
 class DataConstructor:
@@ -216,7 +213,7 @@ class DataConstructor:
 
         for (experiment_id, session_id), group in grouped:
             neurons = group['neuron_id'].unique()
-
+            print(f'experiment_id_{experiment_id}, session_{session_id}')
             file_path = os.path.join(self.link_dir, f'experiment_{experiment_id}/session_{session_id}.mat')
             time_id = load_mat_to_numpy(file_path, 'time_id')
             video_frame_id = load_mat_to_numpy(file_path, 'video_frame_id')
@@ -229,10 +226,9 @@ class DataConstructor:
             file_path = os.path.join(self.resp_dir, f'experiment_{experiment_id}/session_{session_id}.mat')
             firing_rate_array = load_mat_to_numpy(file_path, 'spike_smooth')
 
-            firing_rate_index = construct_temporal_array_imageid(sequence_id, self.seq_len, self.stride, flip_lr=True)
-
+            firing_rate_index = constructor.construct_array(sequence_id, flip_lr=True)
             num_rows = len(session_array) * len(neurons)
-            session_data = np.empty((num_rows, 4 + self.seq_len - 1), dtype=session_array.dtype)
+            session_data = np.empty((num_rows, 4 + self.seq_len), dtype=session_array.dtype)
 
             for i, neuron_id in enumerate(neurons):
                 start_row = i * len(session_array)
@@ -242,6 +238,7 @@ class DataConstructor:
 
                 # Firing rate data as the fourth column
                 firing_rate_data = firing_rate_array[firing_rate_index[:, 0], neuron_id]
+
                 session_data[start_row:end_row, 3] = firing_rate_data
 
                 # Remaining columns filled with session_array
@@ -249,20 +246,12 @@ class DataConstructor:
 
             all_sessions_data.append(session_data)
 
-        final_data = np.vstack(all_sessions_data)
-        return final_data
+        Frame_array = np.vstack(all_sessions_data)
 
+        query_array, query_index = np.unique(Frame_array[:, :3], axis=0, return_inverse=True)
 
-def construct_temporal_array_imageid(stim_sequence, seq_len, stride=2, flip_lr=False):
-    resp_seq_len = (len(stim_sequence) - seq_len) // stride + 1
-    imgids = np.zeros((resp_seq_len, seq_len), dtype=int)
+        return Frame_array, query_array, query_index
 
-    for i in range(resp_seq_len):
-        start_idx = i * stride
-        sequence_slice = stim_sequence[start_idx:start_idx + seq_len]
-        imgids[i, :] = sequence_slice[::-1] if flip_lr else sequence_slice
-
-    return imgids
 
 
 
