@@ -25,16 +25,27 @@ def precompute_image_paths(data_array, root_dir):
 
 
 class RetinalDataset(Dataset):
-    def __init__(self, data_array, query_series, image_root_dir, chunk_indices, chunk_size, device='cuda', use_cache=True):
+    def __init__(self, data_array, query_series, firing_rate_array, image_root_dir, chunk_indices, chunk_size, device='cuda', use_path_cache=True, use_image_cache=True):
         self.data_array = data_array
         self.query_series = query_series
+        self.firing_rate_array = firing_rate_array
         self.image_root_dir = image_root_dir
         self.chunk_indices = chunk_indices
         self.chunk_size = chunk_size
         self.device = device
-        self.use_cache = use_cache
-        self.image_paths = precompute_image_paths(data_array, image_root_dir)
-        self.image_tensor_cache = {}
+        self.use_path_cache = use_path_cache
+        self.use_image_cache = use_image_cache
+
+        if self.use_path_cache:
+            self.image_paths = precompute_image_paths(data_array, image_root_dir)
+        else:
+            self.image_paths = None
+
+        if self.use_image_cache:
+            self.image_tensor_cache = {}
+        else:
+            self.image_tensor_cache = None
+
         assert len(data_array) == len(query_series), "data_array and query_series must be the same length"
 
     def __len__(self):
@@ -47,7 +58,8 @@ class RetinalDataset(Dataset):
 
         # Randomly select a data point within the chunk
         random_idx = random.randint(start_idx, end_idx - 1)
-        firing_rate, experiment_id, session_id, neuron_id, *frame_ids = self.data_array[random_idx]
+        experiment_id, session_id, neuron_id, *frame_ids = self.data_array[random_idx]
+        firing_rate = self.firing_rate_array[random_idx]
         query_id = self.query_series[random_idx]
 
         # Load and stack images for the selected data point
@@ -58,13 +70,25 @@ class RetinalDataset(Dataset):
 
     def load_image(self, experiment_id, session_id, frame_id):
         key = (experiment_id, session_id, frame_id)
-        if self.use_cache and key in self.image_tensor_cache:
+
+        if self.use_image_cache and key in self.image_tensor_cache:
             return self.image_tensor_cache[key]
-        image_path = self.image_paths[key]
+
+        if self.use_path_cache:
+            image_path = self.image_paths[key]
+        else:
+            image_path = os.path.join(self.image_root_dir,
+                                      f"experiment_{experiment_id}",
+                                      f"session_{session_id}",
+                                      f"frame_{frame_id}.png")
+
         image = Image.open(image_path)
         image_tensor = torch.from_numpy(np.array(image)).float().to(self.device)
-        if self.use_cache:
+        image_tensor = (image_tensor / 255.0) * 2.0 - 1.0  # Normalize to [-1, 1]
+
+        if self.use_image_cache:
             self.image_tensor_cache[key] = image_tensor
+
         return image_tensor
 
 
@@ -209,6 +233,7 @@ class DataConstructor:
 
     def construct_data(self):
         all_sessions_data = []
+        all_sessions_fr_data = []
         grouped = self.input_table.groupby(['experiment_id', 'session_id'])
 
         for (experiment_id, session_id), group in grouped:
@@ -222,14 +247,15 @@ class DataConstructor:
 
             constructor = TemporalArrayConstructor(time_id=time_id, seq_len=self.seq_len, stride=self.stride)
             session_array = constructor.construct_array(video_frame_id)
+            session_array = session_array.astype(np.int32)
 
             file_path = os.path.join(self.resp_dir, f'experiment_{experiment_id}/session_{session_id}.mat')
             firing_rate_array = load_mat_to_numpy(file_path, 'spike_smooth')
 
             firing_rate_index = constructor.construct_array(sequence_id, flip_lr=True)
             num_rows = len(session_array) * len(neurons)
-            session_data = np.empty((num_rows, 4 + self.seq_len), dtype=session_array.dtype)
-
+            session_data = np.empty((num_rows, 3 + self.seq_len), dtype=session_array.dtype)
+            session_fr_data = np.empty((num_rows, 1))
             for i, neuron_id in enumerate(neurons):
                 start_row = i * len(session_array)
                 end_row = start_row + len(session_array)
@@ -239,18 +265,20 @@ class DataConstructor:
                 # Firing rate data as the fourth column
                 firing_rate_data = firing_rate_array[firing_rate_index[:, 0], neuron_id]
 
-                session_data[start_row:end_row, 3] = firing_rate_data
+                session_fr_data[start_row:end_row, 0] = firing_rate_data
 
                 # Remaining columns filled with session_array
-                session_data[start_row:end_row, 4:] = session_array
+                session_data[start_row:end_row, 3:] = session_array
 
             all_sessions_data.append(session_data)
+            all_sessions_fr_data.append(session_fr_data)
 
-        Frame_array = np.vstack(all_sessions_data)
+        frame_array = np.vstack(all_sessions_data)
+        firing_rate_array = np.vstack(all_sessions_fr_data)
 
-        query_array, query_index = np.unique(Frame_array[:, :3], axis=0, return_inverse=True)
+        query_array, query_index = np.unique(frame_array[:, [0, 2]], axis=0, return_inverse=True)
 
-        return Frame_array, query_array, query_index
+        return frame_array, query_array, query_index, firing_rate_array
 
 
 
