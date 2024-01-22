@@ -14,13 +14,14 @@ import time
 from io import StringIO
 import sys
 from torchinfo import summary
-import torch.distributed as dist
-from torch.nn.parallel import DistributedDataParallel
+import pandas as pd
+#import torch.distributed as dist
+#from torch.nn.parallel import DistributedDataParallel
 
-from datasets.simulated_target_rf import MultiTargetMatrixGenerator, CellClassLevel, ExperimentalLevel, IntegratedLevel
+from datasets.neuron_dataset import RetinalDataset, DataConstructor
+from datasets.neuron_dataset import train_val_split, load_mat_to_dataframe, load_data_from_excel, filter_and_merge_data
 from utils.utils import plot_and_save_3d_matrix_with_timestamp as plot3dmat
 from utils.utils import SeriesEncoder
-from datasets.simulated_dataset import MultiMatrixDataset
 from models.perceiver3d import RetinalPerceiverIO
 from models.cnn3d import RetinalPerceiverIOWithCNN
 from utils.training_procedure import Trainer, Evaluator, save_checkpoint, CheckpointLoader
@@ -66,24 +67,15 @@ def parse_args():
     parser.add_argument('--checkpoint_path', type=str, default='./checkpoints/model.pth',
                         help='Path to save load model checkpoint')
     parser.add_argument('--load_checkpoint', action='store_true', help='Flag to load the model from checkpoint')
-    # Target matrix specificity
-    parser.add_argument('--sf_surround_weight', type=float, default=0.5, help='Strength of spatial surround')
-    parser.add_argument('--tf_surround_weight', type=float, default=0.2, help='Strength of temporal surround')
-    parser.add_argument("--mean", nargs=2, type=float, default=(0.1, -0.2),
-                        help="Mean as two separate floats (e.g., 0.1 -0.2)")
-    parser.add_argument("--mean2", nargs=2, type=float, default=None,
-                        help="Mean as two separate floats (e.g., 0.1 -0.2)")
-    parser.add_argument("--cov", type=parse_covariance, default=np.array([[0.12, 0.05], [0.04, 0.03]]),
-                        help="Covariance matrix as four floats separated by commas (e.g., '0.12,0.05,0.04,0.03')")
-    parser.add_argument("--cov2", type=parse_covariance, default=None,
-                        help="Covariance matrix as four floats separated by commas (e.g., '0.12,0.05,0.04,0.03')")
-    parser.add_argument('--add_noise', action='store_true', help='Enable adding noise to the output label')
-    parser.add_argument('--noise_level', type=float, default=0.01, help='std of the noise, if added')
-    parser.add_argument('--use_relu', action='store_true', help='Rectify the output label')
-    parser.add_argument('--output_offset', type=float, default=0.01, help='add value to offset for rectification')
-    # Stimulus specificity
-    parser.add_argument('--stimulus_type', type=int, default=4, help='Stimulus type')
-    parser.add_argument('--stimulus_type_set', nargs='+', type=int, default=[1], help='Sets of stimulus type')
+    parser.add_argument('--use_path_cache', action='store_true', help='Flag to preload image addresses')
+    parser.add_argument('----use_image_cache', action='store_true', help='Flag to reuse image that is loaded in cache')
+    # Data specificity (neuro dataset)
+    parser.add_argument('--chunk_size', type=int, default=50, help='Number of continuous data point in one chunk')
+    parser.add_argument('--stride', type=int, default=1, help='Number of step to create data (10 ms / per step)')
+    parser.add_argument('--num_latent', type=int, default=16, help='Number of latent length (encoding)')
+    chunk_size = 50  # Example chunk size
+
+    stride = 2
     # Perceiver specificity
     parser.add_argument('--num_head', type=int, default=4, help='Number of heads in perceiver')
     parser.add_argument('--num_iter', type=int, default=1, help='Number of input reiteration')
@@ -115,6 +107,11 @@ def main():
     savemodel_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/CheckPoints/'
     saveprint_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Prints/'
     savefig_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Figures/'
+    image_root_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Stimulus/'
+    link_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Link/'
+    resp_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Response/'
+    exp_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/ExperimentSheets.xlsx'
+    neu_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/experiment_neuron_011724.mat'
     # Generate a timestamp
     timestr = datetime.now().strftime('%Y%m%d_%H%M%S')
 
@@ -133,125 +130,62 @@ def main():
     # If CUDA is available, continue with the rest of the script
     device = torch.device("cuda")
 
-    '''
-    if args.parallel_processing:
-        # Initialize the process group
-        dist.init_process_group(backend='nccl')
-        #rank = dist.get_rank()
+    experiment_session_table = load_data_from_excel(exp_dir, 'experiment_session')
+    experiment_session_table = experiment_session_table.drop('stimulus_type', axis=1)
 
-        # Set up the distributed environment
-        local_rank = torch.distributed.get_rank()
-        world_size = torch.distributed.get_world_size()
-    '''
+    experiment_info_table = load_data_from_excel(exp_dir, 'experiment_info')
+    experiment_info_table = experiment_info_table.drop(['species', 'sex', 'day', 'folder_name'], axis=1)
 
-    '''
-    # Create cells and cell classes
-    cell_class1 = CellClassLevel(sf_cov_center=np.array([[0.12, 0.05], [0.04, 0.03]]),
-                                 sf_cov_surround=np.array([[0.24, 0.05], [0.04, 0.06]]),
-                                 sf_weight_surround=0.5, num_cells=6, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
+    experiment_neuron_table = load_mat_to_dataframe(neu_dir, 'experiment_neuron_table', 'column_name')
+    experiment_neuron_table.iloc[:, 0:3] = experiment_neuron_table.iloc[:, 0:3].astype('int64')
+    # make sure the format is correct
+    experiment_neuron_table.fillna(-1, inplace=True)
+    experiment_neuron_table['experiment_id'] = experiment_neuron_table['experiment_id'].astype('int64')
+    experiment_neuron_table['session_id'] = experiment_neuron_table['session_id'].astype('int64')
+    experiment_neuron_table['neuron_id'] = experiment_neuron_table['neuron_id'].astype('int64')
+    experiment_neuron_table['quality'] = experiment_neuron_table['quality'].astype('float')
+    # make sure the neuron id is matching while indexing
+    experiment_neuron_table['neuron_id'] = experiment_neuron_table['neuron_id'] - 1
 
-    cell_class2 = CellClassLevel(sf_cov_center=np.array([[0.08, 0.03], [0.06, 0.16]]),
-                                 sf_cov_surround=np.array([[0.16, 0.03], [0.06, 0.32]]),
-                                 sf_weight_surround=0.3, num_cells=10, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
+    filtered_data = filter_and_merge_data(
+        experiment_session_table, experiment_neuron_table,
+        selected_experiment_ids=[0],
+        selected_stimulus_types=[1, 2],
+        excluded_session_table=None,
+        excluded_neuron_table=None
+    )
 
-    cell_class3 = CellClassLevel(sf_cov_center=np.array([[0.1, 0.01], [0.01, 0.1]]),
-                                 sf_cov_surround=np.array([[0.2, 0.01], [0.01, 0.2]]),
-                                 sf_weight_surround=0.5, num_cells=16, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
-
-    # Create experimental level with cell classes
-    experimental = ExperimentalLevel(tf_weight_surround=0.2, tf_sigma_center=0.05,
-                                     tf_sigma_surround=0.12, tf_mean_center=0.08,
-                                     tf_mean_surround=0.12, tf_weight_center=1,
-                                     tf_offset=0, cell_classes=[cell_class1, cell_class2])
-
-    # Create experimental level with cell classes
-    experimental2 = ExperimentalLevel(tf_weight_surround=0.3, tf_sigma_center=0.04,
-                                      tf_sigma_surround=0.10, tf_mean_center=0.07,
-                                      tf_mean_surround=0.10, tf_weight_center=1,
-                                      tf_offset=0, cell_classes=[cell_class3])
-
-    # Create integrated level with experimental levels
-    integrated_list = IntegratedLevel([experimental, experimental2])
-    '''
-
-    # Create cells and cell classes
-    cell_class1_layout1 = CellClassLevel(sf_cov_center=np.array([[0.12, 0.05], [0.04, 0.03]]),
-                                         sf_cov_surround=np.array([[0.24, 0.05], [0.04, 0.06]]),
-                                         sf_weight_surround=0.5, num_cells=6, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
-
-    cell_class1_layout2 = CellClassLevel(sf_cov_center=np.array([[0.12, 0.05], [0.04, 0.03]]),
-                                         sf_cov_surround=np.array([[0.24, 0.05], [0.04, 0.06]]),
-                                         sf_weight_surround=0.5, num_cells=8, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
-
-    cell_class1_layout3 = CellClassLevel(sf_cov_center=np.array([[0.12, 0.05], [0.04, 0.03]]),
-                                         sf_cov_surround=np.array([[0.24, 0.05], [0.04, 0.06]]),
-                                         sf_weight_surround=0.5, num_cells=7, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
-
-    cell_class2_layout1 = CellClassLevel(sf_cov_center=np.array([[0.08, 0.03], [0.06, 0.16]]),
-                                         sf_cov_surround=np.array([[0.16, 0.03], [0.06, 0.32]]),
-                                         sf_weight_surround=0.3, num_cells=8, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
-
-    cell_class2_layout2 = CellClassLevel(sf_cov_center=np.array([[0.08, 0.03], [0.06, 0.16]]),
-                                         sf_cov_surround=np.array([[0.16, 0.03], [0.06, 0.32]]),
-                                         sf_weight_surround=0.3, num_cells=10, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
-
-    cell_class3_layout1 = CellClassLevel(sf_cov_center=np.array([[0.1, 0.01], [0.01, 0.1]]),
-                                         sf_cov_surround=np.array([[0.2, 0.01], [0.01, 0.2]]),
-                                         sf_weight_surround=0.5, num_cells=16, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
-
-    cell_class3_layout2 = CellClassLevel(sf_cov_center=np.array([[0.1, 0.01], [0.01, 0.1]]),
-                                         sf_cov_surround=np.array([[0.2, 0.01], [0.01, 0.2]]),
-                                         sf_weight_surround=0.5, num_cells=14, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
-
-    # Create experimental level with cell classes
-    experimental = ExperimentalLevel(tf_weight_surround=0.2, tf_sigma_center=0.05,
-                                     tf_sigma_surround=0.12, tf_mean_center=0.08,
-                                     tf_mean_surround=0.12, tf_weight_center=1,
-                                     tf_offset=0, cell_classes=[cell_class1_layout1, cell_class2_layout1])
-
-    experimental2 = ExperimentalLevel(tf_weight_surround=0.3, tf_sigma_center=0.04,
-                                      tf_sigma_surround=0.10, tf_mean_center=0.07,
-                                      tf_mean_surround=0.10, tf_weight_center=1,
-                                      tf_offset=0, cell_classes=[cell_class1_layout2, cell_class2_layout2,
-                                                                 cell_class3_layout1])
-
-    experimental3 = ExperimentalLevel(tf_weight_surround=0.4, tf_sigma_center=0.03,
-                                      tf_sigma_surround=0.09, tf_mean_center=0.06,
-                                      tf_mean_surround=0.11, tf_weight_center=1,
-                                      tf_offset=0, cell_classes=[cell_class1_layout3, cell_class3_layout2])
-
-    # Create integrated level with experimental levels
-    integrated_list = IntegratedLevel([experimental, experimental2, experimental3])
-    # Generate param_list
-    param_list, series_ids = integrated_list.generate_combined_param_list()
+    # construct the array for dataset
+    data_constructor = DataConstructor(filtered_data, seq_len=args.input_depth, stride=args.stride, link_dir=link_dir,
+                                       resp_dir=resp_dir)
+    data_array, query_array, query_index, firing_rate_array = data_constructor.construct_data()
+    data_array = data_array.astype('int32')
+    query_array = query_array.astype('int32')
+    query_index = query_index.astype('int32')
+    firing_rate_array = firing_rate_array.astype('float32')
+    # construct the query array for query encoder
+    query_df = pd.DataFrame(query_array, columns=['experiment_id', 'neuron_id'])
+    query_array = pd.merge(query_df, experiment_info_table, on='experiment_id', how='left')
+    query_array = query_array[['experiment_id', 'species_id', 'sex_id', 'neuron_id']]
+    query_array = query_array.to_numpy()
 
     # Encode series_ids into query arrays
-    max_values = {'Experiment': 100, 'Type': 100, 'Cell': 10000}
-    lengths = {'Experiment': 6, 'Type': 6, 'Cell': 24}
-    shuffle_components = ['Cell']
+    max_values = {'Experiment': 1000, 'Species': 10, 'Sex': 3, 'Neuron'}
+    lengths = {'Experiment': 7, 'Species': 2, 'Sex': 2, 'Neuron':13}
+    shuffle_components = ['Neuron']
     query_encoder = SeriesEncoder(max_values, lengths, shuffle_components=shuffle_components)
-    query_array = query_encoder.encode(series_ids)
+    query_array = query_encoder.encode(query_array)
     logging.info(f'query_array size:{query_array.shape} \n')
-    # Use param_list in MultiTargetMatrixGenerator
-    multi_target_gen = MultiTargetMatrixGenerator(param_list)
-    target_matrix = multi_target_gen.create_3d_target_matrices(
-        input_height=args.input_height, input_width=args.input_width, input_depth=args.input_depth)
-
-    logging.info(f'target matrix: {target_matrix.shape}  \n')
-    # plot and save the target_matrix figure
-    plot3dmat(target_matrix[0, :, :, :], args.num_cols, savefig_dir, file_prefix='plot_3D_matrix')
-
-    # Initialize the dataset with the device
-    dataset = MultiMatrixDataset(target_matrix, length=args.total_length, device=device,
-                                 combination_set=args.stimulus_type_set, add_noise=args.add_noise,
-                                 noise_level=args.noise_level, use_relu=args.use_relu, output_offset=args.output_offset)
-
-    # Splitting the dataset into training and validation sets
-    train_length = int(0.8 * args.total_length)  # 80% for training
-    val_length = args.total_length - train_length  # 20% for validation
-
-    train_dataset, val_dataset = random_split(dataset, [train_length, val_length])
+    # get data spit with chucks
+    train_indices, val_indices = train_val_split(len(data_array), args.chunk_size)
+    # get dataset
+    train_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir, train_indices,
+                                   args.chunk_size, device='cuda', use_path_cache=args.use_path_cache,
+                                   use_image_cache=args.use_image_cache)
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
+    val_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir, val_indices,
+                                   args.chunk_size, device='cuda', use_path_cache=args.use_path_cache,
+                                   use_image_cache=args.use_image_cache)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
 
     check_loader = DataLoader(train_dataset, batch_size=2, shuffle=True)
@@ -342,9 +276,6 @@ def main():
             save_checkpoint(epoch, model, optimizer, args, training_losses, validation_losses,
                             os.path.join(savemodel_dir, checkpoint_filename))
 
-    if args.parallel_processing:
-        # Clean up
-        dist.destroy_process_group()
 
 
 if __name__ == '__main__':
