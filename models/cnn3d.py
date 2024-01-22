@@ -7,7 +7,8 @@ from utils.utils import add_gradient
 
 class RetinalCNN(nn.Module):
     def __init__(self, input_depth, input_height, input_width, output_size=1, hidden_size=128,
-                 device=None, conv3d_out_channels=10, conv2_out_channels=64):
+                 device=None, conv3d_out_channels=10, conv2_out_channels=64, conv2_1st_layer_kernel=4,
+                 conv2_2nd_layer_kernel=5):
         super().__init__()
         self.device = device if device is not None else torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.input_depth = input_depth
@@ -17,6 +18,8 @@ class RetinalCNN(nn.Module):
         self.hidden_size = hidden_size
         self.conv3d_out_channels = conv3d_out_channels
         self.conv2_out_channels = conv2_out_channels
+        self.conv2_1st_layer_kernel = conv2_1st_layer_kernel
+        self.conv2_2nd_layer_kernel = conv2_2nd_layer_kernel
 
         # 3D convolutional layer to handle depth
         self.conv3d = nn.Conv3d(in_channels=1, out_channels=self.conv3d_out_channels,
@@ -24,9 +27,9 @@ class RetinalCNN(nn.Module):
 
         # 2D Convolutional layers
         self.conv1 = nn.Conv2d(in_channels=self.conv3d_out_channels, out_channels=32,
-                               kernel_size=3, stride=1, padding=1).to(self.device)
-        self.conv2 = nn.Conv2d(in_channels=32, out_channels=self.conv2_out_channels, kernel_size=3, stride=1,
-                               padding=1).to(self.device)
+                               kernel_size=self.conv2_1st_layer_kernel, stride=1, padding=1).to(self.device)
+        self.conv2 = nn.Conv2d(in_channels=32, out_channels=self.conv2_out_channels,
+                               kernel_size=self.conv2_2nd_layer_kernel, stride=1, padding=1).to(self.device)
         self.pool = nn.MaxPool2d(2, 2).to(self.device)
 
         # Calculate the size of the flattened output after the last pooling layer

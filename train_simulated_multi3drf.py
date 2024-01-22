@@ -1,6 +1,5 @@
 import os
 
-
 os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:128'
 
 import argparse
@@ -26,6 +25,7 @@ from models.perceiver3d import RetinalPerceiverIO
 from models.cnn3d import RetinalPerceiverIOWithCNN
 from utils.training_procedure import Trainer, Evaluator, save_checkpoint, CheckpointLoader
 
+
 def parse_covariance(string):
     try:
         # Split the string into list of strings
@@ -39,7 +39,8 @@ def parse_covariance(string):
         cov_matrix = np.array(values).reshape(2, 2)
         return cov_matrix
     except:
-        raise argparse.ArgumentTypeError("Covariance matrix must be four floats separated by commas (e.g., '0.12,0.05,0.04,0.03')")
+        raise argparse.ArgumentTypeError(
+            "Covariance matrix must be four floats separated by commas (e.g., '0.12,0.05,0.04,0.03')")
 
 
 def parse_args():
@@ -57,18 +58,25 @@ def parse_args():
     parser.add_argument('--output_size', type=int, default=1, help='Number of neurons for prediction')
     parser.add_argument('--conv3d_out_channels', type=int, default=10, help='Number of temporal in CNN3D')
     parser.add_argument('--conv2_out_channels', type=int, default=64, help='Number of output in 2nd convolution layer')
+    parser.add_argument('--conv2_1st_layer_kernel', type=int, default=3,
+                        help='Size of kernel in 1st layer of 2d convolution layer')
+    parser.add_argument('--conv2_2nd_layer_kernel', type=int, default=3,
+                        help='Size of kernel in 2nd layer of 2d convolution layer')
     # Training procedure
     parser.add_argument('--epochs', type=int, default=100, help='Number of training epochs')
     parser.add_argument('--batch_size', type=int, default=64, help='Batch size for training')
     parser.add_argument('--learning_rate', type=float, default=0.001, help='Learning rate')
     parser.add_argument('--weight_decay', type=float, default=0.001, help='Weight decay')
-    parser.add_argument('--checkpoint_path', type=str, default='./checkpoints/model.pth', help='Path to save load model checkpoint')
+    parser.add_argument('--checkpoint_path', type=str, default='./checkpoints/model.pth',
+                        help='Path to save load model checkpoint')
     parser.add_argument('--load_checkpoint', action='store_true', help='Flag to load the model from checkpoint')
     # Target matrix specificity
     parser.add_argument('--sf_surround_weight', type=float, default=0.5, help='Strength of spatial surround')
     parser.add_argument('--tf_surround_weight', type=float, default=0.2, help='Strength of temporal surround')
-    parser.add_argument("--mean", nargs=2, type=float, default=(0.1, -0.2), help="Mean as two separate floats (e.g., 0.1 -0.2)")
-    parser.add_argument("--mean2", nargs=2, type=float, default=None, help="Mean as two separate floats (e.g., 0.1 -0.2)")
+    parser.add_argument("--mean", nargs=2, type=float, default=(0.1, -0.2),
+                        help="Mean as two separate floats (e.g., 0.1 -0.2)")
+    parser.add_argument("--mean2", nargs=2, type=float, default=None,
+                        help="Mean as two separate floats (e.g., 0.1 -0.2)")
     parser.add_argument("--cov", type=parse_covariance, default=np.array([[0.12, 0.05], [0.04, 0.03]]),
                         help="Covariance matrix as four floats separated by commas (e.g., '0.12,0.05,0.04,0.03')")
     parser.add_argument("--cov2", type=parse_covariance, default=None,
@@ -103,6 +111,7 @@ def parse_args():
     parser.add_argument('--num_cols', type=int, default=5, help='Number of columns in a figure')
 
     return parser.parse_args()
+
 
 def main():
     args = parse_args()
@@ -171,8 +180,8 @@ def main():
 
     # Create cells and cell classes
     cell_class1_layout1 = CellClassLevel(sf_cov_center=np.array([[0.12, 0.05], [0.04, 0.03]]),
-                                 sf_cov_surround=np.array([[0.24, 0.05], [0.04, 0.06]]),
-                                 sf_weight_surround=0.5, num_cells=6, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
+                                         sf_cov_surround=np.array([[0.24, 0.05], [0.04, 0.06]]),
+                                         sf_weight_surround=0.5, num_cells=6, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
 
     cell_class1_layout2 = CellClassLevel(sf_cov_center=np.array([[0.12, 0.05], [0.04, 0.03]]),
                                          sf_cov_surround=np.array([[0.24, 0.05], [0.04, 0.06]]),
@@ -183,16 +192,16 @@ def main():
                                          sf_weight_surround=0.5, num_cells=7, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
 
     cell_class2_layout1 = CellClassLevel(sf_cov_center=np.array([[0.08, 0.03], [0.06, 0.16]]),
-                                 sf_cov_surround=np.array([[0.16, 0.03], [0.06, 0.32]]),
-                                 sf_weight_surround=0.3, num_cells=8, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
+                                         sf_cov_surround=np.array([[0.16, 0.03], [0.06, 0.32]]),
+                                         sf_weight_surround=0.3, num_cells=8, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
 
     cell_class2_layout2 = CellClassLevel(sf_cov_center=np.array([[0.08, 0.03], [0.06, 0.16]]),
-                                 sf_cov_surround=np.array([[0.16, 0.03], [0.06, 0.32]]),
-                                 sf_weight_surround=0.3, num_cells=10, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
+                                         sf_cov_surround=np.array([[0.16, 0.03], [0.06, 0.32]]),
+                                         sf_weight_surround=0.3, num_cells=10, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
 
     cell_class3_layout1 = CellClassLevel(sf_cov_center=np.array([[0.1, 0.01], [0.01, 0.1]]),
-                                 sf_cov_surround=np.array([[0.2, 0.01], [0.01, 0.2]]),
-                                 sf_weight_surround=0.5, num_cells=16, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
+                                         sf_cov_surround=np.array([[0.2, 0.01], [0.01, 0.2]]),
+                                         sf_weight_surround=0.5, num_cells=16, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
 
     cell_class3_layout2 = CellClassLevel(sf_cov_center=np.array([[0.1, 0.01], [0.01, 0.1]]),
                                          sf_cov_surround=np.array([[0.2, 0.01], [0.01, 0.2]]),
@@ -258,30 +267,41 @@ def main():
     logging.info(f'query vector: {queryvec.shape} \n')
     # Model, Loss, and Optimizer
     if args.model == 'RetinalPerceiver':
-        model = RetinalPerceiverIO(input_dim=args.input_channels, latent_dim=args.hidden_size, output_dim=args.output_size,
-                                   num_latents=args.num_latent, heads=args.num_head, depth=args.num_iter, query_dim=query_array.shape[1],
+        model = RetinalPerceiverIO(input_dim=args.input_channels, latent_dim=args.hidden_size,
+                                   output_dim=args.output_size,
+                                   num_latents=args.num_latent, heads=args.num_head, depth=args.num_iter,
+                                   query_dim=query_array.shape[1],
                                    depth_dim=args.input_depth, height=args.input_height, width=args.input_width,
-                                   num_bands=args.num_band, device=device, use_layer_norm=args.use_layer_norm, kernel_size=args.kernel_size,
-                                   stride=args.stride, concatenate_positional_encoding=args.concatenate_positional_encoding,
+                                   num_bands=args.num_band, device=device, use_layer_norm=args.use_layer_norm,
+                                   kernel_size=args.kernel_size,
+                                   stride=args.stride,
+                                   concatenate_positional_encoding=args.concatenate_positional_encoding,
                                    use_phase_shift=args.use_phase_shift, use_dense_frequency=args.use_dense_frequency)
     elif args.model == 'RetinalCNN':
         model = RetinalPerceiverIOWithCNN(input_depth=args.input_depth, input_height=args.input_height,
-                                    input_width=args.input_width, output_dim=args.output_size, latent_dim=args.hidden_size,
-                                    query_dim=query_array.shape[1], num_latents=args.num_latent, heads=args.num_head,
-                                    use_layer_norm=args.use_layer_norm, device=device, num_bands=args.num_band,
-                                    conv3d_out_channels=args.conv3d_out_channels, conv2_out_channels=args.conv2_out_channels)
+                                          input_width=args.input_width, output_dim=args.output_size,
+                                          latent_dim=args.hidden_size,
+                                          query_dim=query_array.shape[1], num_latents=args.num_latent,
+                                          heads=args.num_head,
+                                          use_layer_norm=args.use_layer_norm, device=device, num_bands=args.num_band,
+                                          conv3d_out_channels=args.conv3d_out_channels,
+                                          conv2_out_channels=args.conv2_out_channels,
+                                          conv2_1st_layer_kernel=args.conv2_1st_layer_kernel,
+                                          conv2_2nd_layer_kernel=args.conv2_2nd_layer_kernel,
+                                          )
 
     if args.parallel_processing:
         model = nn.DataParallel(model)
-        #model = DistributedDataParallel(model, device_ids=[local_rank])
+        # model = DistributedDataParallel(model, device_ids=[local_rank])
         logging.info(f'Initial parallel processing on on {torch.cuda.device_count()} \n')
 
     logging.info(f'Model: {args.model} \n')
     old_stdout = sys.stdout
     sys.stdout = buffer = StringIO()
 
-    summary(model, input_data=(torch.rand(1, args.input_channels, args.input_depth, args.input_height, args.input_width),
-                               torch.rand(1, 1, query_array.shape[1])))
+    summary(model,
+            input_data=(torch.rand(1, args.input_channels, args.input_depth, args.input_height, args.input_width),
+                        torch.rand(1, 1, query_array.shape[1])))
 
     sys.stdout = old_stdout
     logging.info(buffer.getvalue())
@@ -309,7 +329,7 @@ def main():
         avg_train_loss = trainer.train_one_epoch(train_loader, epoch, query_array)
         training_losses.append(avg_train_loss)
 
-        #torch.cuda.empty_cache()
+        # torch.cuda.empty_cache()
         avg_val_loss = evaluator.evaluate(val_loader, query_array)
         validation_losses.append(avg_val_loss)
 
@@ -317,12 +337,13 @@ def main():
         if (epoch + 1) % 5 == 0:
             elapsed_time = time.time() - start_time
             # Log the epoch and elapsed time, and on a new indented line, log the losses
-            logging.info(f"{filename_fixed} Epoch [{epoch + 1}/{args.epochs}], Elapsed time: {elapsed_time:.2f} seconds \n"
-                         f"\tTraining Loss: {avg_train_loss:.4f}, Validation Loss: {avg_val_loss:.4f} \n")
+            logging.info(
+                f"{filename_fixed} Epoch [{epoch + 1}/{args.epochs}], Elapsed time: {elapsed_time:.2f} seconds \n"
+                f"\tTraining Loss: {avg_train_loss:.4f}, Validation Loss: {avg_val_loss:.4f} \n")
 
         # Save checkpoint
         if (epoch + 1) % 10 == 0:  # Example: Save every 10 epochs
-            checkpoint_filename = f'{filename_fixed}_checkpoint_epoch_{epoch+1}.pth'
+            checkpoint_filename = f'{filename_fixed}_checkpoint_epoch_{epoch + 1}.pth'
             logging.info(f"Allocated memory: {torch.cuda.memory_allocated() / 1e6} MB \n"
                          f"Max memory allocated: {torch.cuda.max_memory_allocated() / 1e6} MB \n")
             save_checkpoint(epoch, model, optimizer, args, training_losses, validation_losses,
@@ -331,6 +352,7 @@ def main():
     if args.parallel_processing:
         # Clean up
         dist.destroy_process_group()
+
 
 if __name__ == '__main__':
     main()

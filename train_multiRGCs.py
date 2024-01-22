@@ -53,12 +53,15 @@ def parse_args():
     parser.add_argument('--input_height', type=int, default=30, help='Heights of the input')
     parser.add_argument('--input_width', type=int, default=40, help='Width of the input')
     parser.add_argument('--input_channels', type=int, default=1, help='Number of color channel')
-    parser.add_argument('--total_length', type=int, default=1000, help='Number of simulated data')
     parser.add_argument('--train_proportion', type=float, default=0.8, help='Proportion for training data split')
     parser.add_argument('--hidden_size', type=int, default=128, help='Number of hidden nodes (information bottleneck)')
     parser.add_argument('--output_size', type=int, default=1, help='Number of neurons for prediction')
     parser.add_argument('--conv3d_out_channels', type=int, default=10, help='Number of temporal in CNN3D')
     parser.add_argument('--conv2_out_channels', type=int, default=64, help='Number of output in 2nd convolution layer')
+    parser.add_argument('--conv2_1st_layer_kernel', type=int, default=4,
+                        help='Size of kernel in 1st layer of 2d convolution layer')
+    parser.add_argument('--conv2_2nd_layer_kernel', type=int, default=5,
+                        help='Size of kernel in 2nd layer of 2d convolution layer')
     # Training procedure
     parser.add_argument('--epochs', type=int, default=100, help='Number of training epochs')
     parser.add_argument('--batch_size', type=int, default=64, help='Batch size for training')
@@ -179,7 +182,7 @@ def main():
     query_array = query_encoder.encode(query_array)
     logging.info(f'query_array size:{query_array.shape} \n')
     # get data spit with chucks
-    train_indices, val_indices = train_val_split(len(data_array), args.chunk_size)
+    train_indices, val_indices = train_val_split(len(data_array), args.chunk_size, test_size=1-args.train_proportion)
     # get dataset
     train_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir, train_indices,
                                    args.chunk_size, device='cuda', use_path_cache=args.use_path_cache,
@@ -219,7 +222,10 @@ def main():
                                           heads=args.num_head,
                                           use_layer_norm=args.use_layer_norm, device=device, num_bands=args.num_band,
                                           conv3d_out_channels=args.conv3d_out_channels,
-                                          conv2_out_channels=args.conv2_out_channels)
+                                          conv2_out_channels=args.conv2_out_channels,
+                                          conv2_1st_layer_kernel=args.conv2_1st_layer_kernel,
+                                          conv2_2nd_layer_kernel=args.conv2_2nd_layer_kernel,
+                                          )
 
     if args.parallel_processing:
         model = nn.DataParallel(model)
