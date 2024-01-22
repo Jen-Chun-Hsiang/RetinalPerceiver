@@ -15,8 +15,8 @@ from io import StringIO
 import sys
 from torchinfo import summary
 import pandas as pd
-#import torch.distributed as dist
-#from torch.nn.parallel import DistributedDataParallel
+# import torch.distributed as dist
+# from torch.nn.parallel import DistributedDataParallel
 
 from datasets.neuron_dataset import RetinalDataset, DataConstructor
 from datasets.neuron_dataset import train_val_split, load_mat_to_dataframe, load_data_from_excel, filter_and_merge_data
@@ -167,11 +167,13 @@ def main():
     query_df = pd.DataFrame(query_array, columns=['experiment_id', 'neuron_id'])
     query_array = pd.merge(query_df, experiment_info_table, on='experiment_id', how='left')
     query_array = query_array[['experiment_id', 'species_id', 'sex_id', 'neuron_id']]
+    query_array['neuron_unique_id'] = query_array['experiment_id'] * 10000 + query_array['neuron_id']
+    query_array = query_array.drop(['neuron_id'], axis=1)
     query_array = query_array.to_numpy()
 
     # Encode series_ids into query arrays
-    max_values = {'Experiment': 1000, 'Species': 10, 'Sex': 3, 'Neuron'}
-    lengths = {'Experiment': 7, 'Species': 2, 'Sex': 2, 'Neuron':13}
+    max_values = {'Experiment': 1000, 'Species': 9, 'Sex': 3, 'Neuron': 10000000}
+    lengths = {'Experiment': 7, 'Species': 2, 'Sex': 1, 'Neuron': 15}
     shuffle_components = ['Neuron']
     query_encoder = SeriesEncoder(max_values, lengths, shuffle_components=shuffle_components)
     query_array = query_encoder.encode(query_array)
@@ -184,8 +186,8 @@ def main():
                                    use_image_cache=args.use_image_cache)
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
     val_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir, val_indices,
-                                   args.chunk_size, device='cuda', use_path_cache=args.use_path_cache,
-                                   use_image_cache=args.use_image_cache)
+                                 args.chunk_size, device='cuda', use_path_cache=args.use_path_cache,
+                                 use_image_cache=args.use_image_cache)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
 
     check_loader = DataLoader(train_dataset, batch_size=2, shuffle=True)
@@ -195,6 +197,8 @@ def main():
     queryvec = queryvec[index]
     logging.info(f'movie clip: {movie.shape} labels:{labels} index:{index} \n')
     logging.info(f'query vector: {queryvec.shape} \n')
+    # plot and save the target_matrix figure
+    plot3dmat(movie[0, :, :, :], args.num_cols, savefig_dir, file_prefix='plot_3D_matrix')
     # Model, Loss, and Optimizer
     if args.model == 'RetinalPerceiver':
         model = RetinalPerceiverIO(input_dim=args.input_channels, latent_dim=args.hidden_size,
@@ -275,7 +279,6 @@ def main():
                          f"Max memory allocated: {torch.cuda.max_memory_allocated() / 1e6} MB \n")
             save_checkpoint(epoch, model, optimizer, args, training_losses, validation_losses,
                             os.path.join(savemodel_dir, checkpoint_filename))
-
 
 
 if __name__ == '__main__':
