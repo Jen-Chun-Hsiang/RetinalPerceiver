@@ -1,7 +1,12 @@
 import torch
+import numpy as np
 from datasets.neuron_dataset import RetinalDataset, DataConstructor
 from datasets.neuron_dataset import train_val_split, load_mat_to_dataframe, load_data_from_excel, filter_and_merge_data
 from torch.utils.data import DataLoader
+
+import os
+from datetime import datetime
+import logging
 
 chunk_size = 50  # Example chunk size
 seq_len = 50
@@ -11,6 +16,19 @@ link_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeData
 resp_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Response/'
 exp_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/ExperimentSheets.xlsx'
 neu_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/experiment_neuron_011724.mat'
+saveprint_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Prints/'
+filename_fixed = 'test_neuron_dataset'
+
+# Generate a timestamp
+timestr = datetime.now().strftime('%Y%m%d_%H%M%S')
+
+# Construct the full path for the log file
+log_filename = os.path.join(saveprint_dir, f'{filename_fixed}_training_log_{timestr}.txt')
+# Setup logging
+logging.basicConfig(filename=log_filename,
+                    level=logging.INFO,
+                    format='%(asctime)s %(levelname)s:%(message)s')
+
 
 experiment_session_table = load_data_from_excel(exp_dir, 'experiment_session')
 experiment_session_table = experiment_session_table.drop('stimulus_type', axis=1)
@@ -59,7 +77,4 @@ check_loader = DataLoader(train_dataset, batch_size=2, shuffle=True)
 dataiter = iter(check_loader)
 movie, labels, index = next(dataiter)
 
-print(f'movie shape: {movie.shape}')
-print(f'labels shape: {labels.shape}')
-print(f'index shape: {index.shape}')
-print(index)
+logging.info(f'movie shape: {movie.shape} labels shape:{labels.shape} index shape:{index.shape} \n')
