@@ -197,7 +197,7 @@ def main():
     queryvec = queryvec[index]
     logging.info(f'query vector: {queryvec.shape} \n')
     # plot and save the target_matrix figure
-    plot3dmat(movie[0, :, :, :], args.num_cols, savefig_dir, file_prefix='plot_3D_matrix')
+    plot3dmat(movie[0, 0, :, :, :].squeeze(), args.num_cols, savefig_dir, file_prefix='plot_3D_matrix')
     # Model, Loss, and Optimizer
     if args.model == 'RetinalPerceiver':
         model = RetinalPerceiverIO(input_dim=args.input_channels, latent_dim=args.hidden_size,
