@@ -396,6 +396,7 @@ class RetinalPerceiverIO(nn.Module):
 
     def forward(self, input_array, query_array):
         query_array = query_array.to(self.device).repeat(1, self.num_latents, 1)
+        query_array = add_gradient(query_array, 1)
         input_array = input_array.to(self.device)
 
         # Convert input array to patches
