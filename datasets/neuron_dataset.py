@@ -65,6 +65,7 @@ class RetinalDataset(Dataset):
         # Load and stack images for the selected data point
         images = [self.load_image(experiment_id, session_id, frame_id) for frame_id in frame_ids]
         images_3d = torch.stack(images, dim=0)
+        images_3d = images_3d.unsqueeze(0)
 
         return images_3d, firing_rate, query_id
 
