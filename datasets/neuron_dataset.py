@@ -6,6 +6,8 @@ import os
 import random
 import pandas as pd
 from scipy.io import loadmat
+#from functools import lru_cache
+from collections import OrderedDict
 
 
 def precompute_image_paths(data_array, root_dir):
@@ -25,7 +27,21 @@ def precompute_image_paths(data_array, root_dir):
 
 
 class RetinalDataset(Dataset):
-    def __init__(self, data_array, query_series, firing_rate_array, image_root_dir, chunk_indices, chunk_size, device='cuda', use_path_cache=True, use_image_cache=True):
+    def __init__(self, data_array, query_series, firing_rate_array, image_root_dir, chunk_indices, chunk_size,
+                 device='cuda', cache_size=100):
+        """
+        Initializes the RetinalDataset.
+
+        Parameters:
+        - data_array: Information about each data point (experiment ID, session ID, neuron ID, frame IDs).
+        - query_series: Array containing query IDs.
+        - firing_rate_array: Array containing the firing rates corresponding to each data point.
+        - image_root_dir: Root directory where images are stored.
+        - chunk_indices: Indices to define chunks of data for processing.
+        - chunk_size: Size of each chunk.
+        - device: The device (CPU/GPU) where tensors will be allocated.
+        - cache_size: The maximum number of images to store in the cache.
+        """
         self.data_array = data_array
         self.query_series = query_series
         self.firing_rate_array = firing_rate_array
@@ -33,18 +49,8 @@ class RetinalDataset(Dataset):
         self.chunk_indices = chunk_indices
         self.chunk_size = chunk_size
         self.device = device
-        self.use_path_cache = use_path_cache
-        self.use_image_cache = use_image_cache
-
-        if self.use_path_cache:
-            self.image_paths = precompute_image_paths(data_array, image_root_dir)
-        else:
-            self.image_paths = None
-
-        if self.use_image_cache:
-            self.image_tensor_cache = {}
-        else:
-            self.image_tensor_cache = None
+        self.cache_size = cache_size
+        self.image_tensor_cache = OrderedDict()
 
         assert len(data_array) == len(query_series), "data_array and query_series must be the same length"
 
@@ -52,6 +58,17 @@ class RetinalDataset(Dataset):
         return len(self.chunk_indices)
 
     def __getitem__(self, idx):
+        """
+         Retrieves a chunk of data by index.
+
+         Parameters:
+         - idx: Index of the chunk.
+
+         Returns:
+         - images_3d: A tensor containing stacked images for the selected data point.
+         - firing_rate: The firing rate associated with the selected data point.
+         - query_id: The query ID associated with the selected data point.
+         """
         # Determine the range of the chunk
         start_idx = self.chunk_indices[idx]
         end_idx = min(start_idx + self.chunk_size, len(self.data_array))
@@ -64,33 +81,37 @@ class RetinalDataset(Dataset):
 
         # Load and stack images for the selected data point
         images = [self.load_image(experiment_id, session_id, frame_id) for frame_id in frame_ids]
-        images_3d = torch.stack(images, dim=0)
-        images_3d = images_3d.unsqueeze(0)
+        images_3d = torch.stack(images, dim=0).unsqueeze(0)  # Adding an extra dimension to simulate batch size
 
-        return images_3d, firing_rate, query_id
+        return images_3d.to(self.device), firing_rate, query_id
 
     def load_image(self, experiment_id, session_id, frame_id):
         key = (experiment_id, session_id, frame_id)
 
-        if self.use_image_cache and key in self.image_tensor_cache:
+        # Check if the image is in the cache
+        if key in self.image_tensor_cache:
+            # Move the item to the end of the cache to mark it as recently used
+            self.image_tensor_cache.move_to_end(key)
             return self.image_tensor_cache[key]
 
-        if self.use_path_cache:
-            image_path = self.image_paths[key]
-        else:
-            image_path = os.path.join(self.image_root_dir,
-                                      f"experiment_{experiment_id}",
-                                      f"session_{session_id}",
-                                      f"frame_{frame_id}.png")
-
+        # If not in cache, load the image
+        image_path = self.get_image_path(experiment_id, session_id, frame_id)
         image = Image.open(image_path)
         image_tensor = torch.from_numpy(np.array(image)).float().to(self.device)
         image_tensor = (image_tensor / 255.0) * 2.0 - 1.0  # Normalize to [-1, 1]
 
-        if self.use_image_cache:
-            self.image_tensor_cache[key] = image_tensor
+        # Add to cache and enforce cache size limit
+        self.image_tensor_cache[key] = image_tensor
+        if len(self.image_tensor_cache) > self.cache_size:
+            self.image_tensor_cache.popitem(last=False)  # Remove the oldest item
 
         return image_tensor
+
+    def get_image_path(self, experiment_id, session_id, frame_id):
+        return os.path.join(self.image_root_dir,
+                            f"experiment_{experiment_id}",
+                            f"session_{session_id}",
+                            f"frame_{frame_id}.png")
 
 
 def train_val_split(data_length, chunk_size, test_size=0.2):

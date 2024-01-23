@@ -70,8 +70,7 @@ def parse_args():
     parser.add_argument('--checkpoint_path', type=str, default='./checkpoints/model.pth',
                         help='Path to save load model checkpoint')
     parser.add_argument('--load_checkpoint', action='store_true', help='Flag to load the model from checkpoint')
-    parser.add_argument('--use_path_cache', action='store_true', help='Flag to preload image addresses')
-    parser.add_argument('----use_image_cache', action='store_true', help='Flag to reuse image that is loaded in cache')
+    parser.add_argument('--cache_size', type=int, default=100, help='Maximum number of 3d tensor loaded in the memory')
     # Data specificity (neuro dataset)
     parser.add_argument('--chunk_size', type=int, default=50, help='Number of continuous data point in one chunk')
     parser.add_argument('--data_stride', type=int, default=2, help='Number of step to create data (10 ms / per step)')
@@ -181,12 +180,10 @@ def main():
     train_indices, val_indices = train_val_split(len(data_array), args.chunk_size, test_size=1-args.train_proportion)
     # get dataset
     train_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir, train_indices,
-                                   args.chunk_size, device='cuda', use_path_cache=args.use_path_cache,
-                                   use_image_cache=args.use_image_cache)
+                                   args.chunk_size, device='cuda', cache_size=args.cache_size)
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
     val_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir, val_indices,
-                                 args.chunk_size, device='cuda', use_path_cache=args.use_path_cache,
-                                 use_image_cache=args.use_image_cache)
+                                 args.chunk_size, device='cuda', cache_size=args.cache_size)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
 
     check_loader = DataLoader(train_dataset, batch_size=2, shuffle=True)
