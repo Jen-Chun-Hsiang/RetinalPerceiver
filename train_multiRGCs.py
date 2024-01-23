@@ -127,6 +127,9 @@ def main():
 
     # If CUDA is available, continue with the rest of the script
     device = torch.device("cuda")
+    num_workers = os.cpu_count()
+    logging.info(f'Number of workers: {num_workers} \n')
+    logging.info(f'CUDA counts: {torch.cuda.device_count} \n')
 
     experiment_session_table = load_data_from_excel(exp_dir, 'experiment_session')
     experiment_session_table = experiment_session_table.drop('stimulus_type', axis=1)
@@ -181,10 +184,12 @@ def main():
     # get dataset
     train_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir, train_indices,
                                    args.chunk_size, device='cuda', cache_size=args.cache_size)
-    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
+    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=num_workers,
+                              pin_memory=True)
     val_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir, val_indices,
                                  args.chunk_size, device='cuda', cache_size=args.cache_size)
-    val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
+    val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=num_workers,
+                            pin_memory=True)
 
     check_loader = DataLoader(train_dataset, batch_size=2, shuffle=True)
     dataiter = iter(check_loader)
@@ -206,7 +211,7 @@ def main():
                                    kernel_size=args.kernel_size,
                                    stride=args.stride,
                                    concatenate_positional_encoding=args.concatenate_positional_encoding,
-                                   use_phase_shift=args.use_phase_shift, use_dense_frequency=args.use_dense_frequency)
+                                   use_phase_shift=args.use_phase_shift, use_dense_frequency=args.use_dense_frequency).to(device)
     elif args.model == 'RetinalCNN':
         model = RetinalPerceiverIOWithCNN(input_depth=args.input_depth, input_height=args.input_height,
                                           input_width=args.input_width, output_dim=args.output_size,
@@ -218,7 +223,7 @@ def main():
                                           conv2_out_channels=args.conv2_out_channels,
                                           conv2_1st_layer_kernel=args.conv2_1st_layer_kernel,
                                           conv2_2nd_layer_kernel=args.conv2_2nd_layer_kernel,
-                                          )
+                                          ).to(device)
 
     if args.parallel_processing:
         model = nn.DataParallel(model)
