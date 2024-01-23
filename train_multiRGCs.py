@@ -74,11 +74,7 @@ def parse_args():
     parser.add_argument('----use_image_cache', action='store_true', help='Flag to reuse image that is loaded in cache')
     # Data specificity (neuro dataset)
     parser.add_argument('--chunk_size', type=int, default=50, help='Number of continuous data point in one chunk')
-    parser.add_argument('--stride', type=int, default=1, help='Number of step to create data (10 ms / per step)')
-    parser.add_argument('--num_latent', type=int, default=16, help='Number of latent length (encoding)')
-    chunk_size = 50  # Example chunk size
-
-    stride = 2
+    parser.add_argument('--stride', type=int, default=2, help='Number of step to create data (10 ms / per step)')
     # Perceiver specificity
     parser.add_argument('--num_head', type=int, default=4, help='Number of heads in perceiver')
     parser.add_argument('--num_iter', type=int, default=1, help='Number of input reiteration')
