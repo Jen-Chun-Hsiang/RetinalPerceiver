@@ -74,7 +74,7 @@ def parse_args():
     parser.add_argument('----use_image_cache', action='store_true', help='Flag to reuse image that is loaded in cache')
     # Data specificity (neuro dataset)
     parser.add_argument('--chunk_size', type=int, default=50, help='Number of continuous data point in one chunk')
-    parser.add_argument('--stride', type=int, default=2, help='Number of step to create data (10 ms / per step)')
+    parser.add_argument('--data_stride', type=int, default=2, help='Number of step to create data (10 ms / per step)')
     # Perceiver specificity
     parser.add_argument('--num_head', type=int, default=4, help='Number of heads in perceiver')
     parser.add_argument('--num_iter', type=int, default=1, help='Number of input reiteration')
@@ -155,8 +155,8 @@ def main():
     )
 
     # construct the array for dataset
-    data_constructor = DataConstructor(filtered_data, seq_len=args.input_depth, stride=args.stride, link_dir=link_dir,
-                                       resp_dir=resp_dir)
+    data_constructor = DataConstructor(filtered_data, seq_len=args.input_depth, stride=args.data_stride,
+                                       link_dir=link_dir, resp_dir=resp_dir)
     data_array, query_array, query_index, firing_rate_array = data_constructor.construct_data()
     data_array = data_array.astype('int32')
     query_array = query_array.astype('int32')
