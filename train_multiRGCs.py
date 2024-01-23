@@ -158,9 +158,9 @@ def main():
     data_constructor = DataConstructor(filtered_data, seq_len=args.input_depth, stride=args.data_stride,
                                        link_dir=link_dir, resp_dir=resp_dir)
     data_array, query_array, query_index, firing_rate_array = data_constructor.construct_data()
-    data_array = data_array.astype('int32')
-    query_array = query_array.astype('int32')
-    query_index = query_index.astype('int32')
+    data_array = data_array.astype('int64')
+    query_array = query_array.astype('int64')
+    query_index = query_index.astype('int64')
     firing_rate_array = firing_rate_array.astype('float32')
     # construct the query array for query encoder
     query_df = pd.DataFrame(query_array, columns=['experiment_id', 'neuron_id'])
