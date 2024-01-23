@@ -8,6 +8,7 @@ import pandas as pd
 from scipy.io import loadmat
 #from functools import lru_cache
 from collections import OrderedDict
+import threading
 
 
 def precompute_image_paths(data_array, root_dir):
@@ -51,6 +52,7 @@ class RetinalDataset(Dataset):
         self.device = device
         self.cache_size = cache_size
         self.image_tensor_cache = OrderedDict()
+        self.cache_lock = threading.Lock()  # Create a lock for the cache
 
         assert len(data_array) == len(query_series), "data_array and query_series must be the same length"
 
@@ -88,11 +90,13 @@ class RetinalDataset(Dataset):
     def load_image(self, experiment_id, session_id, frame_id):
         key = (experiment_id, session_id, frame_id)
 
-        # Check if the image is in the cache
-        if key in self.image_tensor_cache:
-            # Move the item to the end of the cache to mark it as recently used
-            self.image_tensor_cache.move_to_end(key)
-            return self.image_tensor_cache[key]
+        # Synchronized access to the cache
+        with self.cache_lock:
+            # Check if the image is in the cache
+            if key in self.image_tensor_cache:
+                # Move the item to the end of the cache to mark it as recently used
+                self.image_tensor_cache.move_to_end(key)
+                return self.image_tensor_cache[key]
 
         # If not in cache, load the image
         image_path = self.get_image_path(experiment_id, session_id, frame_id)
@@ -100,10 +104,12 @@ class RetinalDataset(Dataset):
         image_tensor = torch.from_numpy(np.array(image)).float().to(self.device)
         image_tensor = (image_tensor / 255.0) * 2.0 - 1.0  # Normalize to [-1, 1]
 
-        # Add to cache and enforce cache size limit
-        self.image_tensor_cache[key] = image_tensor
-        if len(self.image_tensor_cache) > self.cache_size:
-            self.image_tensor_cache.popitem(last=False)  # Remove the oldest item
+        # Synchronized cache update
+        with self.cache_lock:
+            # Add to cache and enforce cache size limit
+            self.image_tensor_cache[key] = image_tensor
+            if len(self.image_tensor_cache) > self.cache_size:
+                self.image_tensor_cache.popitem(last=False)  # Remove the oldest item
 
         return image_tensor
 
