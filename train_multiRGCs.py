@@ -192,9 +192,9 @@ def main():
     check_loader = DataLoader(train_dataset, batch_size=2, shuffle=True)
     dataiter = iter(check_loader)
     movie, labels, index = next(dataiter)
+    logging.info(f'movie clip: {movie.shape} labels:{labels} index:{index} \n')
     queryvec = torch.from_numpy(query_array).unsqueeze(1)
     queryvec = queryvec[index]
-    logging.info(f'movie clip: {movie.shape} labels:{labels} index:{index} \n')
     logging.info(f'query vector: {queryvec.shape} \n')
     # plot and save the target_matrix figure
     plot3dmat(movie[0, :, :, :], args.num_cols, savefig_dir, file_prefix='plot_3D_matrix')

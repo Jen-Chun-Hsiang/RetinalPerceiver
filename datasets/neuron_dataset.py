@@ -238,7 +238,6 @@ class DataConstructor:
 
         for (experiment_id, session_id), group in grouped:
             neurons = group['neuron_id'].unique()
-            print(f'experiment_id_{experiment_id}, session_{session_id}')
             file_path = os.path.join(self.link_dir, f'experiment_{experiment_id}/session_{session_id}.mat')
             time_id = load_mat_to_numpy(file_path, 'time_id')
             video_frame_id = load_mat_to_numpy(file_path, 'video_frame_id')
