@@ -26,10 +26,10 @@ def weightedsum_image_plot(output_image_np):
 def main():
     # experiment specific parameters
 
-    #stimulus_type = '200ktl123ss3e256nl64hs1cpe2022kn1st16ag'
-    stimulus_type = 'cnn200ktl123ss3e256nl64hs2ag1ns012relu'
+    stimulus_type = '100ktl123ss2e3c256nl64hs0ln1cpe3kn1st0ps8ag1df'
+    #stimulus_type = 'cnn100ktl123ss2e3c256nl64hs0ln2ag1ns012relu'
     is_cross_level = False
-    epoch_end = 400
+    epoch_end = 200
     is_full_figure_draw = True
     checkpoint_filename = f'PerceiverIO_20tp{stimulus_type}_checkpoint_epoch_{epoch_end}'
 
