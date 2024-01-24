@@ -26,7 +26,7 @@ def weightedsum_image_plot(output_image_np):
 def main():
     # experiment specific parameters
 
-    stimulus_type = '100ktl123ss2e3c256nl64hs0ln1cpe3kn1st0ps8ag1df'
+    stimulus_type = '200ktl2011ks111sd'
     #stimulus_type = 'cnn100ktl123ss2e3c256nl64hs0ln2ag1ns012relu'
     is_cross_level = False
     epoch_end = 200
