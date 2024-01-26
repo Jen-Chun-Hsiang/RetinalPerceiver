@@ -18,6 +18,7 @@ resp_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeData
 exp_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/ExperimentSheets.xlsx'
 neu_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/experiment_neuron_011724.mat'
 saveprint_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Prints/'
+savetime_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Auxiliary'
 filename_fixed = 'test_neuron_dataset'
 
 # Generate a timestamp
@@ -79,3 +80,17 @@ dataiter = iter(check_loader)
 movie, labels, index = next(dataiter)
 
 logging.info(f'movie shape: {movie.shape} labels shape:{labels.shape} index shape:{index.shape} \n')
+
+timer = Timer()
+
+@timer
+def load_one_time():
+    for movie, labels, index in check_loader:
+        break  # Break after the first batch to simulate one load operation
+
+for i in range(1000):
+    load_one_time()
+
+# Save to .mat file
+file_name = 'timer_data.mat'
+timer.save_to_mat(os.path.join(savetime_dir, file_name))
