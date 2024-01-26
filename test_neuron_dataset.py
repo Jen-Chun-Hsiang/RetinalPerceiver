@@ -3,6 +3,7 @@ import numpy as np
 from datasets.neuron_dataset import RetinalDataset, DataConstructor
 from datasets.neuron_dataset import train_val_split, load_mat_to_dataframe, load_data_from_excel, filter_and_merge_data
 from torch.utils.data import DataLoader
+from utils.efficiency import Timer
 import pandas as pd
 
 import os
