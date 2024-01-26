@@ -72,8 +72,8 @@ query_array = query_array.to_numpy()
 # get data spit with chucks
 train_indices, val_indices = train_val_split(len(data_array), chunk_size)
 # get dataset
-train_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir, train_indices, chunk_size, device='cuda', use_path_cache = False, use_image_cache=True)
-
+train_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir, train_indices, chunk_size,
+                               device='cuda', cache_size=80)
 
 check_loader = DataLoader(train_dataset, batch_size=2, shuffle=True)
 dataiter = iter(check_loader)
