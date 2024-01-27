@@ -35,7 +35,7 @@ class Timer:
 
     def save_to_mat(self, filename):
         mat_data = {
-            'function_names': np.array(self.function_names, dtype=np.object),
+            'function_names': np.array(self.function_names, dtype=object),
             'execution_times': np.array(self.execution_times)
         }
         savemat(filename, mat_data)
