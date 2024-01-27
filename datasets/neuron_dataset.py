@@ -57,8 +57,9 @@ class RetinalDataset(Dataset):
         assert len(data_array) == len(query_series), "data_array and query_series must be the same length"
 
         # Dummy load to get image size
-        _, _, _, *frame_ids = self.data_array[0]
-        sample_image_tensor = self.load_image(*self.data_array[0][:3], frame_ids[0])
+        experiment_id, session_id, neuron_id = self.data_array[0][:3]
+        frame_ids = self.data_array[0][3:]
+        sample_image_tensor = self.load_image(experiment_id, session_id, frame_ids[0])
         self.image_shape = sample_image_tensor.shape
 
     def __len__(self):
