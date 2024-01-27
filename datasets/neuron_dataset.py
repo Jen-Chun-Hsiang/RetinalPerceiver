@@ -56,6 +56,11 @@ class RetinalDataset(Dataset):
 
         assert len(data_array) == len(query_series), "data_array and query_series must be the same length"
 
+        # Dummy load to get image size
+        _, _, _, *frame_ids = self.data_array[0]
+        sample_image_tensor = self.load_image(*self.data_array[0][:3], frame_ids[0])
+        self.image_shape = sample_image_tensor.shape
+
     def __len__(self):
         return len(self.chunk_indices)
 
@@ -81,11 +86,16 @@ class RetinalDataset(Dataset):
         firing_rate = self.firing_rate_array[random_idx]
         query_id = self.query_series[random_idx]
 
-        # Load and stack images for the selected data point
-        images = [self.load_image(experiment_id, session_id, frame_id) for frame_id in frame_ids]
-        images_3d = torch.stack(images, dim=0).unsqueeze(0)  # Adding an extra dimension to simulate batch size
+        # Initialize an empty tensor to hold all images
+        images_3d = torch.empty((len(frame_ids),) + self.image_shape, device=self.device)
 
-        return images_3d.to(self.device), firing_rate, query_id
+        # Load and assign images
+        for i, frame_id in enumerate(frame_ids):
+            images_3d[i] = self.load_image(experiment_id, session_id, frame_id)
+
+        images_3d = images_3d.unsqueeze(0)  # Adding an extra dimension to simulate batch size
+
+        return images_3d, firing_rate, query_id
 
     def load_image(self, experiment_id, session_id, frame_id):
         key = (experiment_id, session_id, frame_id)
