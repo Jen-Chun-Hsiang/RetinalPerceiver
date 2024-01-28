@@ -31,7 +31,7 @@ def precompute_image_paths(data_array, root_dir):
 
 class RetinalDataset(Dataset):
     def __init__(self, data_array, query_series, firing_rate_array, image_root_dir, chunk_indices, chunk_size,
-                 device='cuda', cache_size=100):
+                 device='cuda', cache_size=100, image_format='png'):
         """
         Initializes the RetinalDataset.
 
@@ -53,6 +53,7 @@ class RetinalDataset(Dataset):
         self.chunk_size = chunk_size
         self.device = device
         self.cache_size = cache_size
+        self.image_format = image_format
         self.image_tensor_cache = OrderedDict()
         self.cache_lock = threading.Lock()  # Create a lock for the cache
 
@@ -120,11 +121,15 @@ class RetinalDataset(Dataset):
                 self.image_tensor_cache.move_to_end(key)
                 return self.image_tensor_cache[key]
 
-        # If not in cache, load the image
-        image_path = self.get_image_path(experiment_id, session_id, frame_id)
-        image = Image.open(image_path)
-        image_tensor = torch.from_numpy(np.array(image)).float().to(self.device)
-        image_tensor = (image_tensor / 255.0) * 2.0 - 1.0  # Normalize to [-1, 1]
+        image_tensor = None
+        if self.image_format == 'png':
+            image_path = self.get_image_path(experiment_id, session_id, frame_id, '.png')
+            image = Image.open(image_path)
+            image_tensor = torch.from_numpy(np.array(image)).float().to(self.device)
+            image_tensor = (image_tensor / 255.0) * 2.0 - 1.0  # Normalize to [-1, 1]
+        elif self.image_format == 'pt':
+            image_path = self.get_image_path(experiment_id, session_id, frame_id, '.pt')
+            image_tensor = torch.load(image_path, map_location=self.device)
 
         # Synchronized cache update
         with self.cache_lock:
@@ -135,11 +140,11 @@ class RetinalDataset(Dataset):
 
         return image_tensor
 
-    def get_image_path(self, experiment_id, session_id, frame_id):
+    def get_image_path(self, experiment_id, session_id, frame_id, extension):
         return os.path.join(self.image_root_dir,
                             f"experiment_{experiment_id}",
                             f"session_{session_id}",
-                            f"frame_{frame_id}.png")
+                            f"frame_{frame_id}{extension}")
 
 
 def train_val_split(data_length, chunk_size, test_size=0.2):
