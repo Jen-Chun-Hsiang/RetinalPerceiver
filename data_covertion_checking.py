@@ -3,6 +3,7 @@ from PIL import Image
 import torch
 from torchvision.transforms import ToTensor
 
+
 class PNGToTensorConverter:
     def __init__(self, root_dir, overwrite=False):
         self.root_dir = root_dir
@@ -36,6 +37,7 @@ class PNGToTensorConverter:
 
     def start_conversion(self):
         self.convert_directory(self.root_dir)
+
 
 convert_root = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Stimulus/'
 
