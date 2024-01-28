@@ -87,12 +87,21 @@ class RetinalDataset(Dataset):
         firing_rate = self.firing_rate_array[random_idx]
         query_id = self.query_series[random_idx]
 
+        # Find unique frame_ids and their indices
+        unique_frame_ids, inverse_indices = np.unique(frame_ids, return_inverse=True)
+
         # Initialize an empty tensor to hold all images
         images_3d = torch.empty((len(frame_ids),) + self.image_shape, device=self.device)
 
-        # Load and assign images
-        for i, frame_id in enumerate(frame_ids):
-            images_3d[i] = self.load_image(experiment_id, session_id, frame_id)
+        # Load each unique image and assign to the respective positions in images_3d
+        for unique_idx in np.unique(inverse_indices):
+            frame_id = unique_frame_ids[unique_idx]
+            image = self.load_image(experiment_id, session_id, frame_id)
+
+            # Assign this image to all positions in images_3d that use this frame_id
+            indices = np.where(inverse_indices == unique_idx)[0]
+            for i in indices:
+                images_3d[i] = image
 
         images_3d = images_3d.unsqueeze(0)  # Adding an extra dimension to simulate batch size
 
