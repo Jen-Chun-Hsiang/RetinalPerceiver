@@ -120,13 +120,11 @@ class RetinalDataset(Dataset):
                 self.image_tensor_cache.move_to_end(key)
                 return self.image_tensor_cache[key]
 
-            # If not in cache, load the image
-            image_path = self.get_image_path(experiment_id, session_id, frame_id)
-            image_tensor = read_image(image_path)  # Load image directly into a PyTorch tensor
-
-            # Convert to float and normalize to [-1, 1]
-            image_tensor = convert_image_dtype(image_tensor, torch.float32)
-            image_tensor = (image_tensor / 255.0) * 2.0 - 1.0
+        # If not in cache, load the image
+        image_path = self.get_image_path(experiment_id, session_id, frame_id)
+        image = Image.open(image_path)
+        image_tensor = torch.from_numpy(np.array(image)).float().to(self.device)
+        image_tensor = (image_tensor / 255.0) * 2.0 - 1.0  # Normalize to [-1, 1]
 
         # Synchronized cache update
         with self.cache_lock:
