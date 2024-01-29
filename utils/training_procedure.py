@@ -1,6 +1,7 @@
 import torch
 from torch.utils.data import DataLoader
 
+
 class Trainer:
     def __init__(self, model, criterion, optimizer, device, accumulation_steps=1):
         self.model = model
