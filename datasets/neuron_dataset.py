@@ -106,7 +106,7 @@ class RetinalDataset(Dataset):
             for i in indices:
                 images_3d[i] = image
 
-        images_3d = images_3d.unsqueeze(0)  # Adding an extra dimension to simulate batch size
+        images_3d = images_3d.unsqueeze(0).to(self.device)  # Adding an extra dimension to simulate batch size
 
         return images_3d, firing_rate, query_id
 
