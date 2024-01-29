@@ -15,7 +15,7 @@ from utils.utils import DataVisualizer, SeriesEncoder
 def main():
     stimulus_type = '50tpcnn10ct64co4kn5kn256nl64hs2ag100ch'  # get the name from the check point folder
     epoch_end = 90  # the number of epoch in the check_point file
-    is_full_figure_draw = True # determine whether draw for each neuro or just get stats
+    is_full_figure_draw = True  # determine whether draw for each neuro or just get stats
     savefig_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Figures/'
     saveprint_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Prints/'
     checkpoint_folder = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/CheckPoints/'
@@ -43,6 +43,8 @@ def main():
     # Load the training and model parameters
     checkpoint_loader = CheckpointLoader(checkpoint_path=checkpoint_path, device=device)
     training_losses, validation_losses = checkpoint_loader.get_training_losses(), checkpoint_loader.get_validation_losses()
+    logging.info(f'training_losses:{training_losses} \n')
+    logging.info(f'validation_losses:{validation_losses} \n')
     visualizer_prog.plot_and_save(None, plot_type='line', line1=training_losses, line2=validation_losses,
                                   xlabel='Epochs', ylabel='Loss')
     args = checkpoint_loader.load_args()
