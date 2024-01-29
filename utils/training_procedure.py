@@ -14,15 +14,20 @@ class Trainer:
         total_train_loss = 0
         self.optimizer.zero_grad()  # Zero gradients at the start of the epoch
 
+        if len(train_loader) == 0:
+            raise ValueError("train_loader is empty. The training process requires a non-empty train_loader.")
+
         for batch_idx, data in enumerate(train_loader):
             if query_array is not None:
                 loss = self._process_batch_with_query(data, query_array)
             else:
                 loss = self._process_batch(data)
 
-            # loss = loss / self.accumulation_steps  # Normalize the loss (no need for MSE loss)
-            self._update_parameters(loss)  # Backward pass to accumulate gradients
-            total_train_loss += loss.item()
+            if loss is not None:
+                self._update_parameters(loss)
+                total_train_loss += loss.item()
+            else:
+                raise ValueError(f"Loss is None for batch {batch_idx}. Check your model's output and loss function.")
 
             if (batch_idx + 1) % self.accumulation_steps == 0:
                 self.optimizer.step()  # Perform optimization step
