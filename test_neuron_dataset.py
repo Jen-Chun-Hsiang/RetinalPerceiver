@@ -13,7 +13,7 @@ import logging
 chunk_size = 50  # Example chunk size
 seq_len = 50
 stride = 2
-batch_size = 16
+batch_size = 4
 image_loading_method = 'pt'  # 'pt', 'png', 'hdf5'
 image_root_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Stimulus/'
 link_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Link/'
@@ -78,7 +78,7 @@ train_indices, val_indices = train_val_split(len(data_array), chunk_size)
 train_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir, train_indices, chunk_size,
                                device='cuda', cache_size=80, image_loading_method=image_loading_method)
 
-check_loader = DataLoader(train_dataset, batch_size=2, shuffle=True)
+check_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 dataiter = iter(check_loader)
 movie, labels, index = next(dataiter)
 
