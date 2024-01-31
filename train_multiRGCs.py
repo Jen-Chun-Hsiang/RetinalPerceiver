@@ -238,8 +238,10 @@ def main():
     sys.stdout = buffer = StringIO()
 
     summary(model,
-            input_data=(torch.rand(1, args.input_channels, args.input_depth, args.input_height, args.input_width),
-                        torch.rand(1, 1, query_array.shape[1])))
+            input_data=(
+                torch.rand(1, args.input_channels, args.input_depth, args.input_height, args.input_width).to(device),
+                torch.rand(1, 1, query_array.shape[1]).to(device)
+            ))
 
     sys.stdout = old_stdout
     logging.info(buffer.getvalue())
