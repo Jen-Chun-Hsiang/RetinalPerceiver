@@ -91,8 +91,8 @@ class RetinalDataset(Dataset):
             example_session_path = self.get_hdf5_path(*self.data_array[0][:2])
             with h5py.File(example_session_path, 'r') as hfile:
                 sample_frame_id = self.data_array[0][3]
-            sample_image_tensor = torch.tensor(np.array(hfile[str(sample_frame_id)])).float().to(self.device)
-            self.image_shape = sample_image_tensor.shape
+                sample_image_tensor = torch.tensor(np.array(hfile[str(sample_frame_id)])).float().to(self.device)
+                self.image_shape = sample_image_tensor.shape
         else:
             # Dummy load to get image size for 'png' or 'pt' formats
             experiment_id, session_id, neuron_id = self.data_array[0][:3]
@@ -174,7 +174,6 @@ class RetinalDataset(Dataset):
                     frames[i] = torch.tensor(img_array, dtype=torch.float32)
                 else:
                     print(f"Frame index {index} not found in HDF5 file.")
-
         return frames
 
     def load_image(self, experiment_id, session_id, frame_id):
