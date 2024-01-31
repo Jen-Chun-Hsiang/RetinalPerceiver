@@ -161,7 +161,7 @@ class RetinalDataset(Dataset):
         """
         Retrieve specific frames from an HDF5 file based on a set of indices.
         """
-        img_height, img_width = self.image_shape[1], self.image_shape[2]
+        img_height, img_width = self.image_shape[0], self.image_shape[1]
 
         # Pre-allocate a list for the frames
         frames = [torch.empty((img_height, img_width), dtype=torch.float32) for _ in frame_indices]
