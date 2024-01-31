@@ -13,7 +13,8 @@ import logging
 chunk_size = 50  # Example chunk size
 seq_len = 50
 stride = 2
-image_loading_method = 'hdf5'  # 'ph', 'png', 'hdf5'
+batch_size = 2
+image_loading_method = 'ph'  # 'ph', 'png', 'hdf5'
 image_root_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Stimulus/'
 link_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Link/'
 resp_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Response/'
@@ -94,5 +95,5 @@ for i in range(1000):
     load_one_time()
 
 # Save to .mat file
-file_name = 'timer_data.mat'
+file_name = f'timer_data_{image_loading_method}_{batch_size}.mat'
 timer.save_to_mat(os.path.join(savetime_dir, file_name))
