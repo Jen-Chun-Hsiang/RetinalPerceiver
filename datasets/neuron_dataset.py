@@ -208,7 +208,7 @@ class RetinalDataset(Dataset):
         return image_tensor
 
     def get_image_path(self, experiment_id, session_id, frame_id, extension):
-        return os.path.join(self.image_root_dir,
+        return os.path.join(self.root_dir,
                             f"experiment_{experiment_id}",
                             f"session_{session_id}",
                             f"frame_{frame_id}{extension}")
