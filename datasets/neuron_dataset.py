@@ -11,6 +11,34 @@ from torchvision.io import read_image
 from torchvision.transforms.functional import convert_image_dtype
 from collections import OrderedDict
 import threading
+import h5py
+
+
+def get_frames_by_indices(hdf5_file, frame_indices, image_size=(800, 600)):
+    """
+    Retrieve specific frames from an HDF5 file based on a set of indices with pre-allocation.
+
+    :param hdf5_file: Path to the HDF5 file.
+    :param frame_indices: List of frame indices to retrieve.
+    :param image_size: Tuple indicating the size of the images (height, width).
+    :return: List of PyTorch tensors representing the requested frames.
+    """
+    img_height, img_width = image_size
+    num_channels = 3  # Assuming RGB images; change if different
+
+    # Pre-allocate a list for the frames
+    frames = [torch.empty((num_channels, img_height, img_width), dtype=torch.float32) for _ in frame_indices]
+
+    with h5py.File(hdf5_file, 'r') as hfile:
+        for i, index in enumerate(frame_indices):
+            str_index = str(index)
+            if str_index in hfile:
+                img_array = np.array(hfile[str_index])
+                frames[i] = torch.tensor(img_array, dtype=torch.float32)
+            else:
+                print(f"Frame index {index} not found in HDF5 file.")
+
+    return frames
 
 
 def precompute_image_paths(data_array, root_dir):
@@ -30,8 +58,8 @@ def precompute_image_paths(data_array, root_dir):
 
 
 class RetinalDataset(Dataset):
-    def __init__(self, data_array, query_series, firing_rate_array, image_root_dir, chunk_indices, chunk_size,
-                 device='cuda', cache_size=100, image_format='png'):
+    def __init__(self, data_array, query_series, firing_rate_array, root_dir, chunk_indices, chunk_size,
+                 device='cuda', cache_size=100, image_loading_method='hdf5'):
         """
         Initializes the RetinalDataset.
 
@@ -48,22 +76,29 @@ class RetinalDataset(Dataset):
         self.data_array = data_array
         self.query_series = query_series
         self.firing_rate_array = firing_rate_array
-        self.image_root_dir = image_root_dir
+        self.root_dir = root_dir
         self.chunk_indices = chunk_indices
         self.chunk_size = chunk_size
         self.device = device
         self.cache_size = cache_size
-        self.image_format = image_format
+        self.image_loading_method = image_loading_method
         self.image_tensor_cache = OrderedDict()
         self.cache_lock = threading.Lock()  # Create a lock for the cache
 
         assert len(data_array) == len(query_series), "data_array and query_series must be the same length"
 
-        # Dummy load to get image size
-        experiment_id, session_id, neuron_id = self.data_array[0][:3]
-        frame_ids = self.data_array[0][3:]
-        sample_image_tensor = self.load_image(experiment_id, session_id, frame_ids[0])
-        self.image_shape = sample_image_tensor.shape
+        if image_loading_method == 'hdf5':
+            example_session_path = self.get_hdf5_path(*self.data_array[0][:2])
+            with h5py.File(example_session_path, 'r') as hfile:
+                sample_frame_id = self.data_array[0][3]
+            sample_image_tensor = torch.tensor(np.array(hfile[str(sample_frame_id)])).float().to(self.device)
+            self.image_shape = sample_image_tensor.shape
+        else:
+            # Dummy load to get image size for 'png' or 'pt' formats
+            experiment_id, session_id, neuron_id = self.data_array[0][:3]
+            frame_id = self.data_array[0][3]
+            sample_image_tensor = self.load_image(experiment_id, session_id, frame_id)
+            self.image_shape = sample_image_tensor.shape
 
     def __len__(self):
         return len(self.chunk_indices)
@@ -96,19 +131,51 @@ class RetinalDataset(Dataset):
         # Initialize an empty tensor to hold all images
         images_3d = torch.empty((len(frame_ids),) + self.image_shape, device=self.device)
 
-        # Load each unique image and assign to the respective positions in images_3d
-        for unique_idx in np.unique(inverse_indices):
-            frame_id = unique_frame_ids[unique_idx]
-            image = self.load_image(experiment_id, session_id, frame_id)
+        if self.image_loading_method == 'hdf5':
+            hdf5_path = self.get_hdf5_path(experiment_id, session_id)
+            unique_frames = self.get_frames_by_indices(hdf5_path, unique_frame_ids)
 
-            # Assign this image to all positions in images_3d that use this frame_id
-            indices = np.where(inverse_indices == unique_idx)[0]
-            for i in indices:
-                images_3d[i] = image
+            # Assign the loaded images to the respective positions in images_3d
+            for unique_idx, image in zip(np.unique(inverse_indices), unique_frames):
+                indices = np.where(inverse_indices == unique_idx)[0]
+                for i in indices:
+                    images_3d[i] = image
+        else:
+            # For 'png' or 'pt', load each unique image and assign to images_3d
+            for unique_idx in np.unique(inverse_indices):
+                frame_id = unique_frame_ids[unique_idx]
+                image = self.load_image(experiment_id, session_id, frame_id)
+                indices = np.where(inverse_indices == unique_idx)[0]
+                for i in indices:
+                    images_3d[i] = image
 
         images_3d = images_3d.unsqueeze(0).to(self.device)  # Adding an extra dimension to simulate batch size
 
         return images_3d, firing_rate, query_id
+
+    def get_hdf5_path(self, experiment_id, session_id):
+        """Construct the path to the HDF5 file for a given experiment and session."""
+        return os.path.join(self.root_dir, f"experiment_{experiment_id}", f"session_{session_id}.hdf5")
+
+    def get_frames_by_indices(self, hdf5_file, frame_indices):
+        """
+        Retrieve specific frames from an HDF5 file based on a set of indices.
+        """
+        img_height, img_width = self.image_shape[1], self.image_shape[2]
+
+        # Pre-allocate a list for the frames
+        frames = [torch.empty((img_height, img_width), dtype=torch.float32) for _ in frame_indices]
+
+        with h5py.File(hdf5_file, 'r') as hfile:
+            for i, index in enumerate(frame_indices):
+                str_index = str(index)
+                if str_index in hfile:
+                    img_array = np.array(hfile[str_index])
+                    frames[i] = torch.tensor(img_array, dtype=torch.float32)
+                else:
+                    print(f"Frame index {index} not found in HDF5 file.")
+
+        return frames
 
     def load_image(self, experiment_id, session_id, frame_id):
         key = (experiment_id, session_id, frame_id)
