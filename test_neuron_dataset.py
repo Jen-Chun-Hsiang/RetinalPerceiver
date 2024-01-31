@@ -13,6 +13,7 @@ import logging
 chunk_size = 50  # Example chunk size
 seq_len = 50
 stride = 2
+image_loading_method = 'hdf5'  # 'ph', 'png', 'hdf5'
 image_root_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Stimulus/'
 link_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Link/'
 resp_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Response/'
