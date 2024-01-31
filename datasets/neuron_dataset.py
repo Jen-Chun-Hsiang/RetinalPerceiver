@@ -189,12 +189,12 @@ class RetinalDataset(Dataset):
                 return self.image_tensor_cache[key]
 
         image_tensor = None
-        if self.image_format == 'png':
+        if self.image_loading_method == 'png':
             image_path = self.get_image_path(experiment_id, session_id, frame_id, '.png')
             image = Image.open(image_path)
             image_tensor = torch.from_numpy(np.array(image)).float().to(self.device)
             image_tensor = (image_tensor / 255.0) * 2.0 - 1.0  # Normalize to [-1, 1]
-        elif self.image_format == 'pt':
+        elif self.image_loading_method == 'pt':
             image_path = self.get_image_path(experiment_id, session_id, frame_id, '.pt')
             image_tensor = torch.load(image_path, map_location=self.device)
 
