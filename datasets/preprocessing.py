@@ -2,6 +2,8 @@ import os
 import h5py
 import numpy as np
 from PIL import Image
+import torch
+from torchvision.transforms import ToTensor
 
 def normalize_image(image_array):
     """Normalize image array to the range [-1, 1]."""
@@ -36,8 +38,39 @@ def process_experiment_folders(root_folder):
                     process_session_images(session_path, output_file)
                     print(f'Processed {subfolder} into {output_file}')
 
-'''
-# Set the root folder path
-root_folder = 'path/to/root/folder'
-process_experiment_folders(root_folder)
-'''
+
+class PNGToTensorConverter:
+    def __init__(self, root_dir, overwrite=False):
+        self.root_dir = root_dir
+        self.overwrite = overwrite
+        self.to_tensor = ToTensor()
+
+    def convert_directory(self, directory):
+        for item in os.listdir(directory):
+            path = os.path.join(directory, item)
+            if os.path.isdir(path):
+                # Recursively convert subdirectories
+                self.convert_directory(path)
+            elif path.endswith('.png'):
+                self.convert_png_to_tensor(path)
+
+    def convert_png_to_tensor(self, file_path):
+        tensor_file_path = file_path.replace('.png', '.pt')
+
+        # Check if tensor file already exists and overwrite flag
+        if not self.overwrite and os.path.exists(tensor_file_path):
+            print(f"Skipping {file_path} as tensor file already exists.")
+            return
+
+        # Load the image and convert it to a tensor
+        image = Image.open(file_path)
+        tensor = self.to_tensor(image)
+
+        # Save the tensor
+        torch.save(tensor, tensor_file_path)
+        print(f"Saved tensor to {tensor_file_path}")
+
+    def start_conversion(self):
+        self.convert_directory(self.root_dir)
+
+
