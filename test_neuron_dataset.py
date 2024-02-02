@@ -13,7 +13,7 @@ import logging
 chunk_size = 50  # Example chunk size
 seq_len = 50
 stride = 2
-batch_size = 32
+batch_size = 64
 image_loading_method = 'png'  # 'pt', 'png', 'hdf5'
 image_root_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Stimulus/'
 link_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Link/'
