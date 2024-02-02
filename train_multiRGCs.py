@@ -178,7 +178,7 @@ def main():
     lengths = {'Experiment': 7, 'Species': 2, 'Sex': 1, 'Neuron': 15}
     shuffle_components = ['Neuron']
     query_encoder = SeriesEncoder(max_values, lengths, shuffle_components=shuffle_components)
-    query_array = query_encoder.encode(query_array)
+    query_array = query_encoder.encode(query_array).to(device)
     logging.info(f'query_array size:{query_array.shape} \n')
     # get data spit with chucks
     train_indices, val_indices = train_val_split(len(data_array), args.chunk_size, test_size=1-args.train_proportion)
