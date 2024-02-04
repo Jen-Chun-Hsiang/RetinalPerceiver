@@ -15,7 +15,7 @@ from io import StringIO
 import sys
 from torchinfo import summary
 import pandas as pd
-import multiprocessing as mp
+import torch.multiprocessing as mp
 # import torch.distributed as dist
 # from torch.nn.parallel import DistributedDataParallel
 
