@@ -382,20 +382,6 @@ class DataConstructor:
 
                 session_data[start_row:end_row, :3] = [experiment_id, session_id, neuron_id]
 
-                # Print the specific index values being accessed to check for out-of-bounds indices
-                print(f"Indices being accessed (firing_rate_index[:, 0]): {firing_rate_index[:, 0]}")
-                print(f"Max index being accessed: {max(firing_rate_index[:, 0])}")
-                print(f"Min index being accessed: {min(firing_rate_index[:, 0])}")
-
-                # Print the neuron_id to see if it's within the valid range
-                print(f"neuron_id: {neuron_id}")
-                print(
-                    f"Valid neuron_id range: 0 to {firing_rate_array.shape[1] - 1}" if firing_rate_array.ndim > 1 else "N/A - firing_rate_array is 1-dimensional")
-
-                # Check if any accessed index is out of bounds
-                if any(i >= firing_rate_array.shape[0] for i in firing_rate_index[:, 0]):
-                    print("Error: One or more indices in firing_rate_index[:, 0] are out of bounds.")
-
                 # Firing rate data as the fourth column
                 firing_rate_data = firing_rate_array[firing_rate_index[:, 0], neuron_id]
 
