@@ -186,13 +186,13 @@ def main():
     train_indices, val_indices = train_val_split(len(data_array), args.chunk_size, test_size=1-args.train_proportion)
     # get dataset
     train_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir, train_indices,
-                                   args.chunk_size, device='cuda', cache_size=args.cache_size,
+                                   args.chunk_size, device=device, cache_size=args.cache_size,
                                    image_loading_method=args.image_loading_method)
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
     # train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=num_workers,
     #                          pin_memory=True)
     val_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir, val_indices,
-                                 args.chunk_size, device='cuda', cache_size=args.cache_size,
+                                 args.chunk_size, device=device, cache_size=args.cache_size,
                                  image_loading_method=args.image_loading_method)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
     # val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=num_workers,
