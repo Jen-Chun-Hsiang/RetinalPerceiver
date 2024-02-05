@@ -172,22 +172,22 @@ class CheckpointLoader:
         """
         model.load_state_dict(self.checkpoint['model_state_dict'])
         optimizer.load_state_dict(self.checkpoint['optimizer_state_dict'])
-        self.start_epoch = self.checkpoint['epoch']
-        self.training_losses = self.checkpoint.get('training_losses', [])
-        self.validation_losses = self.checkpoint.get('validation_losses', [])
 
         return model, optimizer
 
-    def get_epoch(self):
+    def load_epoch(self):
         """ Return the epoch at which training was interrupted. """
+        self.start_epoch = self.checkpoint['epoch']
         return self.start_epoch
 
-    def get_training_losses(self):
+    def load_training_losses(self):
         """ Return the list of recorded training losses. """
+        self.training_losses = self.checkpoint.get('training_losses', [])
         return self.training_losses
 
-    def get_validation_losses(self):
+    def load_validation_losses(self):
         """ Return the list of recorded validation losses. """
+        self.validation_losses = self.checkpoint.get('validation_losses', [])
         return self.validation_losses
 
 def forward_model(model, dataset, query_array=None, batch_size=32):

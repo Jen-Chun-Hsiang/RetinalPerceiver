@@ -42,7 +42,7 @@ def main():
 
     # Load the training and model parameters
     checkpoint_loader = CheckpointLoader(checkpoint_path=checkpoint_path, device=device)
-    training_losses, validation_losses = checkpoint_loader.get_training_losses(), checkpoint_loader.get_validation_losses()
+    training_losses, validation_losses = checkpoint_loader.load_training_losses(), checkpoint_loader.load_validation_losses()
     logging.info(f'training_losses:{training_losses} \n')
     logging.info(f'validation_losses:{validation_losses} \n')
     visualizer_prog.plot_and_save(None, plot_type='line', line1=training_losses, line2=validation_losses,
