@@ -129,7 +129,7 @@ class RetinalDataset(Dataset):
         unique_frame_ids, inverse_indices = np.unique(frame_ids, return_inverse=True)
 
         # Initialize an empty tensor to hold all images
-        images_3d = torch.empty((len(frame_ids),) + self.image_shape, device=self.device)
+        images_3d = torch.empty((len(frame_ids),) + self.image_shape[-2], device=self.device)
 
         if self.image_loading_method == 'hdf5':
             hdf5_path = self.get_hdf5_path(experiment_id, session_id)
