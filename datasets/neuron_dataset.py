@@ -259,12 +259,24 @@ def load_data_from_excel(file_path, sheet_name):
     return df
 
 
-def filter_and_merge_data(exp_session_table, exp_neuron_table, selected_experiment_ids, selected_stimulus_types, excluded_session_table=None, excluded_neuron_table=None):
+def filter_and_merge_data(exp_session_table, exp_neuron_table, selected_experiment_ids, selected_stimulus_types,
+                          excluded_session_table=None, excluded_neuron_table=None,
+                          included_session_table=None, included_neuron_table=None):
     # Filter exp_session_table before merging
     if selected_experiment_ids:
         exp_session_table = exp_session_table[exp_session_table['experiment_id'].isin(selected_experiment_ids)]
     if selected_stimulus_types:
         exp_session_table = exp_session_table[exp_session_table['stimulus_type_id'].isin(selected_stimulus_types)]
+
+    # Include sessions if included_session_table is provided
+    if included_session_table is not None:
+        included_sessions = included_session_table[['experiment_id', 'session_id']]
+        exp_session_table = pd.merge(exp_session_table, included_sessions, on=['experiment_id', 'session_id'], how='inner')
+
+    # Include neurons if included_neuron_table is provided before merging
+    if included_neuron_table is not None:
+        included_neurons = included_neuron_table[['experiment_id', 'neuron_id']]
+        exp_neuron_table = pd.merge(exp_neuron_table, included_neurons, on=['experiment_id', 'neuron_id'], how='inner')
 
     # Merge DataFrames on 'experiment_id' and 'session_id'
     merged_df = pd.merge(exp_session_table, exp_neuron_table, on=['experiment_id', 'session_id'])

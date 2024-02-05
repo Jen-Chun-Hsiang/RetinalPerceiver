@@ -137,6 +137,8 @@ def main():
     experiment_session_table = load_data_from_excel(exp_dir, 'experiment_session')
     experiment_session_table = experiment_session_table.drop('stimulus_type', axis=1)
 
+    included_neuron_table = load_data_from_excel(exp_dir, 'included_neuron_01')
+
     experiment_info_table = load_data_from_excel(exp_dir, 'experiment_info')
     experiment_info_table = experiment_info_table.drop(['species', 'sex', 'day', 'folder_name'], axis=1)
 
@@ -156,7 +158,9 @@ def main():
         selected_experiment_ids=[0],
         selected_stimulus_types=[1, 2],
         excluded_session_table=None,
-        excluded_neuron_table=None
+        excluded_neuron_table=None,
+        included_session_table=None,
+        included_neuron_table=included_neuron_table
     )
 
     # construct the array for dataset
