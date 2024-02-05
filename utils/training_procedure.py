@@ -58,6 +58,7 @@ class Trainer:
             print("An error occurred:", e)
             print(input_matrices.device)
             print(query_vectors.device)
+
         loss = self._compute_loss(outputs, targets)
         return loss
 
