@@ -126,13 +126,14 @@ class FrontEndRetinalCNN(RetinalCNN):
 class RetinalPerceiverIOWithCNN(nn.Module):
     def __init__(self, input_depth, input_height, input_width, latent_dim=128, output_dim=1, query_dim=6,
                  num_latents=16, heads=4, use_layer_norm=False, num_bands=10, conv3d_out_channels=10,
-                 conv2_out_channels=64, conv2_1st_layer_kernel=4, conv2_2nd_layer_kernel=5):
+                 conv2_out_channels=64, conv2_1st_layer_kernel=4, conv2_2nd_layer_kernel=5, device=device):
         super().__init__()
         self.latent_dim = latent_dim
         self.query_dim = query_dim
         self.num_latents = num_latents
         self.heads = heads
         self.use_layer_norm = use_layer_norm
+        self.device = device
 
         # Initialize the FrontEndRetinalCNN
         self.front_end_cnn = FrontEndRetinalCNN(input_depth=input_depth,
@@ -178,7 +179,7 @@ class RetinalPerceiverIOWithCNN(nn.Module):
 
         cnn_output = self.front_end_cnn(input_array)
         # Apply positional encoding
-        pos_encoding = self.positional_encoding().unsqueeze(0).repeat(cnn_output.size(0), 1, 1, 1)
+        pos_encoding = self.positional_encoding().unsqueeze(0).repeat(cnn_output.size(0), 1, 1, 1).to(self.device)
         # Concatenate the CNN output with the positional encoding
         try:
             cnn_output_with_pos = torch.cat([cnn_output, pos_encoding], dim=1)

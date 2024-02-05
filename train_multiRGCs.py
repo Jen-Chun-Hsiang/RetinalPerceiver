@@ -230,7 +230,7 @@ def main():
                                           conv2_out_channels=args.conv2_out_channels,
                                           conv2_1st_layer_kernel=args.conv2_1st_layer_kernel,
                                           conv2_2nd_layer_kernel=args.conv2_2nd_layer_kernel,
-                                          ).to(device)
+                                          device=device).to(device)
 
     if args.parallel_processing:
         model = nn.DataParallel(model)
