@@ -13,8 +13,8 @@ from utils.utils import DataVisualizer, SeriesEncoder
 
 
 def main():
-    stimulus_type = '50tpcnn10ct64co4kn5kn256nl64hs2ag100ch'  # get the name from the check point folder
-    epoch_end = 90  # the number of epoch in the check_point file
+    stimulus_type = '50tpcnn10ct64co4kn5kn256nl64hs2ag100ch02'  # get the name from the check point folder
+    epoch_end = 10  # the number of epoch in the check_point file
     is_full_figure_draw = True  # determine whether draw for each neuro or just get stats
     savefig_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Figures/'
     saveprint_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Prints/'
