@@ -52,13 +52,7 @@ class Trainer:
         query_vectors = query_vectors.float().to(self.device)
         input_matrices, targets = input_matrices.to(self.device), targets.to(self.device)
         targets = targets.unsqueeze(1)
-        try:
-            outputs = self.model(input_matrices, query_vectors)
-        except Exception as e:
-            print("An error occurred:", e)
-            print(input_matrices.device)
-            print(query_vectors.device)
-
+        outputs = self.model(input_matrices, query_vectors)
         loss = self._compute_loss(outputs, targets)
         return loss
 
