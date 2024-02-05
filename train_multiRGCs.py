@@ -290,6 +290,11 @@ def main():
             checkpoint_filename = f'{filename_fixed}_checkpoint_epoch_{epoch + 1}.pth'
             logging.info(f"Allocated memory: {torch.cuda.memory_allocated() / 1e6} MB \n"
                          f"Max memory allocated: {torch.cuda.max_memory_allocated() / 1e6} MB \n")
+
+            # Assert statements to check that neither variable is None or undefined
+            assert training_losses is not None, "training_losses is None or undefined"
+            assert validation_losses is not None, "validation_losses is None or undefined"
+
             save_checkpoint(epoch, model, optimizer, args, training_losses, validation_losses,
                             os.path.join(savemodel_dir, checkpoint_filename))
 
