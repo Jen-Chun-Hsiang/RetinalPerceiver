@@ -5,6 +5,7 @@ import torch
 import pandas as pd
 
 from utils.training_procedure import CheckpointLoader, forward_model
+from datasets.neuron_dataset import RetinalDataset, DataConstructor
 from datasets.neuron_dataset import train_val_split, load_mat_to_dataframe, load_data_from_excel, filter_and_merge_data
 from utils.utils import DataVisualizer, SeriesEncoder
 # (0) identify the cell we have modeled their responses
@@ -13,8 +14,8 @@ from utils.utils import DataVisualizer, SeriesEncoder
 
 
 def main():
-    stimulus_type = '50tpcnn10ct64co4kn5kn256nl64hs2ag100ch02'  # get the name from the check point folder
-    epoch_end = 8  # the number of epoch in the check_point file
+    stimulus_type = '50tpcnn10ct64co4kn5kn256nl64hs2ag100ch'  # get the name from the check point folder
+    epoch_end = 100  # the number of epoch in the check_point file
     is_full_figure_draw = True  # determine whether draw for each neuro or just get stats
     savefig_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Figures/'
     saveprint_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Prints/'
