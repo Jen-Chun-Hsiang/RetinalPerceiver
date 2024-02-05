@@ -53,7 +53,9 @@ class Trainer:
         input_matrices, targets = input_matrices.to(self.device), targets.to(self.device)
         targets = targets.unsqueeze(1)
         outputs = self.model(input_matrices, query_vectors)
+        assert outputs.shape == targets.shape
         loss = self._compute_loss(outputs, targets)
+
         return loss
 
     def _compute_loss(self, outputs, targets):
