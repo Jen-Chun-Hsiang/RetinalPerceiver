@@ -129,9 +129,9 @@ def main():
 
     # If CUDA is available, continue with the rest of the script
     device = torch.device("cuda")
-    #num_workers = os.cpu_count()
-    #mp.set_start_method('spawn', force=True)
-    logging.info(f'Number of workers: {num_workers} \n')
+    # num_workers = os.cpu_count()
+    # mp.set_start_method('spawn', force=True)
+    # logging.info(f'Number of workers: {num_workers} \n')
     logging.info(f'CUDA counts: {torch.cuda.device_count} \n')
 
     experiment_session_table = load_data_from_excel(exp_dir, 'experiment_session')
@@ -188,13 +188,15 @@ def main():
     train_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir, train_indices,
                                    args.chunk_size, device='cuda', cache_size=args.cache_size,
                                    image_loading_method=args.image_loading_method)
-    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=num_workers,
-                              pin_memory=True)
+    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
+    # train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=num_workers,
+    #                          pin_memory=True)
     val_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir, val_indices,
                                  args.chunk_size, device='cuda', cache_size=args.cache_size,
                                  image_loading_method=args.image_loading_method)
-    val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=num_workers,
-                            pin_memory=True)
+    val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
+    # val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=num_workers,
+    #                        pin_memory=True)
 
     check_loader = DataLoader(train_dataset, batch_size=2, shuffle=True)
     dataiter = iter(check_loader)
