@@ -51,7 +51,7 @@ class Trainer:
         query_vectors = query_vectors[matrix_indices]
         query_vectors = query_vectors.float().to(self.device)
         input_matrices, targets = input_matrices.to(self.device), targets.to(self.device)
-        targets = targets.unsqueeze(1)
+        #targets = targets.unsqueeze(1)
         outputs = self.model(input_matrices, query_vectors)
         try:
             assert outputs.shape == targets.shape
@@ -65,7 +65,7 @@ class Trainer:
         return loss
 
     def _compute_loss(self, outputs, targets):
-        return self.criterion(outputs, targets)
+        return self.criterion(outputs.squeeze(), targets.squeeze())
 
     def _update_parameters(self, loss):
         loss.backward()  # Compute the backward pass only
@@ -109,13 +109,13 @@ class Evaluator:
         query_vectors = query_vectors[matrix_indices]
         query_vectors = query_vectors.float().to(self.device)
         input_matrices, targets = input_matrices.to(self.device), targets.to(self.device)
-        targets = targets.unsqueeze(1)
+        #targets = targets.unsqueeze(1)
         outputs = self.model(input_matrices, query_vectors)
         loss = self._compute_loss(outputs, targets)
         return loss
 
     def _compute_loss(self, outputs, targets):
-        return self.criterion(outputs, targets)
+        return self.criterion(outputs.squeeze(), targets.squeeze())
 
 
 def save_checkpoint(epoch, model, optimizer, args, training_losses, validation_losses, file_path):
