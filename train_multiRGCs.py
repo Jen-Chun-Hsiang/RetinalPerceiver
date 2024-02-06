@@ -290,7 +290,7 @@ def main():
                 f"\tTraining Loss: {avg_train_loss:.4f}, Validation Loss: {avg_val_loss:.4f} \n")
 
         # Save checkpoint
-        if (epoch + 1) % 2 == 0:  # Example: Save every 10 epochs
+        if (epoch + 1) % 10 == 0:  # Example: Save every 10 epochs
             checkpoint_filename = f'{filename_fixed}_checkpoint_epoch_{epoch + 1}.pth'
             logging.info(f"Allocated memory: {torch.cuda.memory_allocated() / 1e6} MB \n"
                          f"Max memory allocated: {torch.cuda.max_memory_allocated() / 1e6} MB \n")
