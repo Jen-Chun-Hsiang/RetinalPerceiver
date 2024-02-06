@@ -14,7 +14,7 @@ from utils.utils import DataVisualizer, SeriesEncoder
 
 
 def main():
-    stimulus_type = '50tpcnn_2024020504_GoodCell'  # get the name from the check point folder
+    stimulus_type = '50tpcnn_2024020502_GoodCell'  # get the name from the check point folder
     epoch_end = 100  # the number of epoch in the check_point file
     is_full_figure_draw = True  # determine whether draw for each neuro or just get stats
     savefig_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Figures/'
