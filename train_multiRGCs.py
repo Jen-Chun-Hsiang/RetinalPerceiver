@@ -171,6 +171,7 @@ def main():
     query_array = query_array.astype('int64')
     query_index = query_index.astype('int64')
     firing_rate_array = firing_rate_array.astype('float32')
+
     # construct the query array for query encoder
     query_df = pd.DataFrame(query_array, columns=['experiment_id', 'neuron_id'])
     query_array = pd.merge(query_df, experiment_info_table, on='experiment_id', how='left')

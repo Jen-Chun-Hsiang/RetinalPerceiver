@@ -2,12 +2,14 @@ import os
 from datetime import datetime
 import logging
 import torch
+import torch.optim as optim
 import pandas as pd
 
 from utils.training_procedure import CheckpointLoader, forward_model
 from datasets.neuron_dataset import RetinalDataset, DataConstructor
 from datasets.neuron_dataset import train_val_split, load_mat_to_dataframe, load_data_from_excel, filter_and_merge_data
 from utils.utils import DataVisualizer, SeriesEncoder
+from torch.utils.data import DataLoader, random_split
 # (0) identify the cell we have modeled their responses
 # (1) show the receptive field with the white noise
 # (2) show the response to the test set
@@ -23,6 +25,7 @@ def main():
     exp_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/ExperimentSheets.xlsx'
     neu_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/experiment_neuron_011724.mat'
     link_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Link/'
+    resp_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Response/'
 
     # Compile the regarding parameters
     checkpoint_filename = f'PerceiverIO_{stimulus_type}_checkpoint_epoch_{epoch_end}'
@@ -77,8 +80,8 @@ def main():
         selected_stimulus_types=[1, 2],
         excluded_session_table=None,
         excluded_neuron_table=None,
-        included_session_table = None,
-        included_neuron_table = included_neuron_table
+        included_session_table=None,
+        included_neuron_table=included_neuron_table
     )
 
     # construct the array for dataset
@@ -107,6 +110,49 @@ def main():
     logging.info(f'query_array size:{query_array.shape} \n')
 
     # Get how many unique cells are there
+    train_indices, val_indices = train_val_split(len(data_array), args.chunk_size, test_size=1 - args.train_proportion)
+    # get dataset
+    train_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir, train_indices,
+                                   args.chunk_size, device=device, cache_size=args.cache_size,
+                                   image_loading_method=args.image_loading_method)
+    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
+
+    check_loader = DataLoader(train_dataset, batch_size=2, shuffle=True)
+    dataiter = iter(check_loader)
+    movie, labels, index = next(dataiter)
+    logging.info(f'movie clip: {movie.shape} labels:{labels} index:{index} \n')
+    queryvec = torch.from_numpy(query_array).unsqueeze(1)
+    queryvec = queryvec[index]
+    logging.info(f'query vector: {queryvec.shape} \n')
+
+    # Model, Loss, and Optimizer
+    if args.model == 'RetinalPerceiver':
+        model = RetinalPerceiverIO(input_dim=args.input_channels, latent_dim=args.hidden_size,
+                                   output_dim=args.output_size,
+                                   num_latents=args.num_latent, heads=args.num_head, depth=args.num_iter,
+                                   query_dim=query_array.shape[1],
+                                   depth_dim=args.input_depth, height=args.input_height, width=args.input_width,
+                                   num_bands=args.num_band, use_layer_norm=args.use_layer_norm,
+                                   kernel_size=args.kernel_size,
+                                   stride=args.stride,
+                                   concatenate_positional_encoding=args.concatenate_positional_encoding,
+                                   use_phase_shift=args.use_phase_shift,
+                                   use_dense_frequency=args.use_dense_frequency).to(device)
+    elif args.model == 'RetinalCNN':
+        model = RetinalPerceiverIOWithCNN(input_depth=args.input_depth, input_height=args.input_height,
+                                          input_width=args.input_width, output_dim=args.output_size,
+                                          latent_dim=args.hidden_size,
+                                          query_dim=query_array.shape[1], num_latents=args.num_latent,
+                                          heads=args.num_head,
+                                          use_layer_norm=args.use_layer_norm, num_bands=args.num_band,
+                                          conv3d_out_channels=args.conv3d_out_channels,
+                                          conv2_out_channels=args.conv2_out_channels,
+                                          conv2_1st_layer_kernel=args.conv2_1st_layer_kernel,
+                                          conv2_2nd_layer_kernel=args.conv2_2nd_layer_kernel,
+                                          device=device).to(device)
+
+    optimizer = optim.Adam(model.parameters(), lr=0.001)
+    model, optimizer = checkpoint_loader.load_checkpoint(model, optimizer)
 
 if __name__ == "__main__":
     main()
