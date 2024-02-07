@@ -10,6 +10,8 @@ from datasets.neuron_dataset import RetinalDataset, DataConstructor
 from datasets.neuron_dataset import train_val_split, load_mat_to_dataframe, load_data_from_excel, filter_and_merge_data
 from utils.utils import DataVisualizer, SeriesEncoder
 from torch.utils.data import DataLoader, random_split
+from models.perceiver3d import RetinalPerceiverIO
+from models.cnn3d import RetinalPerceiverIOWithCNN
 # (0) identify the cell we have modeled their responses
 # (1) show the receptive field with the white noise
 # (2) show the response to the test set
