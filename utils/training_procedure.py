@@ -190,7 +190,8 @@ class CheckpointLoader:
         self.validation_losses = self.checkpoint.get('validation_losses', [])
         return self.validation_losses
 
-def forward_model(model, dataset, query_array=None, batch_size=32, use_matrix_index=True):
+def forward_model(model, dataset, query_array=None, batch_size=32, use_matrix_index=True,
+                  is_weight_in_label=False):
     model.eval()  # Set the model to evaluation mode
 
     all_weights = []
@@ -208,9 +209,10 @@ def forward_model(model, dataset, query_array=None, batch_size=32, use_matrix_in
                 images, labels, matrix_indices = data
                 if use_matrix_index:
                     query_vectors = query_array_tensor[matrix_indices].to(images.device)
+                    weights = model(images, query_vectors).squeeze()
                 else:
                     query_vectors = query_array_tensor.to(images.device)
-                weights = model(images, query_vectors).squeeze()
+                    weights = model(images, query_vectors)
             else:
                 images, labels = data
                 weights = model(images).squeeze()
@@ -220,7 +222,10 @@ def forward_model(model, dataset, query_array=None, batch_size=32, use_matrix_in
             all_labels.extend(labels.cpu().tolist() if torch.is_tensor(labels) else labels)
 
     # Normalize weights
-    weights_tensor = torch.tensor(all_weights)
+    if is_weight_in_label:
+        weights_tensor = torch.tensor(all_labels)
+    else:
+        weights_tensor = torch.tensor(all_weights)
     weights_mean = weights_tensor.mean()
     weights_std = weights_tensor.std()
     normalized_weights = (weights_tensor - weights_mean) / weights_std
