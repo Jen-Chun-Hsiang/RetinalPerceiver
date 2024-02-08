@@ -124,7 +124,7 @@ def main():
     train_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir, train_indices,
                                    args.chunk_size, device=device, cache_size=args.cache_size,
                                    image_loading_method=args.image_loading_method)
-    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
+    #train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
 
     check_loader = DataLoader(train_dataset, batch_size=2, shuffle=True)
     dataiter = iter(check_loader)
