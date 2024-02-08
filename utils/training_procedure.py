@@ -190,7 +190,7 @@ class CheckpointLoader:
         self.validation_losses = self.checkpoint.get('validation_losses', [])
         return self.validation_losses
 
-def forward_model(model, dataset, query_array=None, batch_size=32):
+def forward_model(model, dataset, query_array=None, batch_size=32, use_matrix_index=True):
     model.eval()  # Set the model to evaluation mode
 
     all_weights = []
@@ -206,7 +206,10 @@ def forward_model(model, dataset, query_array=None, batch_size=32):
         for data in dataloader:
             if use_query:
                 images, labels, matrix_indices = data
-                query_vectors = query_array_tensor[matrix_indices].to(images.device)
+                if use_matrix_index:
+                    query_vectors = query_array_tensor[matrix_indices].to(images.device)
+                else:
+                    query_vectors = query_array_tensor.to(images.device)
                 weights = model(images, query_vectors).squeeze()
             else:
                 images, labels = data

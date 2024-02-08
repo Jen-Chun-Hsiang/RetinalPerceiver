@@ -180,7 +180,7 @@ def main():
         sample_data, sample_label, sample_index = train_dataset[0]
         logging.info(f"dataset size: {sample_data.shape}")
         output_image, weights, labels = forward_model(model, train_dataset, query_array=query_array_one,
-                                                      batch_size=args.batch_size)
+                                                      batch_size=args.batch_size, use_matrix_index=False)
 
         if is_full_figure_draw:
             output_image_np = output_image.squeeze().cpu().numpy()
