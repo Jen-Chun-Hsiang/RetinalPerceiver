@@ -211,11 +211,7 @@ def forward_model(model, dataset, query_array=None, batch_size=32, use_matrix_in
                     query_vectors = query_array_tensor[matrix_indices].to(images.device)
                     weights = model(images, query_vectors).squeeze()
                 else:
-                    print(f'query: {query_array_tensor}')
-                    print(f'query shape: {query_array_tensor.shape}')
-                    print(f'images shape: {images.shape}')
-                    print(f'images device: {images.device}')
-                    query_vectors = query_array_tensor.to(images.device)
+                    query_vectors = query_array_tensor.repeat(0, batch_size, 1).to(images.device)
                     weights = model(images, query_vectors)
             else:
                 images, labels = data
