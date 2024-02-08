@@ -3,13 +3,16 @@ from datetime import datetime
 import logging
 import torch
 import torch.optim as optim
+from torch.utils.data import DataLoader, random_split
 import pandas as pd
+import numpy as np
+from scipy.io import savemat
 
 from utils.training_procedure import CheckpointLoader, forward_model
 from datasets.neuron_dataset import RetinalDataset, DataConstructor
 from datasets.neuron_dataset import train_val_split, load_mat_to_dataframe, load_data_from_excel, filter_and_merge_data
 from utils.utils import DataVisualizer, SeriesEncoder
-from torch.utils.data import DataLoader, random_split
+from utils.utils import calculate_correlation
 from models.perceiver3d import RetinalPerceiverIO
 from models.cnn3d import RetinalPerceiverIOWithCNN
 # (0) identify the cell we have modeled their responses
@@ -23,6 +26,7 @@ def main():
     is_full_figure_draw = True  # determine whether draw for each neuro or just get stats
     savefig_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Figures/'
     saveprint_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Prints/'
+    savedata_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Data/'
     image_root_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Stimulus/'
     checkpoint_folder = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/CheckPoints/'
     exp_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/ExperimentSheets.xlsx'
@@ -36,6 +40,8 @@ def main():
 
     timestr = datetime.now().strftime('%Y%m%d_%H%M%S')
     log_filename = os.path.join(saveprint_dir, f'{checkpoint_filename}_training_log_{timestr}.txt')
+    savedata_filename_npy = os.path.join(savedata_dir, f'{checkpoint_filename}_data.npy')
+    savedata_filename_mat = os.path.join(savedata_dir, f'{checkpoint_filename}_data.mat')
     # Setup logging
     logging.basicConfig(filename=log_filename,
                         level=logging.INFO,
@@ -128,6 +134,12 @@ def main():
     queryvec = queryvec[index]
     logging.info(f'query vector: {queryvec.shape} \n')
 
+    # Initialize the DataVisualizer
+    visualizer_est_rf = DataVisualizer(savefig_dir, file_prefix=f'{stimulus_type}_Estimate_RF')
+    visualizer_est_rfstd = DataVisualizer(savefig_dir, file_prefix=f'{stimulus_type}_Estimate_RF_std')
+    visualizer_inout_corr = DataVisualizer(savefig_dir, file_prefix=f'{stimulus_type}_Input_output_correlation')
+
+
     # Model, Loss, and Optimizer
     if args.model == 'RetinalPerceiver':
         model = RetinalPerceiverIO(input_dim=args.input_channels, latent_dim=args.hidden_size,
@@ -156,6 +168,37 @@ def main():
 
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     model, optimizer = checkpoint_loader.load_checkpoint(model, optimizer)
+
+    presented_cell_ids = list(range(query_array.shape[0]))
+    num_cols = 5
+    corrcoef_vals = np.zeros((query_array.shape[0], 1))
+    ii = 0
+    for presented_cell_id in presented_cell_ids:
+        query_array_one = query_array[presented_cell_id:presented_cell_id+1, :]
+        logging.info(f'query_encoder example 1:{query_array_one.shape} \n')
+
+        sample_data, sample_label, sample_index = train_dataset[0]
+        logging.info(f"dataset size: {sample_data.shape}")
+        output_image, weights, labels = forward_model(model, train_dataset, query_array=query_array_one,
+                                                      batch_size=args.batch_size)
+
+        if is_full_figure_draw:
+            output_image_np = output_image.squeeze().cpu().numpy()
+            visualizer_est_rf.plot_and_save(output_image_np, plot_type='3D_matrix', num_cols=5)
+            visualizer_inout_corr.plot_and_save(None, plot_type='scatter', x_data=labels, y_data=weights,
+                                                xlabel='Labels', ylabel='Weights',
+                                                title='Relationship between Weights and Labels')
+            output_image_np_std = np.std(output_image_np, axis=0)
+            visualizer_est_rfstd.plot_and_save(output_image_np_std, plot_type='2D_matrix')
+
+        corrcoef_vals[ii, :] = calculate_correlation(labels, weights)
+        ii += 1
+
+    logging.info(f'correlation coefficient: {corrcoef_vals} \n')
+    np.save(savedata_filename_npy, corrcoef_vals)
+
+    # Save the dictionary as a .mat file
+    savemat(savedata_filename_mat, {'corrcoef_vals': corrcoef_vals})
 
 if __name__ == "__main__":
     main()
