@@ -246,7 +246,7 @@ def forward_model(model, dataset, query_array=None, batch_size=32, use_matrix_in
     for data in dataloader:
         if use_query:
             images, _, matrix_indices = data
-            query_vectors = query_array_tensor[matrix_indices].to(images.device)
+            #query_vectors = query_array_tensor[matrix_indices].to(images.device)
             weights_batch = normalized_weights[idx:idx + images.size(0)].to(images.device).view(-1, 1, 1, 1, 1)
             weighted_images = images * weights_batch
         else:
