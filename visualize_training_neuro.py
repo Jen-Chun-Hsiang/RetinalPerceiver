@@ -50,6 +50,7 @@ def main():
     if not torch.cuda.is_available():
         raise RuntimeError("CUDA is not available. Please check your GPU and CUDA installation.")
     device = torch.device("cuda")
+    torch.cuda.empty_cache()
 
     #
     visualizer_prog = DataVisualizer(savefig_dir, file_prefix=f'{stimulus_type}_Training_progress')

@@ -129,6 +129,8 @@ def main():
 
     # If CUDA is available, continue with the rest of the script
     device = torch.device("cuda")
+    torch.cuda.empty_cache()
+
     # num_workers = os.cpu_count()
     # mp.set_start_method('spawn', force=True)
     # logging.info(f'Number of workers: {num_workers} \n')
