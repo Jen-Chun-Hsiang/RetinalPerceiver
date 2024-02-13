@@ -1,7 +1,7 @@
 from datasets.preprocessing import PNGToTensorConverter
 from datasets.preprocessing import process_experiment_folders
 
-task_id = 3
+task_id = 2
 
 
 def convert_png_to_ph_overwrite():
@@ -13,7 +13,8 @@ def convert_png_to_ph_overwrite():
 
 def convert_png_to_ph_addnew():
     # (2) Skip conversion if .pt file exists:
-    converter = PNGToTensorConverter('/path/to/your/folder', overwrite=False)
+    convert_root = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Stimulus/experiment_1'
+    converter = PNGToTensorConverter(convert_root, overwrite=False)
     converter.start_conversion()
 
 
