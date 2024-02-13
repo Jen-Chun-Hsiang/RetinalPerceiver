@@ -139,7 +139,7 @@ def main():
     experiment_session_table = load_data_from_excel(exp_dir, 'experiment_session')
     experiment_session_table = experiment_session_table.drop('stimulus_type', axis=1)
 
-    included_neuron_table = load_data_from_excel(exp_dir, 'included_neuron_01')
+    included_neuron_table = load_data_from_excel(exp_dir, 'included_neuron_02')
 
     experiment_info_table = load_data_from_excel(exp_dir, 'experiment_info')
     experiment_info_table = experiment_info_table.drop(['species', 'sex', 'day', 'folder_name'], axis=1)
