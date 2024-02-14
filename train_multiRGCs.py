@@ -154,7 +154,7 @@ def main():
     experiment_neuron_table['neuron_id'] = experiment_neuron_table['neuron_id'].astype('int64')
     experiment_neuron_table['quality'] = experiment_neuron_table['quality'].astype('float')
     # make sure the neuron id is matching while indexing
-    experiment_neuron_table['neuron_id'] = experiment_neuron_table['neuron_id'] - 1
+    # experiment_neuron_table['neuron_id'] = experiment_neuron_table['neuron_id'] - 1
 
     filtered_data = filter_and_merge_data(
         experiment_session_table, experiment_neuron_table,
