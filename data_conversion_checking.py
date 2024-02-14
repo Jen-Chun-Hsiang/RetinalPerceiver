@@ -6,7 +6,7 @@ task_id = 1
 
 def convert_png_to_ph_overwrite():
     # (1) Convert png to ph
-    convert_root = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Stimulus/'
+    convert_root = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Stimulus/experiment_1/'
     converter = PNGToTensorConverter(convert_root, overwrite=True)
     converter.start_conversion()
 
@@ -20,7 +20,7 @@ def convert_png_to_ph_addnew():
 
 def generate_session_in_hdf5():
     # (3) Gather image into hdf5 file
-    root_folder = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Stimulus/'
+    root_folder = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Stimulus/experiment_1/'
     process_experiment_folders(root_folder)
 
 
