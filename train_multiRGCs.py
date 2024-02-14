@@ -167,8 +167,10 @@ def main():
     )
     logging.info(f'filtered_data size:{filtered_data.shape} \n')
     logging.info(f'filtered_data:{filtered_data} \n')
-    if filtered_data.shape[0] < 10000:
-        raise RuntimeError("stop for checking")
+
+    #if filtered_data.shape[0] < 10000:
+    #    raise RuntimeError("stop for checking")
+
     # construct the array for dataset
     data_constructor = DataConstructor(filtered_data, seq_len=args.input_depth, stride=args.data_stride,
                                        link_dir=link_dir, resp_dir=resp_dir)

@@ -394,8 +394,8 @@ class DataConstructor:
 
                 session_data[start_row:end_row, :3] = [experiment_id, session_id, neuron_id]
 
-                # Firing rate data as the fourth column
-                firing_rate_data = firing_rate_array[firing_rate_index[:, 0], neuron_id]
+                # Firing rate data as the fourth column (Get the id correct by -1)
+                firing_rate_data = firing_rate_array[firing_rate_index[:, 0], neuron_id-1]
 
                 session_fr_data[start_row:end_row, 0] = firing_rate_data
 
