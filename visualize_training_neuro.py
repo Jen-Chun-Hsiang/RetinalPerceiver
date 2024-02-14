@@ -23,8 +23,8 @@ from models.cnn3d import RetinalPerceiverIOWithCNN
 
 
 def main():
-    stimulus_type = '50tpcnn_2024020603_GoodCell'  # get the name from the check point folder
-    epoch_end = 240  # the number of epoch in the check_point file
+    stimulus_type = '50tpcnn_2024021303_GoodCell2'  # get the name from the check point folder
+    epoch_end = 100  # the number of epoch in the check_point file
     is_weight_in_label = True # check if the data is good
     is_full_figure_draw = True  # determine whether draw for each neuro or just get stats
     savefig_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Figures/'
@@ -33,7 +33,7 @@ def main():
     image_root_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Stimulus/'
     checkpoint_folder = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/CheckPoints/'
     exp_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/ExperimentSheets.xlsx'
-    neu_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/experiment_neuron_011724.mat'
+    neu_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/experiment_neuron_021324.mat'
     link_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Link/'
     resp_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Response/'
 
@@ -89,7 +89,7 @@ def main():
 
     filtered_data = filter_and_merge_data(
         experiment_session_table, experiment_neuron_table,
-        selected_experiment_ids=[0],
+        selected_experiment_ids=[1],
         selected_stimulus_types=[1, 2],
         excluded_session_table=None,
         excluded_neuron_table=None,
