@@ -23,8 +23,8 @@ def compare_images(image1_np, image2_np):
     """Compare two images by computing the correlation coefficient between their pixels."""
     print(f'image1 shape {image1_np.shape}')
     print(f'image2 shape {image2_np.shape}')
-    if image1_np.shape != image2_np.shape:
-        raise ValueError("Images must have the same shape to compare.")
+#    if image1_np.shape != image2_np.shape:
+#        raise ValueError("Images must have the same shape to compare.")
     image1_flat = image1_np.flatten()
     image2_flat = image2_np.flatten()
     corr_matrix = np.corrcoef(image1_flat, image2_flat)
