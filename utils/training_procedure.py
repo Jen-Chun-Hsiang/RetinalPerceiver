@@ -190,7 +190,7 @@ class CheckpointLoader:
         self.validation_losses = self.checkpoint.get('validation_losses', [])
         return self.validation_losses
 
-def forward_model(model, dataset, query_array=None, batch_size=32, use_matrix_index=True,
+def forward_model(model, dataset, query_array=None, batch_size=16, use_matrix_index=True,
                   is_weight_in_label=False):
     model.eval()  # Set the model to evaluation mode
 
