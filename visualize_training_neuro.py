@@ -36,6 +36,7 @@ def main():
     neu_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/experiment_neuron_021324.mat'
     link_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Link/'
     resp_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Response/'
+    mat_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Matfiles/'
 
     # Compile the regarding parameters
     checkpoint_filename = f'PerceiverIO_{stimulus_type}_checkpoint_epoch_{epoch_end}'
@@ -105,6 +106,16 @@ def main():
     query_array = query_array.astype('int64')
     query_index = query_index.astype('int64')
     firing_rate_array = firing_rate_array.astype('float32')
+
+    # Prepare a dictionary with the variables
+    mat_dict = {
+        'data_array': data_array,
+        'query_array': query_array,
+        'query_index': query_index,
+        'firing_rate_array': firing_rate_array
+    }
+    # Save the dictionary to a .mat file
+    savemat(f'{mat_dir}check_data.mat', mat_dict)
 
     # construct the query array for query encoder
     query_df = pd.DataFrame(query_array, columns=['experiment_id', 'neuron_id'])
