@@ -19,12 +19,6 @@ def load_pth_to_numpy(pth_path):
     return tensor.numpy()
 
 
-def resize_image_as_numpy(image_np, target_size=(256, 256)):
-    """Resize image represented as a NumPy array to target_size."""
-    resized_image = resize(image_np, target_size, anti_aliasing=True)
-    return resized_image
-
-
 def compare_images(image1_np, image2_np):
     """Compare two images by computing the correlation coefficient between their pixels."""
     print(f'image1 shape {image1_np.shape}')
@@ -65,8 +59,8 @@ pth_path = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeData
 save_path = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Figures/check_image_5001.png'  # Specify your save path here
 
 # Load and resize images
-image_png_np = resize_image_as_numpy(load_png_to_numpy(png_path))
-image_pth_np = resize_image_as_numpy(load_pth_to_numpy(pth_path))
+image_png_np = load_png_to_numpy(png_path)
+image_pth_np = load_pth_to_numpy(pth_path)
 
 # Compare images and plot them
 correlation_coefficient = compare_images(image_png_np, image_pth_np)
