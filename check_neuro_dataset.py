@@ -66,7 +66,7 @@ def main():
     train_indices, val_indices = train_val_split(len(data_array), chunk_size, test_size=1 - 0.2)
     train_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir, train_indices,
                                    chunk_size, device=device, cache_size=80,
-                                   image_loading_method='ph')
+                                   image_loading_method='pt')
     output_image = STA_check(train_dataset, batch_size=batch_size, device=device)
 
     # Initialize the DataVisualizer
