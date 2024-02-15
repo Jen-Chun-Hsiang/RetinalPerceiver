@@ -62,6 +62,7 @@ def main():
     query_index = query_index.astype('int64')
     firing_rate_array = firing_rate_array.astype('float32')
 
+    print(f'data_array shape {data_array.shape()}')
     train_indices, val_indices = train_val_split(len(data_array), chunk_size, test_size=1 - 0.2)
     train_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir, train_indices,
                                    chunk_size, device=device, cache_size=80,
