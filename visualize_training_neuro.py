@@ -24,7 +24,7 @@ from models.cnn3d import RetinalPerceiverIOWithCNN
 
 def main():
     stimulus_type = '50tpcnn_2024021401_GoodCell2'  # get the name from the check point folder
-    epoch_end = 40  # the number of epoch in the check_point file
+    epoch_end = 100  # the number of epoch in the check_point file
     is_weight_in_label = True # check if the data is good
     is_full_figure_draw = True  # determine whether draw for each neuro or just get stats
     savefig_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Figures/'
@@ -85,7 +85,7 @@ def main():
     experiment_neuron_table['session_id'] = experiment_neuron_table['session_id'].astype('int64')
     experiment_neuron_table['neuron_id'] = experiment_neuron_table['neuron_id'].astype('int64')
     experiment_neuron_table['quality'] = experiment_neuron_table['quality'].astype('float')
-    experiment_neuron_table['neuron_id'] = experiment_neuron_table['neuron_id'] - 1
+    experiment_neuron_table['neuron_id'] = experiment_neuron_table['neuron_id']
 
     filtered_data = filter_and_merge_data(
         experiment_session_table, experiment_neuron_table,
