@@ -59,8 +59,8 @@ pth_path = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeData
 save_path = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Figures/check_image_5001.png'  # Specify your save path here
 
 # Load and resize images
-image_png_np = load_png_to_numpy(png_path)
-image_pth_np = load_pth_to_numpy(pth_path)
+image_png_np = load_png_to_numpy(png_path).squeeze()
+image_pth_np = load_pth_to_numpy(pth_path).squeeze()
 
 # Compare images and plot them
 correlation_coefficient = compare_images(image_png_np, image_pth_np)
