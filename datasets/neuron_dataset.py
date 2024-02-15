@@ -408,6 +408,8 @@ class DataConstructor:
         frame_array = np.vstack(all_sessions_data)
         firing_rate_array = np.vstack(all_sessions_fr_data)
 
+        assert len(frame_array) == len(firing_rate_array)
+
         query_array, query_index = np.unique(frame_array[:, [0, 2]], axis=0, return_inverse=True)
 
         return frame_array, query_array, query_index, firing_rate_array
