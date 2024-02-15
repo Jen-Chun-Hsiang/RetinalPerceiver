@@ -19,6 +19,7 @@ def main():
     resp_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Response/'
     exp_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/ExperimentSheets.xlsx'
     neu_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/experiment_neuron_021324.mat'
+    mat_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Matfiles/'
 
     # Check if CUDA is available
     if not torch.cuda.is_available():
@@ -61,6 +62,16 @@ def main():
     query_array = query_array.astype('int64')
     query_index = query_index.astype('int64')
     firing_rate_array = firing_rate_array.astype('float32')
+
+    # Prepare a dictionary with the variables
+    mat_dict = {
+        'data_array': data_array,
+        'query_array': query_array,
+        'query_index': query_index,
+        'firing_rate_array': firing_rate_array
+    }
+    # Save the dictionary to a .mat file
+    savemat(f'{mat_dir}check_data_experiment1_cell33.mat', mat_dict)
 
     print(f'data_array shape: {data_array.shape}')
     train_indices, val_indices = train_val_split(len(data_array), chunk_size, test_size=1 - 0.2)
