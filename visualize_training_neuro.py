@@ -184,7 +184,7 @@ def main():
         sample_data, sample_label, sample_index = train_dataset[0]
         logging.info(f"dataset size: {sample_data.shape}")
         output_image, weights, labels = forward_model(model, train_dataset, query_array=query_array_one,
-                                                      batch_size=16, use_matrix_index=False,
+                                                      batch_size=8, use_matrix_index=False,
                                                       is_weight_in_label=is_weight_in_label)
 
         if is_full_figure_draw:
