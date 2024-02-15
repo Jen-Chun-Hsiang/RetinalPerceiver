@@ -86,12 +86,12 @@ def main():
     experiment_neuron_table['session_id'] = experiment_neuron_table['session_id'].astype('int64')
     experiment_neuron_table['neuron_id'] = experiment_neuron_table['neuron_id'].astype('int64')
     experiment_neuron_table['quality'] = experiment_neuron_table['quality'].astype('float')
-    experiment_neuron_table['neuron_id'] = experiment_neuron_table['neuron_id']
+    #experiment_neuron_table['neuron_id'] = experiment_neuron_table['neuron_id']
 
     filtered_data = filter_and_merge_data(
         experiment_session_table, experiment_neuron_table,
         selected_experiment_ids=[1],
-        selected_stimulus_types=[1, 2],
+        selected_stimulus_types=[2],
         excluded_session_table=None,
         excluded_neuron_table=None,
         included_session_table=None,
