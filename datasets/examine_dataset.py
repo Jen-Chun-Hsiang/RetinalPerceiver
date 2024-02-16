@@ -9,11 +9,15 @@ def STA_check(dataset, batch_size=16, device='cuda'):
     for data in dataloader:
         images, labels, matrix_indices = data
         all_labels.extend(labels.cpu().tolist() if torch.is_tensor(labels) else labels)
-
+    '''
     weights_tensor = torch.tensor(all_labels)
     weights_mean = weights_tensor.mean()
     weights_std = weights_tensor.std()
     normalized_weights = (weights_tensor - weights_mean) / weights_std
+    '''
+    weights_tensor = torch.tensor(all_labels)
+    weights_sum = weights_tensor.sum()
+    normalized_weights = weights_tensor / weights_sum
 
     # Initialize weighted_sum before the loop
     sample_shape = dataloader.dataset[0][0].shape
