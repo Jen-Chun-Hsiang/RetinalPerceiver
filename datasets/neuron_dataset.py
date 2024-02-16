@@ -141,13 +141,19 @@ class RetinalDataset(Dataset):
                 for i in indices:
                     images_3d[i] = image
         else:
+
             # For 'png' or 'pt', load each unique image and assign to images_3d
+            for final_idx, frame_id in enumerate(frame_ids):
+                image = self.load_image(experiment_id, session_id, frame_id)
+                images_3d[final_idx] = image
+            '''
             for unique_idx in np.unique(inverse_indices):
                 frame_id = unique_frame_ids[unique_idx]
                 image = self.load_image(experiment_id, session_id, frame_id)
                 indices = np.where(inverse_indices == unique_idx)[0]
                 for i in indices:
                     images_3d[i] = image
+            '''
 
         images_3d = images_3d.unsqueeze(0).to(self.device)  # Adding an extra dimension to simulate batch size
 
