@@ -73,7 +73,7 @@ def parse_args():
     parser.add_argument('--load_checkpoint', action='store_true', help='Flag to load the model from checkpoint')
     parser.add_argument('--cache_size', type=int, default=100, help='Maximum number of 3d tensor loaded in the memory')
     # Data specificity (neuro dataset)
-    parser.add_argument('--chunk_size', type=int, default=50, help='Number of continuous data point in one chunk')
+    parser.add_argument('--chunk_size', type=int, default=9, help='Number of continuous data point in one chunk')
     parser.add_argument('--data_stride', type=int, default=2, help='Number of step to create data (10 ms / per step)')
     parser.add_argument('--image_loading_method', type=str, default='ph', help='The loading method (ph, png, hdf5)')
     # Perceiver specificity
