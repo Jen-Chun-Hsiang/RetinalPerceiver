@@ -86,9 +86,9 @@ def main():
         'firing_rate_array': firing_rate_array,
         'train_indices': train_indices,
         'val_indices': val_indices,
-        'movie': movie.numpy(),
-        'labels': labels.numpy(),
-        'index': index.numpy()
+        'movie': movie.cpu().numpy(),
+        'labels': labels.cpu().numpy(),
+        'index': index.cpu().numpy()
     }
     # Save the dictionary to a .mat file
     savemat(f'{mat_dir}check_data_experiment1_cell33.mat', mat_dict)
