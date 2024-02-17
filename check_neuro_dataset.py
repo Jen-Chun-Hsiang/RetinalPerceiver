@@ -75,6 +75,7 @@ def main():
     dataiter = iter(dataloader)
     movie, labels, index = next(dataiter)
 
+    logging.info(f'movie clip: {movie.shape} labels:{labels} index:{index} \n')
     # Prepare a dictionary with the variables
     mat_dict = {
         'data_array': data_array,
@@ -83,9 +84,9 @@ def main():
         'firing_rate_array': firing_rate_array,
         'train_indices': train_indices,
         'val_indices': val_indices,
-        'movie': movie,
-        'labels': labels,
-        'index': index
+        'movie': movie.numpy(),
+        'labels': labels.numpy(),
+        'index': index.numpy()
     }
     # Save the dictionary to a .mat file
     savemat(f'{mat_dir}check_data_experiment1_cell33.mat', mat_dict)
