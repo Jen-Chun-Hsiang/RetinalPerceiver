@@ -76,7 +76,19 @@ def main():
     movie, labels, index = next(dataiter)
 
     output_image = STA_check(train_dataset, batch_size=batch_size, device=device)
+    '''
+    # Run once to determine shape
+    temp_output_image = STA_check(train_dataset, batch_size=batch_size, device=device)
+    output_image_shape = temp_output_image.shape
+    output_image = torch.zeros(output_image_shape, device=device)
+    output_image += temp_output_image
 
+    # Run the remaining (x-1) times
+    sta_times = 50  # Including the first run outside the loop
+    for _ in range(1, sta_times):  # Start from 1 since we've already done one iteration
+        temp_output_image = STA_check(train_dataset, batch_size=batch_size, device=device)
+        output_image += temp_output_image
+    '''
     print(f'movie clip: {movie.shape}')
     print(f'labels:{labels.shape}')
     print(f'index:{index.shape} ')
