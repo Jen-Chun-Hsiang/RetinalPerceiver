@@ -13,7 +13,7 @@ from torch.utils.data import DataLoader
 
 def main():
     batch_size = 16
-    chunk_size = 50
+    chunk_size = 9 # based on autocorrelation of firing rate
     input_depth = 50
     data_stride = 2
     savefig_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Figures/'
