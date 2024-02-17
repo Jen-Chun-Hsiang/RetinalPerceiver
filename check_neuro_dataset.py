@@ -75,6 +75,8 @@ def main():
     dataiter = iter(dataloader)
     movie, labels, index = next(dataiter)
 
+    output_image = STA_check(train_dataset, batch_size=batch_size, device=device)
+
     print(f'movie clip: {movie.shape}')
     print(f'labels:{labels.shape}')
     print(f'index:{index.shape} ')
@@ -88,12 +90,11 @@ def main():
         'val_indices': val_indices,
         'movie': movie.cpu().numpy(),
         'labels': labels.cpu().numpy(),
-        'index': index.cpu().numpy()
+        'index': index.cpu().numpy(),
+        'output_image': output_image.cpu().numpy()
     }
     # Save the dictionary to a .mat file
     savemat(f'{mat_dir}check_data_experiment1_cell33.mat', mat_dict)
-
-    output_image = STA_check(train_dataset, batch_size=batch_size, device=device)
 
     # Initialize the DataVisualizer
     timestr = datetime.now().strftime('%Y%m%d_%H%M%S')
