@@ -75,7 +75,9 @@ def main():
     dataiter = iter(dataloader)
     movie, labels, index = next(dataiter)
 
-    logging.info(f'movie clip: {movie.shape} labels:{labels} index:{index} \n')
+    print(f'movie clip: {movie.shape}')
+    print(f'labels:{labels.shape}')
+    print(f'index:{index.shape} ')
     # Prepare a dictionary with the variables
     mat_dict = {
         'data_array': data_array,
