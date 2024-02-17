@@ -66,6 +66,13 @@ def main():
 
     train_indices, val_indices = train_val_split(len(data_array), chunk_size, test_size=0.2)
 
+    train_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir, train_indices,
+                                   chunk_size, device=device, cache_size=80,
+                                   image_loading_method='pt')
+    dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False)
+    dataiter = iter(dataloader)
+    movie, labels, index = next(dataiter)
+
     # Prepare a dictionary with the variables
     mat_dict = {
         'data_array': data_array,
@@ -73,14 +80,14 @@ def main():
         'query_index': query_index,
         'firing_rate_array': firing_rate_array,
         'train_indices': train_indices,
-        'val_indices': val_indices
+        'val_indices': val_indices,
+        'movie': movie,
+        'labels': labels,
+        'index': index
     }
     # Save the dictionary to a .mat file
     savemat(f'{mat_dir}check_data_experiment1_cell33.mat', mat_dict)
 
-    train_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir, train_indices,
-                                   chunk_size, device=device, cache_size=80,
-                                   image_loading_method='pt')
     output_image = STA_check(train_dataset, batch_size=batch_size, device=device)
 
     # Initialize the DataVisualizer
