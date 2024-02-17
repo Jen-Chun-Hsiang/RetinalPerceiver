@@ -8,6 +8,8 @@ from datasets.neuron_dataset import RetinalDataset, DataConstructor
 from datasets.neuron_dataset import train_val_split, load_mat_to_dataframe, load_data_from_excel, filter_and_merge_data
 from utils.utils import DataVisualizer
 from scipy.io import savemat
+from torch.utils.data import DataLoader
+
 
 def main():
     batch_size = 16
