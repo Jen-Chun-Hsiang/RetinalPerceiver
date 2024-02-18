@@ -23,9 +23,9 @@ from models.cnn3d import RetinalPerceiverIOWithCNN
 
 
 def main():
-    stimulus_type = '50tpcnn_2024021401_GoodCell2'  # get the name from the check point folder
+    stimulus_type = '50tpcnn_2024021701_GoodCell2'  # get the name from the check point folder
     epoch_end = 100  # the number of epoch in the check_point file
-    is_weight_in_label = True # check if the data is good
+    is_weight_in_label = False  # check if the data is good
     is_full_figure_draw = True  # determine whether draw for each neuro or just get stats
     savefig_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Figures/'
     saveprint_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Prints/'
@@ -194,6 +194,7 @@ def main():
 
         sample_data, sample_label, sample_index = train_dataset[0]
         logging.info(f"dataset size: {sample_data.shape}")
+        # if specified query array, always make sure is_weight_in_label
         output_image, weights, labels = forward_model(model, train_dataset, query_array=query_array_one,
                                                       batch_size=8, use_matrix_index=False,
                                                       is_weight_in_label=is_weight_in_label)
