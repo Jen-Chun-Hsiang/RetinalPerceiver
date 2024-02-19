@@ -188,9 +188,9 @@ def main():
     num_cols = 5
     corrcoef_vals = np.zeros((query_array.shape[0], 1))
     ii = 0
-    for presented_cell_id in presented_cell_ids:
+    for cell_count, presented_cell_id in enumerate(presented_cell_ids):
         query_array_one = query_array[presented_cell_id:presented_cell_id+1, :]
-        logging.info(f'query_encoder example 1:{query_array_one.shape} \n')
+        logging.info(f'query_encoder {cell_count}:{query_array_one} \n')
 
         sample_data, sample_label, sample_index = train_dataset[0]
         logging.info(f"dataset size: {sample_data.shape}")
@@ -204,7 +204,7 @@ def main():
             visualizer_est_rf.plot_and_save(output_image_np, plot_type='3D_matrix', num_cols=5)
             visualizer_inout_corr.plot_and_save(None, plot_type='scatter', x_data=labels, y_data=weights,
                                                 xlabel='Labels', ylabel='Weights',
-                                                title='Relationship between Weights and Labels')
+                                                title=f'Relationship between Weights and Labels {cell_count}')
             output_image_np_std = np.std(output_image_np, axis=0)
             visualizer_est_rfstd.plot_and_save(output_image_np_std, plot_type='2D_matrix')
 
