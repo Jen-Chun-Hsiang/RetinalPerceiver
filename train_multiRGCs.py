@@ -97,6 +97,7 @@ def parse_args():
     parser.add_argument('--accumulation_steps', type=int, default=1, help='Accumulate gradients')
     # Plot parameters
     parser.add_argument('--num_cols', type=int, default=5, help='Number of columns in a figure')
+    parser.add_argument('--add_sampler', action='store_true', help='Enable efficient sampler for dataset')
 
     return parser.parse_args()
 

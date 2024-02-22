@@ -1,17 +1,19 @@
 import torch
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, Sampler
 import numpy as np
 from PIL import Image
 import os
 import random
 import pandas as pd
 from scipy.io import loadmat
-#from functools import lru_cache
-from torchvision.io import read_image
-from torchvision.transforms.functional import convert_image_dtype
 from collections import OrderedDict
 import threading
 import h5py
+
+# from functools import lru_cache
+# from torchvision.io import read_image
+# from torchvision.transforms.functional import convert_image_dtype
+
 
 
 def get_frames_by_indices(hdf5_file, frame_indices, image_size=(800, 600)):
@@ -420,6 +422,42 @@ class DataConstructor:
 
         return frame_array, query_array, query_index, firing_rate_array
 
+
+class GroupedSampler(Sampler):
+    def __init__(self, data_source, neuron_links, batch_size):
+        self.data_source = data_source
+        self.neuron_links = neuron_links
+        self.batch_size = batch_size
+        self._group_indices()
+
+    def _group_indices(self):
+        # Compute unique links and group indices
+        unique_links = np.unique(self.neuron_links)
+        self.grouped_indices = {link: np.where(self.neuron_links == link)[0].tolist() for link in unique_links}
+        self._prepare_batches()
+
+    def _prepare_batches(self):
+        # Prepare batches from grouped indices without shuffling each group individually
+        self.batches = []
+        for group in self.grouped_indices.values():
+            for i in range(0, len(group), self.batch_size):
+                self.batches.append(group[i:i + self.batch_size])
+
+        # Shuffle the batches after all have been created
+        random.shuffle(self.batches)
+
+    def reshuffle(self):
+        # Call this method to reshuffle the batches at the beginning of each epoch
+        self._prepare_batches()
+
+    def __iter__(self):
+        # Optionally reshuffle here if you want automatic reshuffling every epoch
+        # self.reshuffle()
+        for batch in self.batches:
+            yield batch
+
+    def __len__(self):
+        return len(self.batches)
 
 
 
