@@ -15,7 +15,9 @@ from io import StringIO
 import sys
 from torchinfo import summary
 import torch.distributed as dist
+from scipy.io import savemat
 from torch.nn.parallel import DistributedDataParallel
+
 
 from datasets.simulated_target_rf import MultiTargetMatrixGenerator, CellClassLevel, ExperimentalLevel, IntegratedLevel
 from utils.utils import plot_and_save_3d_matrix_with_timestamp as plot3dmat
@@ -119,6 +121,7 @@ def main():
     savemodel_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/CheckPoints/'
     saveprint_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Prints/'
     savefig_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Figures/'
+    savemat_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Matfiles/'
     # Generate a timestamp
     timestr = datetime.now().strftime('%Y%m%d_%H%M%S')
 
@@ -136,98 +139,150 @@ def main():
 
     # If CUDA is available, continue with the rest of the script
     device = torch.device("cuda")
-
-    '''
-    if args.parallel_processing:
-        # Initialize the process group
-        dist.init_process_group(backend='nccl')
-        #rank = dist.get_rank()
-
-        # Set up the distributed environment
-        local_rank = torch.distributed.get_rank()
-        world_size = torch.distributed.get_world_size()
-    '''
-
-    '''
-    # Create cells and cell classes
-    cell_class1 = CellClassLevel(sf_cov_center=np.array([[0.12, 0.05], [0.04, 0.03]]),
-                                 sf_cov_surround=np.array([[0.24, 0.05], [0.04, 0.06]]),
-                                 sf_weight_surround=0.5, num_cells=6, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
-
-    cell_class2 = CellClassLevel(sf_cov_center=np.array([[0.08, 0.03], [0.06, 0.16]]),
-                                 sf_cov_surround=np.array([[0.16, 0.03], [0.06, 0.32]]),
-                                 sf_weight_surround=0.3, num_cells=10, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
-
-    cell_class3 = CellClassLevel(sf_cov_center=np.array([[0.1, 0.01], [0.01, 0.1]]),
-                                 sf_cov_surround=np.array([[0.2, 0.01], [0.01, 0.2]]),
-                                 sf_weight_surround=0.5, num_cells=16, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
-
-    # Create experimental level with cell classes
-    experimental = ExperimentalLevel(tf_weight_surround=0.2, tf_sigma_center=0.05,
-                                     tf_sigma_surround=0.12, tf_mean_center=0.08,
-                                     tf_mean_surround=0.12, tf_weight_center=1,
-                                     tf_offset=0, cell_classes=[cell_class1, cell_class2])
-
-    # Create experimental level with cell classes
-    experimental2 = ExperimentalLevel(tf_weight_surround=0.3, tf_sigma_center=0.04,
-                                      tf_sigma_surround=0.10, tf_mean_center=0.07,
-                                      tf_mean_surround=0.10, tf_weight_center=1,
-                                      tf_offset=0, cell_classes=[cell_class3])
-    
-    # Create integrated level with experimental levels
-    integrated_list = IntegratedLevel([experimental, experimental2])
-    '''
+    torch.cuda.empty_cache()
 
     # Create cells and cell classes
     cell_class1_layout1 = CellClassLevel(sf_cov_center=np.array([[0.12, 0.05], [0.04, 0.03]]),
                                          sf_cov_surround=np.array([[0.24, 0.05], [0.04, 0.06]]),
                                          sf_weight_surround=0.5, num_cells=6, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
-
     cell_class1_layout2 = CellClassLevel(sf_cov_center=np.array([[0.12, 0.05], [0.04, 0.03]]),
                                          sf_cov_surround=np.array([[0.24, 0.05], [0.04, 0.06]]),
                                          sf_weight_surround=0.5, num_cells=8, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
-
     cell_class1_layout3 = CellClassLevel(sf_cov_center=np.array([[0.12, 0.05], [0.04, 0.03]]),
                                          sf_cov_surround=np.array([[0.24, 0.05], [0.04, 0.06]]),
                                          sf_weight_surround=0.5, num_cells=7, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
+    cell_class1_layout4 = CellClassLevel(sf_cov_center=np.array([[0.12, 0.05], [0.04, 0.03]]),
+                                         sf_cov_surround=np.array([[0.24, 0.05], [0.04, 0.06]]),
+                                         sf_weight_surround=0.5, num_cells=9, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
+    cell_class1_layout5 = CellClassLevel(sf_cov_center=np.array([[0.12, 0.05], [0.04, 0.03]]),
+                                         sf_cov_surround=np.array([[0.24, 0.05], [0.04, 0.06]]),
+                                         sf_weight_surround=0.5, num_cells=5, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
 
     cell_class2_layout1 = CellClassLevel(sf_cov_center=np.array([[0.08, 0.03], [0.06, 0.16]]),
                                          sf_cov_surround=np.array([[0.16, 0.03], [0.06, 0.32]]),
                                          sf_weight_surround=0.3, num_cells=8, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
-
     cell_class2_layout2 = CellClassLevel(sf_cov_center=np.array([[0.08, 0.03], [0.06, 0.16]]),
+                                         sf_cov_surround=np.array([[0.16, 0.03], [0.06, 0.32]]),
+                                         sf_weight_surround=0.3, num_cells=11, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
+    cell_class2_layout3 = CellClassLevel(sf_cov_center=np.array([[0.08, 0.03], [0.06, 0.16]]),
+                                         sf_cov_surround=np.array([[0.16, 0.03], [0.06, 0.32]]),
+                                         sf_weight_surround=0.3, num_cells=13, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
+    cell_class2_layout4 = CellClassLevel(sf_cov_center=np.array([[0.08, 0.03], [0.06, 0.16]]),
+                                         sf_cov_surround=np.array([[0.16, 0.03], [0.06, 0.32]]),
+                                         sf_weight_surround=0.3, num_cells=12, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
+    cell_class2_layout5 = CellClassLevel(sf_cov_center=np.array([[0.08, 0.03], [0.06, 0.16]]),
                                          sf_cov_surround=np.array([[0.16, 0.03], [0.06, 0.32]]),
                                          sf_weight_surround=0.3, num_cells=10, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
 
     cell_class3_layout1 = CellClassLevel(sf_cov_center=np.array([[0.1, 0.01], [0.01, 0.1]]),
                                          sf_cov_surround=np.array([[0.2, 0.01], [0.01, 0.2]]),
                                          sf_weight_surround=0.5, num_cells=16, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
-
     cell_class3_layout2 = CellClassLevel(sf_cov_center=np.array([[0.1, 0.01], [0.01, 0.1]]),
                                          sf_cov_surround=np.array([[0.2, 0.01], [0.01, 0.2]]),
                                          sf_weight_surround=0.5, num_cells=14, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
+    cell_class3_layout3 = CellClassLevel(sf_cov_center=np.array([[0.1, 0.01], [0.01, 0.1]]),
+                                         sf_cov_surround=np.array([[0.2, 0.01], [0.01, 0.2]]),
+                                         sf_weight_surround=0.5, num_cells=14, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
+    cell_class3_layout4 = CellClassLevel(sf_cov_center=np.array([[0.1, 0.01], [0.01, 0.1]]),
+                                         sf_cov_surround=np.array([[0.2, 0.01], [0.01, 0.2]]),
+                                         sf_weight_surround=0.5, num_cells=15, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
+    cell_class3_layout5 = CellClassLevel(sf_cov_center=np.array([[0.1, 0.01], [0.01, 0.1]]),
+                                         sf_cov_surround=np.array([[0.2, 0.01], [0.01, 0.2]]),
+                                         sf_weight_surround=0.5, num_cells=13, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
+
+    cell_class4_layout1 = CellClassLevel(sf_cov_center=np.array([[0.12, -0.05], [-0.04, 0.03]]),
+                                         sf_cov_surround=np.array([[0.24, -0.05], [-0.04, 0.06]]),
+                                         sf_weight_surround=0.5, num_cells=6, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
+    cell_class4_layout2 = CellClassLevel(sf_cov_center=np.array([[0.12, -0.05], [-0.04, 0.03]]),
+                                         sf_cov_surround=np.array([[0.24, -0.05], [-0.04, 0.06]]),
+                                         sf_weight_surround=0.5, num_cells=6, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
+    cell_class4_layout3 = CellClassLevel(sf_cov_center=np.array([[0.12, -0.05], [-0.04, 0.03]]),
+                                         sf_cov_surround=np.array([[0.24, -0.05], [-0.04, 0.06]]),
+                                         sf_weight_surround=0.5, num_cells=7, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
+    cell_class4_layout4 = CellClassLevel(sf_cov_center=np.array([[0.12, -0.05], [-0.04, 0.03]]),
+                                         sf_cov_surround=np.array([[0.24, -0.05], [-0.04, 0.06]]),
+                                         sf_weight_surround=0.5, num_cells=5, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
+    cell_class4_layout5 = CellClassLevel(sf_cov_center=np.array([[0.12, -0.05], [-0.04, 0.03]]),
+                                         sf_cov_surround=np.array([[0.24, -0.05], [-0.04, 0.06]]),
+                                         sf_weight_surround=0.5, num_cells=7, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
+
+    cell_class5_layout1 = CellClassLevel(sf_cov_center=np.array([[0.12, 0], [-0.05, 0.03]]),
+                                         sf_cov_surround=np.array([[0.20, 0], [-0.05, 0.05]]),
+                                         sf_weight_surround=0.4, num_cells=9, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
+    cell_class5_layout2 = CellClassLevel(sf_cov_center=np.array([[0.12, 0], [-0.05, 0.03]]),
+                                         sf_cov_surround=np.array([[0.20, 0], [-0.05, 0.05]]),
+                                         sf_weight_surround=0.4, num_cells=10, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
+    cell_class5_layout3 = CellClassLevel(sf_cov_center=np.array([[0.12, 0], [-0.05, 0.03]]),
+                                         sf_cov_surround=np.array([[0.20, 0], [-0.05, 0.05]]),
+                                         sf_weight_surround=0.4, num_cells=9, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
+    cell_class5_layout4 = CellClassLevel(sf_cov_center=np.array([[0.12, 0], [-0.05, 0.03]]),
+                                         sf_cov_surround=np.array([[0.20, 0], [-0.05, 0.05]]),
+                                         sf_weight_surround=0.4, num_cells=10, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
+    cell_class5_layout5 = CellClassLevel(sf_cov_center=np.array([[0.12, 0], [-0.05, 0.03]]),
+                                         sf_cov_surround=np.array([[0.20, 0], [-0.05, 0.05]]),
+                                         sf_weight_surround=0.4, num_cells=11, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
+
+    cell_class6_layout1 = CellClassLevel(sf_cov_center=np.array([[0.03, 0.05], [-0.05, 0.12]]),
+                                         sf_cov_surround=np.array([[0.07, 0.05], [-0.05, 0.30]]),
+                                         sf_weight_surround=0.7, num_cells=6, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
+    cell_class6_layout2 = CellClassLevel(sf_cov_center=np.array([[0.03, 0.05], [-0.05, 0.12]]),
+                                         sf_cov_surround=np.array([[0.07, 0.05], [-0.05, 0.30]]),
+                                         sf_weight_surround=0.7, num_cells=6, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
+    cell_class6_layout3 = CellClassLevel(sf_cov_center=np.array([[0.03, 0.05], [-0.05, 0.12]]),
+                                         sf_cov_surround=np.array([[0.07, 0.05], [-0.05, 0.30]]),
+                                         sf_weight_surround=0.7, num_cells=6, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
+    cell_class6_layout4 = CellClassLevel(sf_cov_center=np.array([[0.03, 0.05], [-0.05, 0.12]]),
+                                         sf_cov_surround=np.array([[0.07, 0.05], [-0.05, 0.30]]),
+                                         sf_weight_surround=0.7, num_cells=6, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
+    cell_class6_layout5 = CellClassLevel(sf_cov_center=np.array([[0.03, 0.05], [-0.05, 0.12]]),
+                                         sf_cov_surround=np.array([[0.07, 0.05], [-0.05, 0.30]]),
+                                         sf_weight_surround=0.7, num_cells=6, xlim=(-0.5, 0.5), ylim=(-0.6, 0.6))
 
     # Create experimental level with cell classes
     experimental = ExperimentalLevel(tf_weight_surround=0.2, tf_sigma_center=0.05,
                                      tf_sigma_surround=0.12, tf_mean_center=0.08,
                                      tf_mean_surround=0.12, tf_weight_center=1,
-                                     tf_offset=0, cell_classes=[cell_class1_layout1, cell_class2_layout1])
+                                     tf_offset=0, cell_classes=[cell_class1_layout1, cell_class2_layout1,
+                                                                cell_class3_layout1, cell_class4_layout1,
+                                                                cell_class5_layout1, cell_class6_layout1])
 
     experimental2 = ExperimentalLevel(tf_weight_surround=0.3, tf_sigma_center=0.04,
                                       tf_sigma_surround=0.10, tf_mean_center=0.07,
                                       tf_mean_surround=0.10, tf_weight_center=1,
                                       tf_offset=0, cell_classes=[cell_class1_layout2, cell_class2_layout2,
-                                                                 cell_class3_layout1])
+                                                                 cell_class3_layout2, cell_class4_layout2,
+                                                                 cell_class5_layout2, cell_class6_layout2])
 
     experimental3 = ExperimentalLevel(tf_weight_surround=0.4, tf_sigma_center=0.03,
                                       tf_sigma_surround=0.09, tf_mean_center=0.06,
                                       tf_mean_surround=0.11, tf_weight_center=1,
-                                      tf_offset=0, cell_classes=[cell_class1_layout3, cell_class3_layout2])
+                                      tf_offset=0, cell_classes=[cell_class1_layout3, cell_class2_layout3,
+                                                                 cell_class3_layout3, cell_class4_layout3,
+                                                                 cell_class5_layout3, cell_class6_layout3])
+
+    experimental4 = ExperimentalLevel(tf_weight_surround=0.1, tf_sigma_center=0.08,
+                                      tf_sigma_surround=0.2, tf_mean_center=0.15,
+                                      tf_mean_surround=0.2, tf_weight_center=1,
+                                      tf_offset=0, cell_classes=[cell_class1_layout4, cell_class2_layout4,
+                                                                 cell_class3_layout4, cell_class4_layout4,
+                                                                 cell_class5_layout4, cell_class6_layout4])
+
+    experimental5 = ExperimentalLevel(tf_weight_surround=-0.1, tf_sigma_center=0.07,
+                                      tf_sigma_surround=0.18, tf_mean_center=0.13,
+                                      tf_mean_surround=0.18, tf_weight_center=-1,
+                                      tf_offset=0, cell_classes=[cell_class1_layout5, cell_class2_layout5,
+                                                                 cell_class3_layout5, cell_class4_layout5,
+                                                                 cell_class5_layout5, cell_class6_layout5])
 
     # Create integrated level with experimental levels
-    integrated_list = IntegratedLevel([experimental, experimental2, experimental3])
+    integrated_list = IntegratedLevel([experimental, experimental2, experimental3, experimental4, experimental5])
     # Generate param_list
     param_list, series_ids = integrated_list.generate_combined_param_list()
+
+    # Save to .mat file
+    savemat(os.path.join(savemat_dir, 'sim_multi_list.mat'),
+            {"param_list": param_list, "series_ids": series_ids})
+    raise RuntimeError("Script stopped after saving outputs.")
 
     # Encode series_ids into query arrays
     max_values = {'Experiment': 100, 'Type': 100, 'Cell': 10000}
