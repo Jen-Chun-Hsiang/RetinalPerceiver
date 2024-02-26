@@ -287,12 +287,12 @@ def main():
     query_encoder = SeriesEncoder(max_values, lengths, shuffle_components=shuffle_components)
     query_array = query_encoder.encode(series_ids)
     logging.info(f'query_array size:{query_array.shape} \n')
-
+    '''
     # Save to .mat file
     savemat(os.path.join(savemat_dir, 'sim_multi_list.mat'),
             {"param_list": param_list, "series_ids": series_ids, 'query_array': query_array})
     raise RuntimeError("Script stopped after saving outputs.")
-
+    '''
 
     # Use param_list in MultiTargetMatrixGenerator
     multi_target_gen = MultiTargetMatrixGenerator(param_list)
