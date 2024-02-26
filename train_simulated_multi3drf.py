@@ -341,12 +341,12 @@ def main():
                                           latent_dim=args.hidden_size,
                                           query_dim=query_array.shape[1], num_latents=args.num_latent,
                                           heads=args.num_head,
-                                          use_layer_norm=args.use_layer_norm, device=device, num_bands=args.num_band,
+                                          use_layer_norm=args.use_layer_norm, num_bands=args.num_band,
                                           conv3d_out_channels=args.conv3d_out_channels,
                                           conv2_out_channels=args.conv2_out_channels,
                                           conv2_1st_layer_kernel=args.conv2_1st_layer_kernel,
                                           conv2_2nd_layer_kernel=args.conv2_2nd_layer_kernel,
-                                          )
+                                          device=device).to(device)
 
     if args.parallel_processing:
         model = nn.DataParallel(model)
