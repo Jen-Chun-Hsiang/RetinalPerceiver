@@ -279,10 +279,6 @@ def main():
     # Generate param_list
     param_list, series_ids = integrated_list.generate_combined_param_list()
 
-    # Save to .mat file
-    savemat(os.path.join(savemat_dir, 'sim_multi_list.mat'),
-            {"param_list": param_list, "series_ids": series_ids})
-    raise RuntimeError("Script stopped after saving outputs.")
 
     # Encode series_ids into query arrays
     max_values = {'Experiment': 100, 'Type': 100, 'Cell': 10000}
@@ -290,6 +286,11 @@ def main():
     shuffle_components = ['Cell']
     query_encoder = SeriesEncoder(max_values, lengths, shuffle_components=shuffle_components)
     query_array = query_encoder.encode(series_ids)
+    # Save to .mat file
+    savemat(os.path.join(savemat_dir, 'sim_multi_list.mat'),
+            {"param_list": param_list, "series_ids": series_ids, 'query_array':query_array})
+    raise RuntimeError("Script stopped after saving outputs.")
+
     logging.info(f'query_array size:{query_array.shape} \n')
     # Use param_list in MultiTargetMatrixGenerator
     multi_target_gen = MultiTargetMatrixGenerator(param_list)
