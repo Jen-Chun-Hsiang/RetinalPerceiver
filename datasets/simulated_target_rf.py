@@ -172,10 +172,11 @@ class CellLevel:
         }
 
 class CellClassLevel:
-    def __init__(self, sf_cov_center, sf_cov_surround, sf_weight_surround, num_cells, xlim, ylim):
+    def __init__(self, sf_cov_center, sf_cov_surround, sf_weight_surround, num_cells, xlim, ylim, class_level_id):
         self.sf_cov_center = sf_cov_center
         self.sf_cov_surround = sf_cov_surround
         self.sf_weight_surround = sf_weight_surround
+        self.class_level_id = class_level_id  # New: Unique identifier for the cell class level
         self.cells = self.create_cells(num_cells, xlim, ylim)
 
     def create_cells(self, num_cells, xlim, ylim):
@@ -194,6 +195,7 @@ class CellClassLevel:
                 'sf_cov_center': self.sf_cov_center,
                 'sf_cov_surround': self.sf_cov_surround,
                 'sf_weight_surround': self.sf_weight_surround
+                'class_level_id': self.class_level_id  # Include the unique class level ID in each cell's parameters
             })
             params.append(cell_params)
         return params
@@ -221,7 +223,7 @@ class ExperimentalLevel:
         self.tf_offset = tf_offset
         self.cell_classes = cell_classes
 
-    def generate_param_list(self, global_class_id_start, global_cell_id_start):
+    def generate_param_list(self, global_cell_id_start):
         """
         Generates a parameter list for this experimental level, including cell class level information.
         Does not descend to the individual cell level.
@@ -229,36 +231,27 @@ class ExperimentalLevel:
         :return: A list of tuples, each containing cell class parameters and a list of cell parameters.
         """
         param_list = []
-        global_class_id = global_class_id_start
         global_cell_id = global_cell_id_start
 
         for cell_class in self.cell_classes:
             class_params = cell_class.get_params()
-            class_params_with_global_ids = []
 
             for cell_params in class_params:
-                cell_params_with_global_id = {
-                    **cell_params,
-                    'cell_level_id': global_cell_id  # Use global cell ID
-                }
-                class_params_with_global_ids.append(cell_params_with_global_id)
+                cell_params_with_global_id = {**cell_params, 'cell_level_id': global_cell_id}
                 global_cell_id += 1  # Increment for the next cell
+                param_list.append({
+                    'tf_weight_surround': self.tf_weight_surround,
+                    'tf_sigma_center': self.tf_sigma_center,
+                    'tf_sigma_surround': self.tf_sigma_surround,
+                    'tf_mean_center': self.tf_mean_center,
+                    'tf_mean_surround': self.tf_mean_surround,
+                    'tf_weight_center': self.tf_weight_center,
+                    'tf_offset': self.tf_offset,
+                    'class_level_id': cell_class.class_level_id,  # Directly use class_level_id from cell_class
+                    'cell_params': [cell_params_with_global_id]
+                })
 
-            combined_params = {
-                'tf_weight_surround': self.tf_weight_surround,
-                'tf_sigma_center': self.tf_sigma_center,
-                'tf_sigma_surround': self.tf_sigma_surround,
-                'tf_mean_center': self.tf_mean_center,
-                'tf_mean_surround': self.tf_mean_surround,
-                'tf_weight_center': self.tf_weight_center,
-                'tf_offset': self.tf_offset,
-                'class_level_id': global_class_id,  # Use global class ID
-                'cell_params': class_params_with_global_ids
-            }
-            param_list.append(combined_params)
-            global_class_id += 1  # Increment for the next class
-
-        return param_list, global_class_id, global_cell_id
+        return param_list, global_cell_id
 
 class IntegratedLevel:
     def __init__(self, experimental_levels):
@@ -279,19 +272,16 @@ class IntegratedLevel:
         """
         combined_param_list = []
         series_ids = []
-        global_class_id_start = 1  # Start ID for global class uniqueness
         global_cell_id_start = 1  # Start ID for global cell uniqueness
 
         for exp_level_id, exp_level in enumerate(self.experimental_levels, start=1):
-            class_param_list, global_class_id_start, global_cell_id_start \
-                = exp_level.generate_param_list(global_class_id_start, global_cell_id_start)
+            class_param_list, global_cell_id_start = exp_level.generate_param_list(global_cell_id_start)
 
             for class_params in class_param_list:
-                class_level_id = class_params['class_level_id']
-                for cell_params in class_params['cell_params']:
-                    cell_level_id = cell_params['cell_level_id']
-                    final_params = {**cell_params, **class_params}  # Combine class and cell level params
-                    combined_param_list.append(final_params)
-                    series_ids.append((exp_level_id, class_level_id, cell_level_id))
+                # Here, class_params already includes 'class_level_id' and 'cell_params' with 'cell_level_id'
+                combined_param_list.append(class_params)  # Add the combined class and cell parameters to the list
+                series_ids.append(
+                    (exp_level_id, class_params['class_level_id'], class_params['cell_params'][0]['cell_level_id']))
+                # Note: The above line assumes each class_params['cell_params'] is not empty. Adjust as necessary.
 
         return combined_param_list, series_ids
