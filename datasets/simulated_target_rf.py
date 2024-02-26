@@ -46,7 +46,7 @@ class TargetMatrixGenerator:
     def generate_difference_of_2d_gaussians(self, size, surround_weight):
         gaussian_matrix1 = self.generate_2d_gaussian(size, self.mean1, self.cov1)
         gaussian_matrix2 = self.generate_2d_gaussian(size, self.mean2, self.cov2)
-        return gaussian_matrix1 - surround_weight*gaussian_matrix2
+        return gaussian_matrix1 - surround_weight * gaussian_matrix2
 
     def generate_2d_gaussian(self, size, mean=None, cov=None):
         if mean is None:
@@ -110,7 +110,7 @@ def create_hexagonal_centers(xlim, ylim, target_num_centers, max_iterations=100,
     side_length = np.sqrt(approximate_cell_area / (3 * np.sqrt(3) / 2))
 
     # Calculate horizontal and vertical spacing
-    dx = side_length * 3**0.5
+    dx = side_length * 3 ** 0.5
     dy = side_length * 1.5
 
     # Estimate number of columns and rows
@@ -160,6 +160,7 @@ def create_hexagonal_centers(xlim, ylim, target_num_centers, max_iterations=100,
 
     return points
 
+
 class CellLevel:
     def __init__(self, sf_mean_center=None, sf_mean_surround=None):
         self.sf_mean_center = sf_mean_center
@@ -170,6 +171,7 @@ class CellLevel:
             'sf_mean_center': self.sf_mean_center,
             'sf_mean_surround': self.sf_mean_surround
         }
+
 
 class CellClassLevel:
     def __init__(self, sf_cov_center, sf_cov_surround, sf_weight_surround, num_cells, xlim, ylim, class_level_id):
@@ -200,8 +202,10 @@ class CellClassLevel:
             params.append(cell_params)
         return params
 
+
 class ExperimentalLevel:
-    def __init__(self, tf_weight_surround, tf_sigma_center, tf_sigma_surround, tf_mean_center, tf_mean_surround, tf_weight_center, tf_offset, cell_classes):
+    def __init__(self, tf_weight_surround, tf_sigma_center, tf_sigma_surround, tf_mean_center, tf_mean_surround,
+                 tf_weight_center, tf_offset, cell_classes):
         """
         Initialize the experimental level with specific parameters and a list of cell classes.
 
@@ -252,6 +256,7 @@ class ExperimentalLevel:
                 })
 
         return param_list, global_cell_id
+
 
 class IntegratedLevel:
     def __init__(self, experimental_levels):
