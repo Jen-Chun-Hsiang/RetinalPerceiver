@@ -291,7 +291,7 @@ class IntegratedLevel:
                     'tf_mean_center': class_params['tf_mean_center'],
                     'tf_mean_surround': class_params['tf_mean_surround'],
                     'tf_weight_center': class_params['tf_weight_center'],
-                    'tf_offset': class_params['cell_params'][0]['tf_offset'],
+                    'tf_offset': class_params['tf_offset'],
                     'sf_cov_center': class_params['cell_params'][0]['sf_cov_center'],
                     'sf_cov_surround': class_params['cell_params'][0]['sf_cov_surround'],
                     'sf_weight_surround': class_params['cell_params'][0]['sf_weight_surround'],
