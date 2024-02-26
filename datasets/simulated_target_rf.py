@@ -285,18 +285,18 @@ class IntegratedLevel:
             for class_params in class_param_list:
                 # Here, class_params already includes 'class_level_id' and 'cell_params' with 'cell_level_id'
                 combined_param_list.append({
-                    'tf_weight_surround': class_params.tf_weight_surround,
-                    'tf_sigma_center': class_params.tf_sigma_center,
-                    'tf_sigma_surround': class_params.tf_sigma_surround,
-                    'tf_mean_center': class_params.tf_mean_center,
-                    'tf_mean_surround': class_params.tf_mean_surround,
-                    'tf_weight_center': class_params.tf_weight_center,
-                    'tf_offset': class_params['cell_params'].tf_offset,
-                    'sf_cov_center': class_params['cell_params'].sf_cov_center,
-                    'sf_cov_surround': class_params['cell_params'].sf_cov_surround,
-                    'sf_weight_surround': class_params['cell_params'].sf_weight_surround,
-                    'sf_mean_center': class_params['cell_params'].sf_mean_center,
-                    'sf_mean_surround': class_params['cell_params'].sf_mean_surround
+                    'tf_weight_surround': class_params['tf_weight_surround'],
+                    'tf_sigma_center': class_params['tf_sigma_center'],
+                    'tf_sigma_surround': class_params['tf_sigma_surround'],
+                    'tf_mean_center': class_params['tf_mean_center'],
+                    'tf_mean_surround': class_params['tf_mean_surround'],
+                    'tf_weight_center': class_params['tf_weight_center'],
+                    'tf_offset': class_params['cell_params'][0]['tf_offset'],
+                    'sf_cov_center': class_params['cell_params'][0]['sf_cov_center'],
+                    'sf_cov_surround': class_params['cell_params'][0]['sf_cov_surround'],
+                    'sf_weight_surround': class_params['cell_params'][0]['sf_weight_surround'],
+                    'sf_mean_center': class_params['cell_params'][0]['sf_mean_center'],
+                    'sf_mean_surround': class_params['cell_params'][0]['sf_mean_surround']
                     })  # Add the combined class and cell parameters to the list
                 series_ids.append(
                     (exp_level_id, class_params['class_level_id'], class_params['cell_params'][0]['cell_level_id']))
