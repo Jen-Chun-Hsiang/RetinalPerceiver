@@ -194,7 +194,7 @@ class CellClassLevel:
             cell_params.update({
                 'sf_cov_center': self.sf_cov_center,
                 'sf_cov_surround': self.sf_cov_surround,
-                'sf_weight_surround': self.sf_weight_surround
+                'sf_weight_surround': self.sf_weight_surround,
                 'class_level_id': self.class_level_id  # Include the unique class level ID in each cell's parameters
             })
             params.append(cell_params)
