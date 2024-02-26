@@ -283,10 +283,16 @@ class IntegratedLevel:
             class_param_list, global_cell_id_start = exp_level.generate_param_list(global_cell_id_start)
 
             for class_params in class_param_list:
-                # Here, class_params already includes 'class_level_id' and 'cell_params' with 'cell_level_id'
-                combined_param_list.append(class_params)  # Add the combined class and cell parameters to the list
-                series_ids.append(
-                    (exp_level_id, class_params['class_level_id'], class_params['cell_params'][0]['cell_level_id']))
-                # Note: The above line assumes each class_params['cell_params'] is not empty. Adjust as necessary.
+                # Loop over each cell's parameters within a class
+                for cell_params in class_params['cell_params']:
+                    # Now each cell_params is directly processed and appended
+                    # Ensure this includes sf parameters and any other necessary adjustments
+                    combined_param_list.append({
+                        'exp_level_id': exp_level_id,
+                        'class_level_id': class_params['class_level_id'],
+                        'cell_params': cell_params  # Assuming cell_params includes all necessary details
+                    })
+                    series_ids.append(
+                        (exp_level_id, class_params['class_level_id'], cell_params['cell_level_id']))
 
         return combined_param_list, series_ids
