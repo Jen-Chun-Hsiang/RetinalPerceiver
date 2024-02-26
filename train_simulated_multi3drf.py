@@ -288,7 +288,7 @@ def main():
     query_array = query_encoder.encode(series_ids)
     # Save to .mat file
     savemat(os.path.join(savemat_dir, 'sim_multi_list.mat'),
-            {"param_list": param_list, "series_ids": series_ids, 'query_array':query_array})
+            {"param_list": param_list, "series_ids": series_ids, 'query_array': query_array})
     raise RuntimeError("Script stopped after saving outputs.")
 
     logging.info(f'query_array size:{query_array.shape} \n')
