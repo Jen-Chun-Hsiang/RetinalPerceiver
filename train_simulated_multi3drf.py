@@ -368,9 +368,9 @@ def main():
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
     # Initialize the Trainer
-    trainer = Trainer(model, criterion, optimizer, device, args.accumulation_steps)
+    trainer = Trainer(model, criterion, optimizer, device, args.accumulation_steps, query_array=query_array)
     # Initialize the Evaluator
-    evaluator = Evaluator(model, criterion, device)
+    evaluator = Evaluator(model, criterion, device, query_array=query_array)
 
     # Optionally, load from checkpoint
     if args.load_checkpoint:
@@ -385,11 +385,11 @@ def main():
         start_time = time.time()  # Capture the start time
 
     for epoch in range(start_epoch, args.epochs):
-        avg_train_loss = trainer.train_one_epoch(train_loader, epoch, query_array)
+        avg_train_loss = trainer.train_one_epoch(train_loader)
         training_losses.append(avg_train_loss)
 
         # torch.cuda.empty_cache()
-        avg_val_loss = evaluator.evaluate(val_loader, query_array)
+        avg_val_loss = evaluator.evaluate(val_loader)
         validation_losses.append(avg_val_loss)
 
         # Print training status
