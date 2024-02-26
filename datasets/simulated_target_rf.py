@@ -97,7 +97,8 @@ class MultiTargetMatrixGenerator(TargetMatrixGenerator):
 
         return torch.cat(all_matrices, dim=0)  # Concatenating along the new dimension
 
-def create_hexagonal_centers(xlim, ylim, target_num_centers, max_iterations=100):
+
+def create_hexagonal_centers(xlim, ylim, target_num_centers, max_iterations=100, noise_level=0.3):
     x_min, x_max = xlim
     y_min, y_max = ylim
     x_range = x_max - x_min
@@ -117,7 +118,7 @@ def create_hexagonal_centers(xlim, ylim, target_num_centers, max_iterations=100)
     rows = int(np.ceil(y_range / dy))
 
     # Function to generate grid points with given spacing and offsets
-    def generate_points(dx, dy, offset_x, offset_y):
+    def generate_points_with_noise(dx, dy, offset_x, offset_y, noise_level):
         points = []
         for row in range(rows):
             for col in range(cols):
@@ -125,6 +126,10 @@ def create_hexagonal_centers(xlim, ylim, target_num_centers, max_iterations=100)
                 y = row * dy + y_min - offset_y
                 if row % 2 == 1:
                     x += dx / 2  # Offset every other row
+
+                # Add noise
+                x += np.random.uniform(-noise_level, noise_level) * dx
+                y += np.random.uniform(-noise_level, noise_level) * dy
 
                 if x_min <= x < x_max and y_min <= y < y_max:
                     points.append((x, y))
@@ -135,7 +140,7 @@ def create_hexagonal_centers(xlim, ylim, target_num_centers, max_iterations=100)
     offset_y = (rows * dy - y_range) / 2
 
     # Generate initial grid points
-    points = generate_points(dx, dy, offset_x, offset_y)
+    points = generate_points_with_noise(dx, dy, offset_x, offset_y, noise_level)
 
     # Adjust grid spacing for a fixed number of iterations
     for _ in range(max_iterations):
@@ -149,7 +154,7 @@ def create_hexagonal_centers(xlim, ylim, target_num_centers, max_iterations=100)
         rows = int(np.ceil(y_range / dy))
         offset_x = (cols * dx - x_range) / 2
         offset_y = (rows * dy - y_range) / 2
-        points = generate_points(dx, dy, offset_x, offset_y)
+        points = generate_points_with_noise(dx, dy, offset_x, offset_y, noise_level)
         if abs(len(points) - target_num_centers) <= target_num_centers * 0.05:  # 5% tolerance
             break
 
