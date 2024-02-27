@@ -172,11 +172,7 @@ def main():
     logging.info(f'filtered_data:{filtered_data} \n')
 
 
-    # Save to .mat file
-    filtered_data_mat = {col: filtered_data[col].values for col in filtered_data.columns}
-    savemat(os.path.join(savemat_dir, 'train_neuro_list.mat'),
-            {"filtered_data_mat": filtered_data_mat})
-    raise RuntimeError("Script stopped after saving outputs.")
+
 
     # construct the array for dataset
     data_constructor = DataConstructor(filtered_data, seq_len=args.input_depth, stride=args.data_stride,
@@ -186,6 +182,13 @@ def main():
     query_array = query_array.astype('int64')
     query_index = query_index.astype('int64')
     firing_rate_array = firing_rate_array.astype('float32')
+
+    # Save to .mat file
+    # filtered_data_mat = {col: filtered_data[col].values for col in filtered_data.columns}
+    savemat(os.path.join(savemat_dir, 'train_neuro_list.mat'),
+            {"data_array": data_array, "query_array": query_array,
+             "query_index": query_index, "firing_rate_array": firing_rate_array})
+    raise RuntimeError("Script stopped after saving outputs.")
 
     # construct the query array for query encoder
     query_df = pd.DataFrame(query_array, columns=['experiment_id', 'neuron_id'])
