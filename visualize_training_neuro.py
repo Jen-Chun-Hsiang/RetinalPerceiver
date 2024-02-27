@@ -11,6 +11,7 @@ import numpy as np
 from scipy.io import savemat
 
 from utils.training_procedure import CheckpointLoader, forward_model
+from datasets.simulated_dataset import MultiMatrixDataset
 from datasets.neuron_dataset import RetinalDataset, DataConstructor
 from datasets.neuron_dataset import train_val_split, load_mat_to_dataframe, load_data_from_excel, filter_and_merge_data
 from utils.utils import DataVisualizer, SeriesEncoder
@@ -197,7 +198,8 @@ def main():
         sample_data, sample_label, sample_index = train_dataset[0]
         logging.info(f"dataset size: {sample_data.shape}")
         # if specified query array, always make sure is_weight_in_label
-        output_image, weights, labels = forward_model(model, train_dataset, query_array=query_array_one,
+        dataset_test = MultiMatrixDataset(sample_data, length=args.total_length, device=device, combination_set=[1])
+        output_image, weights, labels = forward_model(model, dataset_test, query_array=query_array_one,
                                                       batch_size=8, use_matrix_index=False,
                                                       is_weight_in_label=is_weight_in_label)
 
