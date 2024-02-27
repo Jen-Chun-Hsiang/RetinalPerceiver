@@ -162,7 +162,7 @@ def main():
     filtered_data = filter_and_merge_data(
         experiment_session_table, experiment_neuron_table,
         selected_experiment_ids=[1],
-        selected_stimulus_types=[1, 2],
+        selected_stimulus_types=[1, 2, 3],
         excluded_session_table=None,
         excluded_neuron_table=None,
         included_session_table=None,
@@ -180,14 +180,14 @@ def main():
     query_index = query_index.astype('int64')
     firing_rate_array = firing_rate_array.astype('float32')
 
-    '''
+
     # Save to .mat file
     # filtered_data_mat = {col: filtered_data[col].values for col in filtered_data.columns}
     savemat(os.path.join(savemat_dir, 'train_neuro_list.mat'),
             {"data_array": data_array, "query_array": query_array,
              "query_index": query_index, "firing_rate_array": firing_rate_array})
     raise RuntimeError("Script stopped after saving outputs.")
-    '''
+
 
     # construct the query array for query encoder
     query_df = pd.DataFrame(query_array, columns=['experiment_id', 'neuron_id'])
