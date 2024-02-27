@@ -114,7 +114,7 @@ def main():
     link_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Link/'
     resp_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Response/'
     exp_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/ExperimentSheets.xlsx'
-    neu_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/experiment_neuron_021324.mat'
+    neu_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/experiment_neuron_022724.mat'
     savemat_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Matfiles/'
     # Generate a timestamp
     timestr = datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -143,7 +143,7 @@ def main():
     experiment_session_table = load_data_from_excel(exp_dir, 'experiment_session')
     experiment_session_table = experiment_session_table.drop('stimulus_type', axis=1)
 
-    included_neuron_table = load_data_from_excel(exp_dir, 'included_neuron_02')
+    included_neuron_table = load_data_from_excel(exp_dir, 'nid_04')
 
     experiment_info_table = load_data_from_excel(exp_dir, 'experiment_info')
     experiment_info_table = experiment_info_table.drop(['species', 'sex', 'day', 'folder_name'], axis=1)
@@ -171,9 +171,6 @@ def main():
     logging.info(f'filtered_data size:{filtered_data.shape} \n')
     logging.info(f'filtered_data:{filtered_data} \n')
 
-
-
-
     # construct the array for dataset
     data_constructor = DataConstructor(filtered_data, seq_len=args.input_depth, stride=args.data_stride,
                                        link_dir=link_dir, resp_dir=resp_dir)
@@ -183,12 +180,14 @@ def main():
     query_index = query_index.astype('int64')
     firing_rate_array = firing_rate_array.astype('float32')
 
+    '''
     # Save to .mat file
     # filtered_data_mat = {col: filtered_data[col].values for col in filtered_data.columns}
     savemat(os.path.join(savemat_dir, 'train_neuro_list.mat'),
             {"data_array": data_array, "query_array": query_array,
              "query_index": query_index, "firing_rate_array": firing_rate_array})
     raise RuntimeError("Script stopped after saving outputs.")
+    '''
 
     # construct the query array for query encoder
     query_df = pd.DataFrame(query_array, columns=['experiment_id', 'neuron_id'])
