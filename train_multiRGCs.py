@@ -15,6 +15,7 @@ from io import StringIO
 import sys
 from torchinfo import summary
 import pandas as pd
+from scipy.io import savemat
 import torch.multiprocessing as mp
 # import torch.distributed as dist
 # from torch.nn.parallel import DistributedDataParallel
@@ -169,8 +170,12 @@ def main():
     logging.info(f'filtered_data size:{filtered_data.shape} \n')
     logging.info(f'filtered_data:{filtered_data} \n')
 
-    #if filtered_data.shape[0] < 10000:
-    #    raise RuntimeError("stop for checking")
+
+    # Save to .mat file
+    filtered_data_mat = {col: filtered_data[col].values for col in filtered_data.columns}
+    savemat(os.path.join(savemat_dir, 'train_neuro_list.mat'),
+            {"filtered_data_mat": filtered_data_mat})
+    raise RuntimeError("Script stopped after saving outputs.")
 
     # construct the array for dataset
     data_constructor = DataConstructor(filtered_data, seq_len=args.input_depth, stride=args.data_stride,
