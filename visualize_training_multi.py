@@ -39,6 +39,8 @@ def main():
     savefig_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Figures/'
     saveprint_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Prints/'
     savedata_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Data/'
+    savemat_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Matfiles/'
+
     # Construct the full path for the checkpoint file
     checkpoint_path = os.path.join(checkpoint_folder, f'{checkpoint_filename}.pth')
 
@@ -194,7 +196,7 @@ def main():
                                                                  cell_class5_layout5, cell_class6_layout5])
 
     # Create integrated level with experimental levels
-    integrated_list = IntegratedLevel([experimental, experimental2, experimental3])
+    integrated_list = IntegratedLevel([experimental, experimental2, experimental3, experimental4, experimental5])
 
     # Generate param_list
     param_lists, series_ids = integrated_list.generate_combined_param_list()
@@ -283,6 +285,14 @@ def main():
                                                 title='Relationship between Weights and Labels')
             output_image_np_std = np.std(output_image_np, axis=0)
             visualizer_est_rfstd.plot_and_save(output_image_np_std, plot_type='2D_matrix')
+
+
+            # Save to .mat file
+            np.savez(os.path.join(savemat_dir, 'sim_multi_result.npz'),
+                     output_image=output_image, presented_cell_id=presented_cell_id)
+            savemat(os.path.join(savemat_dir, 'sim_multi_result.npz'),
+                    {"output_image": output_image, "presented_cell_id": presented_cell_id})
+            raise RuntimeError("Script stopped after saving outputs.")
 
         corrcoef_vals[ii, :] = calculate_correlation(labels, weights)
         ii += 1
