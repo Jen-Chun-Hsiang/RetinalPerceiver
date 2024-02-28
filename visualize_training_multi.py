@@ -24,9 +24,9 @@ def weightedsum_image_plot(output_image_np):
     plt.ylabel("Height")
 
 def main():
-    stimulus_type = '200ktl2011ks111sd'
+    stimulus_type = 'SIM20tp'
 
-    epoch_end = 200
+    epoch_end = 100
     is_cross_level = False
     is_full_figure_draw = True
     checkpoint_filename = f'PerceiverIO_{stimulus_type}_checkpoint_epoch_{epoch_end}'
