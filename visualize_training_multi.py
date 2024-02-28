@@ -62,6 +62,18 @@ def main():
     device = torch.device("cuda")
     torch.cuda.empty_cache()
 
+    #
+    visualizer_prog = DataVisualizer(savefig_dir, file_prefix=f'{stimulus_type}_Training_progress')
+
+    # Load the training and model parameters
+    checkpoint_loader = CheckpointLoader(checkpoint_path=checkpoint_path, device=device)
+    training_losses, validation_losses = checkpoint_loader.load_training_losses(), checkpoint_loader.load_validation_losses()
+    logging.info(f'training_losses:{training_losses} \n')
+    logging.info(f'validation_losses:{validation_losses} \n')
+    visualizer_prog.plot_and_save(None, plot_type='line', line1=training_losses, line2=validation_losses,
+                                  xlabel='Epochs', ylabel='Loss')
+    args = checkpoint_loader.load_args()
+
     # Create cells and cell classes
     cell_class1_layout1 = CellClassLevel(sf_cov_center=np.array([[0.12, 0.05], [0.04, 0.03]]), class_level_id=1,
                                          sf_cov_surround=np.array([[0.24, 0.05], [0.04, 0.06]]),
@@ -210,13 +222,10 @@ def main():
     logging.info(f'query_arrays example 1:{query_arrays.shape} \n')
 
     # Initialize the DataVisualizer
-    visualizer_prog = DataVisualizer(savefig_dir, file_prefix=f'{stimulus_type}_Training_progress')
     visualizer_est_rf = DataVisualizer(savefig_dir, file_prefix=f'{stimulus_type}_Estimate_RF')
     visualizer_est_rfstd = DataVisualizer(savefig_dir, file_prefix=f'{stimulus_type}_Estimate_RF_std')
     visualizer_inout_corr = DataVisualizer(savefig_dir, file_prefix=f'{stimulus_type}_Input_output_correlation')
 
-    checkpoint_loader = CheckpointLoader(checkpoint_path=checkpoint_path, device=device)
-    args = checkpoint_loader.load_args()
 
     if args.model == 'RetinalPerceiver':
         model = RetinalPerceiverIO(input_dim=args.input_channels, latent_dim=args.hidden_size,
@@ -241,9 +250,6 @@ def main():
 
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     model, optimizer = checkpoint_loader.load_checkpoint(model, optimizer)
-    training_losses, validation_losses = checkpoint_loader.get_training_losses(), checkpoint_loader.get_validation_losses()
-    visualizer_prog.plot_and_save(None, plot_type='line', line1=training_losses, line2=validation_losses,
-                                  xlabel='Epochs', ylabel='Loss')
 
     if is_cross_level:
         query_partition_lengths = tuple(lengths.values())
