@@ -287,7 +287,7 @@ def main():
             visualizer_est_rfstd.plot_and_save(output_image_np_std, plot_type='2D_matrix')
 
 
-            # Save to .mat file
+            # Save file
             np.savez(os.path.join(savemat_dir, 'sim_multi_result.npz'),
                      output_image=output_image, presented_cell_id=presented_cell_id)
             savemat(os.path.join(savemat_dir, 'sim_multi_result.npz'),
