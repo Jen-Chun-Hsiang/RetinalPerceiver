@@ -27,7 +27,6 @@ from models.perceiver3d import RetinalPerceiverIO
 from models.cnn3d import RetinalPerceiverIOWithCNN
 from utils.training_procedure import Trainer, Evaluator, save_checkpoint, CheckpointLoader
 
-
 def parse_covariance(string):
     try:
         # Split the string into list of strings

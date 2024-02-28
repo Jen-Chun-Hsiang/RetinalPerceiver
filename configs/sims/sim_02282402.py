@@ -1,3 +1,4 @@
+import numpy as np
 from datasets.simulated_target_rf import CellClassLevel, ExperimentalLevel
 
 # Create cells and cell classes
