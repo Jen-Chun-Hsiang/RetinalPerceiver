@@ -47,7 +47,7 @@ def find_connected_center(array_2d, connectivity=8):
     y_center += component_slice[0].start
     x_center += component_slice[1].start
 
-    return (y_center, x_center)
+    return np.array((y_center, x_center))
 
 
 def pairwise_mult_sum(matrix_2d, array_3d):
@@ -74,4 +74,4 @@ def pairwise_mult_sum(matrix_2d, array_3d):
     # The resulting shape will be [1 x D]
     result = pairwise_mult.sum(axis=(0, 1))
 
-    return result
+    return np.array(result)
