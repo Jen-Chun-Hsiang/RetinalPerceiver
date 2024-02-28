@@ -104,19 +104,19 @@ experimental = ExperimentalLevel(tf_weight_surround=0.2, tf_sigma_center=0.05,
                                  tf_mean_surround=0.12, tf_weight_center=1,
                                  tf_offset=0, cell_classes=[cell_class1_layout1, cell_class2_layout1,
                                                             cell_class3_layout1, cell_class4_layout1,
-                                                            cell_class5_layout1, cell_class6_layout1])
+                                                            cell_class5_layout1])
 
 experimental2 = ExperimentalLevel(tf_weight_surround=0.3, tf_sigma_center=0.04,
                                   tf_sigma_surround=0.10, tf_mean_center=0.07,
                                   tf_mean_surround=0.10, tf_weight_center=1,
-                                  tf_offset=0, cell_classes=[cell_class1_layout2, cell_class2_layout2,
+                                  tf_offset=0, cell_classes=[cell_class2_layout2,
                                                              cell_class3_layout2, cell_class4_layout2,
                                                              cell_class5_layout2, cell_class6_layout2])
 
 experimental3 = ExperimentalLevel(tf_weight_surround=0.4, tf_sigma_center=0.03,
                                   tf_sigma_surround=0.09, tf_mean_center=0.06,
                                   tf_mean_surround=0.11, tf_weight_center=1,
-                                  tf_offset=0, cell_classes=[cell_class1_layout3, cell_class2_layout3,
+                                  tf_offset=0, cell_classes=[cell_class1_layout3,
                                                              cell_class3_layout3, cell_class4_layout3,
                                                              cell_class5_layout3, cell_class6_layout3])
 
@@ -124,12 +124,12 @@ experimental4 = ExperimentalLevel(tf_weight_surround=0.1, tf_sigma_center=0.08,
                                   tf_sigma_surround=0.2, tf_mean_center=0.15,
                                   tf_mean_surround=0.2, tf_weight_center=1,
                                   tf_offset=0, cell_classes=[cell_class1_layout4, cell_class2_layout4,
-                                                             cell_class3_layout4, cell_class4_layout4,
+                                                             cell_class4_layout4,
                                                              cell_class5_layout4, cell_class6_layout4])
 
 experimental5 = ExperimentalLevel(tf_weight_surround=-0.1, tf_sigma_center=0.07,
                                   tf_sigma_surround=0.18, tf_mean_center=0.13,
                                   tf_mean_surround=0.18, tf_weight_center=-1,
                                   tf_offset=0, cell_classes=[cell_class1_layout5, cell_class2_layout5,
-                                                             cell_class3_layout5, cell_class4_layout5,
+                                                             cell_class3_layout5,
                                                              cell_class5_layout5, cell_class6_layout5])

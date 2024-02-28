@@ -47,6 +47,7 @@ def parse_covariance(string):
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Script for Model Training to get 3D RF in simulation")
+    parser.add_argument('--config_name', type=str, default='sim_022822', help='Config file name for data generation')
     parser.add_argument('--experiment_name', type=str, default='new_experiment', help='Experiment name')
     parser.add_argument('--model', type=str, choices=['RetinalPerceiver', 'RetinalCNN'], required=True,
                         help='Model to train')
@@ -117,6 +118,9 @@ def parse_args():
 
 def main():
     args = parse_args()
+    config_module = f"configs.sims_{args.config_name}"
+    config = __import__(config_module, fromlist=[''])
+
     filename_fixed = args.experiment_name
     savemodel_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/CheckPoints/'
     saveprint_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Prints/'
@@ -142,7 +146,11 @@ def main():
     torch.cuda.empty_cache()
 
     # Create integrated level with experimental levels
-    integrated_list = IntegratedLevel([experimental, experimental2, experimental3, experimental4, experimental5])
+    integrated_list = IntegratedLevel([getattr(config, 'experimental', None),
+                                       getattr(config, 'experimental2', None),
+                                       getattr(config, 'experimental3', None),
+                                       getattr(config, 'experimental4', None),
+                                       getattr(config, 'experimental5', None)])
     # Generate param_list
     param_list, series_ids = integrated_list.generate_combined_param_list()
 
