@@ -262,8 +262,8 @@ def main():
 
     num_cols = 5
     corrcoef_vals = np.zeros((query_arrays.shape[0], 1))
-    rf_center_array = np.array([]).reshape(0, -1)
-    rf_temporal_array = np.array([]).reshape(0, -1)
+    rf_center_array_list = []
+    rf_temporal_array_list = []
     rf_spatial_array_list = []
     ii = 0
     for presented_cell_id in presented_cell_ids:
@@ -302,8 +302,8 @@ def main():
             rf_center = find_connected_center(output_image_np_std)
             rf_temporal = pairwise_mult_sum(output_image_np_std, output_image_np)
 
-            rf_center_array = np.concatenate((rf_center_array, rf_center.reshape(1, -1)), axis=0)
-            rf_temporal_array = np.concatenate((rf_temporal_array, rf_temporal.reshape(1, -1)), axis=0)
+            rf_center_array_list.append(rf_center.reshape(0, -1))
+            rf_temporal_array_list.append(rf_temporal.reshape(0, -1))
             rf_spatial_array_list.append(output_image_np_std)
 
             '''
@@ -318,6 +318,8 @@ def main():
         corrcoef_vals[ii, :] = calculate_correlation(labels, weights)
         ii += 1
 
+    rf_center_array = np.concatenate(rf_center_array_list, axis=0)
+    rf_temporal_array = np.concatenate(rf_temporal_array_list, axis=0)
     rf_spatial_array = np.stack(rf_spatial_array_list, axis=2)
     logging.info(f'correlation coefficient: {corrcoef_vals} \n')
 
