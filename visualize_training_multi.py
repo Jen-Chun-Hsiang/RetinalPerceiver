@@ -295,7 +295,7 @@ def main():
             visualizer_inout_corr.plot_and_save(None, plot_type='scatter', x_data=labels, y_data=weights,
                                                 xlabel='Labels', ylabel='Weights',
                                                 title='Relationship between Weights and Labels')
-            output_image_np_std = np.std(output_image_np, axis=0)
+            output_image_np_std = np.std(output_image_np, axis=2)
             output_image_np_std = output_image_np_std / output_image_np_std.sum()
             visualizer_est_rfstd.plot_and_save(output_image_np_std, plot_type='2D_matrix')
 
