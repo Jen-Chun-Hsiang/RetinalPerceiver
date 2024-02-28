@@ -14,7 +14,7 @@ from models.cnn3d import RetinalPerceiverIOWithCNN
 from utils.training_procedure import CheckpointLoader, forward_model
 from utils.utils import DataVisualizer, SeriesEncoder, rearrange_array, calculate_correlation
 from utils.utils import plot_and_save_3d_matrix_with_timestamp as plot3dmat
-
+from utils.result_analysis import find_connected_center, pairwise_mult_sum
 
 def weightedsum_image_plot(output_image_np):
     plt.figure()
@@ -49,7 +49,7 @@ def main():
     log_name = 'visualize_model'
     # Construct the full path for the log file
     log_filename = os.path.join(saveprint_dir, f'{checkpoint_filename}_training_log_{timestr}.txt')
-    savedata_filename_npy = os.path.join(savedata_dir, f'{checkpoint_filename}_data.npy')
+    savedata_filename_npz = os.path.join(savedata_dir, f'{checkpoint_filename}_data.npz')
     savedata_filename_mat = os.path.join(savedata_dir, f'{checkpoint_filename}_data.mat')
 
     # Setup logging
@@ -262,6 +262,9 @@ def main():
 
     num_cols = 5
     corrcoef_vals = np.zeros((query_arrays.shape[0], 1))
+    rf_center_array = np.array([]).reshape(0, -1)
+    rf_temporal_array = np.array([]).reshape(0, -1)
+    rf_spatial_array_list = []
     ii = 0
     for presented_cell_id in presented_cell_ids:
         query_array = query_arrays[presented_cell_id:presented_cell_id+1, :]
@@ -293,21 +296,34 @@ def main():
                                                 xlabel='Labels', ylabel='Weights',
                                                 title='Relationship between Weights and Labels')
             output_image_np_std = np.std(output_image_np, axis=0)
+            output_image_np_std = output_image_np_std / output_image_np_std.sum()
             visualizer_est_rfstd.plot_and_save(output_image_np_std, plot_type='2D_matrix')
 
+            rf_center = find_connected_center(output_image_np_std)
+            rf_temporal = pairwise_mult_sum(output_image_np_std, output_image_np)
 
+            rf_center_array = np.concatenate((rf_center_array, rf_center.reshape(1, -1)), axis=0)
+            rf_temporal_array = np.concatenate((rf_temporal_array, rf_temporal.reshape(1, -1)), axis=0)
+            rf_spatial_array_list.append(output_image_np_std)
+
+            '''
             # Save file
             np.savez(os.path.join(savemat_dir, 'sim_multi_result.npz'),
                      output_image=output_image_np, presented_cell_id=presented_cell_id)
             savemat(os.path.join(savemat_dir, 'sim_multi_result.mat'),
                     {"output_image": output_image, "presented_cell_id": presented_cell_id})
             raise RuntimeError("Script stopped after saving outputs.")
+            '''
 
         corrcoef_vals[ii, :] = calculate_correlation(labels, weights)
         ii += 1
 
+    rf_spatial_array = np.stack(rf_spatial_array_list, axis=2)
     logging.info(f'correlation coefficient: {corrcoef_vals} \n')
-    np.save(savedata_filename_npy, corrcoef_vals)
+
+    np.savez(savedata_filename_npz,
+             rf_center_array=rf_center_array, rf_temporal_array=rf_temporal_array,
+             rf_spatial_array=rf_spatial_array, corrcoef_vals=corrcoef_vals)
 
     # Save the dictionary as a .mat file
     savemat(savedata_filename_mat, {'corrcoef_vals': corrcoef_vals})
