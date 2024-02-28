@@ -118,7 +118,7 @@ def parse_args():
 
 def main():
     args = parse_args()
-    config_module = f"configs.sims_{args.config_name}"
+    config_module = f"configs.sims.{args.config_name}"
     config = __import__(config_module, fromlist=[''])
 
     filename_fixed = args.experiment_name
