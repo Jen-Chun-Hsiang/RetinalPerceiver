@@ -26,7 +26,7 @@ def weightedsum_image_plot(output_image_np):
 def main():
     stimulus_type = 'SIM20tp'
 
-    epoch_end = 140
+    epoch_end = 130
     is_cross_level = False
     is_full_figure_draw = True
     checkpoint_filename = f'PerceiverIO_{stimulus_type}_checkpoint_epoch_{epoch_end}'
@@ -34,7 +34,7 @@ def main():
 
     # default parameters
     total_length = 10000  # Replace with your actual dataset length
-    batch_size = 16  # Replace with your actual batch size
+    batch_size = 32  # Replace with your actual batch size
     checkpoint_folder = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/CheckPoints/'
     savefig_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Figures/'
     saveprint_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Prints/'
