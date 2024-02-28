@@ -232,9 +232,12 @@ def main():
                                            input_width=args.input_width, output_dim=args.output_size,
                                            latent_dim=args.hidden_size, query_dim=query_arrays.shape[1],
                                            num_latents=args.num_latent, heads=args.num_head,
-                                           use_layer_norm=args.use_layer_norm, device=device,
-                                           num_bands=args.num_band, conv3d_out_channels=args.conv3d_out_channels,
-                                           conv2_out_channels=args.conv2_out_channels).to(device)
+                                           use_layer_norm=args.use_layer_norm, num_bands=args.num_band,
+                                           conv3d_out_channels=args.conv3d_out_channels,
+                                           conv2_out_channels=args.conv2_out_channels,
+                                           conv2_1st_layer_kernel=args.conv2_1st_layer_kernel,
+                                           conv2_2nd_layer_kernel=args.conv2_2nd_layer_kernel,
+                                           device=device,).to(device)
 
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     model, optimizer = checkpoint_loader.load_checkpoint(model, optimizer)
