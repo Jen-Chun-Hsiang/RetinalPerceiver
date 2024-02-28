@@ -299,7 +299,7 @@ def main():
             # Save file
             np.savez(os.path.join(savemat_dir, 'sim_multi_result.npz'),
                      output_image=output_image_np, presented_cell_id=presented_cell_id)
-            savemat(os.path.join(savemat_dir, 'sim_multi_result.npz'),
+            savemat(os.path.join(savemat_dir, 'sim_multi_result.mat'),
                     {"output_image": output_image, "presented_cell_id": presented_cell_id})
             raise RuntimeError("Script stopped after saving outputs.")
 
