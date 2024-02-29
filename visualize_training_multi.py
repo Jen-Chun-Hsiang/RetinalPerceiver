@@ -134,7 +134,7 @@ def main():
 
     if is_cross_level:
         query_partition_lengths = tuple(lengths.values())
-        syn_series_ids, syn_query_index = series_ids_permutation(series_ids, permute_series_length)
+        syn_series_ids, syn_query_index = series_ids_permutation(np.array(series_ids), permute_series_length)
         examine_list = array_to_list_of_tuples(syn_query_index)  # List of tuples for row selection
         query_arrays = rearrange_array(query_arrays, query_partition_lengths, examine_list)
         cross_level_flag = 'Interpolation'
