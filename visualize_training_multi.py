@@ -24,8 +24,8 @@ def weightedsum_image_plot(output_image_np):
     plt.ylabel("Height")
 
 def main():
-    stimulus_type = 'SIM20tp'
-    epoch_end = 70
+    stimulus_type = 'SIM20tp022801'
+    epoch_end = 60
     is_cross_level = False
     is_full_figure_draw = True
     checkpoint_filename = f'PerceiverIO_{stimulus_type}_checkpoint_epoch_{epoch_end}'
@@ -73,7 +73,7 @@ def main():
     visualizer_prog.plot_and_save(None, plot_type='line', line1=training_losses, line2=validation_losses,
                                   xlabel='Epochs', ylabel='Loss')
     args = checkpoint_loader.load_args()
-    config_name = getattr(args, 'config_name', 'sim_022824')
+    config_name = getattr(args, 'config_name', 'sim_02282402')
     config_module = f"configs.sims.{config_name}"
     config = __import__(config_module, fromlist=[''])
 
@@ -85,6 +85,13 @@ def main():
                                        getattr(config, 'experimental5', None)])
     # Generate param_list
     param_lists, series_ids = integrated_list.generate_combined_param_list()
+
+
+    # Save to .mat file
+    savemat(os.path.join(savemat_dir, 'sim_multi_list_02282402.mat'),
+            {"param_list": param_lists, "series_ids": series_ids})
+    raise RuntimeError("Script stopped after saving outputs.")
+
 
     # Encode series_ids into query arrays
     max_values = {'Experiment': 100, 'Type': 100, 'Cell': 10000}
