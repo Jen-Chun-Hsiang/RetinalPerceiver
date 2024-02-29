@@ -13,6 +13,7 @@ from models.perceiver3d import RetinalPerceiverIO
 from models.cnn3d import RetinalPerceiverIOWithCNN
 from utils.training_procedure import CheckpointLoader, forward_model
 from utils.utils import DataVisualizer, SeriesEncoder, rearrange_array, calculate_correlation, series_ids_permutation
+from utils.utils import array_to_list_of_tuples
 from utils.utils import plot_and_save_3d_matrix_with_timestamp as plot3dmat
 from utils.result_analysis import find_connected_center, pairwise_mult_sum
 
@@ -32,6 +33,7 @@ def main():
 
     # default parameters
     total_length = 10000  # Replace with your actual dataset length
+    permute_series_length = 240
     batch_size = 32  # Replace with your actual batch size
     checkpoint_folder = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/CheckPoints/'
     savefig_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Figures/'
@@ -132,7 +134,7 @@ def main():
 
     if is_cross_level:
         query_partition_lengths = tuple(lengths.values())
-        syn_series_ids, syn_query_index = series_ids_permutation(series_ids, length)
+        syn_series_ids, syn_query_index = series_ids_permutation(series_ids, permute_series_length)
         examine_list = array_to_list_of_tuples(syn_query_index)  # List of tuples for row selection
         query_arrays = rearrange_array(query_arrays, query_partition_lengths, examine_list)
         cross_level_flag = 'Interpolation'
