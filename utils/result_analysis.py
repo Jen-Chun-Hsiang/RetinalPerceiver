@@ -2,7 +2,7 @@ import numpy as np
 from scipy.ndimage import median_filter, gaussian_filter, label, find_objects
 
 
-def find_combined_center_of_mass(array_2d, connectivity=8, top_n=10):
+def find_connected_center(array_2d, connectivity=8, top_n=10):
     """
     Find the combined center of mass of the top N connected components based on peak intensity.
 
