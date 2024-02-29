@@ -153,7 +153,10 @@ def main():
         query_array = query_arrays[presented_cell_id:presented_cell_id+1, :]
         logging.info(f'query_encoder {presented_cell_id}:{query_array.shape} \n')
         # Use param_list in MultiTargetMatrixGenerator
-        param_list = param_lists[presented_cell_id]
+        if is_cross_level:
+            param_list = param_lists[0]
+        else:
+            param_list = param_lists[presented_cell_id]
         multi_target_gen = MultiTargetMatrixGenerator(param_list)
         target_matrix = multi_target_gen.create_3d_target_matrices(
             input_height=args.input_height, input_width=args.input_width, input_depth=args.input_depth)
@@ -169,7 +172,8 @@ def main():
 
         sample_data, sample_label, sample_index = dataset_test[0]
         logging.info(f"dataset size: {sample_data.shape}")
-        output_image, weights, labels = forward_model(model, dataset_test, query_array=query_array, batch_size=batch_size)
+        output_image, weights, labels = forward_model(model, dataset_test, query_array=query_array, batch_size=batch_size,
+                                                      use_matrix_index=False)
         output_image_np = output_image.squeeze().cpu().numpy()
         output_image_np_std = np.std(output_image_np, axis=2)
         output_image_np_std = output_image_np_std / output_image_np_std.sum()
