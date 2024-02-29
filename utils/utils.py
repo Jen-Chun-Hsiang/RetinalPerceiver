@@ -444,4 +444,65 @@ def calculate_correlation(list1, list2):
     return correlation_matrix[1, 0].item()
 
 
+def series_ids_permutation(Ds, length):
+    """
+    Shuffle the rows of the input array Ds independently for each column and adjust the shuffling
+    based on the specified length. Populate Df with values drawn with or without replacement from Ds.
+    Then, find the index of the first occurrence where values in Ds match those in Df for each column.
+
+    Parameters:
+    - Ds: A numpy array of shape (n, m) where n is the number of rows and m is the number of columns.
+    - length: The number of rows to be generated in Df, which may be different from the number of rows in Ds.
+
+    Returns:
+    - Df: A numpy array of shape (length, m) with rows of Ds shuffled and adjusted based on the specified length.
+    - syn_query: A numpy array of shape (length, m) containing the first occurrence index where Ds matches Df for each column.
+    """
+    nrows = Ds.shape[0]
+    ncols = Ds.shape[1]
+    np.random.seed()  # Ensures a different shuffle each time
+
+    # Determine how to draw elements based on the specified length
+    if length > nrows:
+        # Draw with replacement
+        Df = np.vstack([Ds[np.random.choice(nrows, length, replace=True), i] for i in range(ncols)]).T
+    else:
+        # Draw without replacement, similar to the original function but adjusted for the specified length
+        Df = np.column_stack([Ds[np.random.permutation(nrows)[:length], i] for i in range(ncols)])
+
+    # Initialize syn_query with NaNs
+    syn_query = np.full((length, ncols), np.nan)
+
+    # Populate syn_query
+    for i in range(length):
+        for j in range(ncols):
+            cids = np.where(Ds[:, j] == Df[i, j])[0]
+            if len(cids) > 0:
+                syn_query[i, j] = cids[0]  # Python's 0-based indexing is maintained
+
+    return Df, syn_query
+
+
+def array_to_list_of_tuples(arr):
+    """
+    Convert a 2D numpy array into a list of tuples, where each tuple starts with the row index,
+    followed by the values in that row, ensuring all elements are integers.
+
+    Parameters:
+    - arr: A 2D numpy array.
+
+    Returns:
+    - A list of tuples, where each tuple contains the row index followed by the values of each element in the row,
+      with all elements converted to integers.
+    """
+    list_of_tuples = []
+    for i in range(arr.shape[0]):  # Iterate over rows
+        # Create a tuple that starts with the row index, then add all values from the row as integers
+        row_tuple = tuple(int(value) for value in arr[i, :])
+        list_of_tuples.append(row_tuple)
+
+    return list_of_tuples
+
+
+
 

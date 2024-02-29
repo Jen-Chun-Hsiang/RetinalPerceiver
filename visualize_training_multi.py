@@ -12,7 +12,7 @@ from datasets.simulated_dataset import MultiMatrixDataset
 from models.perceiver3d import RetinalPerceiverIO
 from models.cnn3d import RetinalPerceiverIOWithCNN
 from utils.training_procedure import CheckpointLoader, forward_model
-from utils.utils import DataVisualizer, SeriesEncoder, rearrange_array, calculate_correlation
+from utils.utils import DataVisualizer, SeriesEncoder, rearrange_array, calculate_correlation, series_ids_permutation
 from utils.utils import plot_and_save_3d_matrix_with_timestamp as plot3dmat
 from utils.result_analysis import find_connected_center, pairwise_mult_sum
 
@@ -27,9 +27,8 @@ def main():
     stimulus_type = 'SIM20tp022801'
     epoch_end = 60
     is_cross_level = False
-    is_full_figure_draw = True
+    is_full_figure_draw = False
     checkpoint_filename = f'PerceiverIO_{stimulus_type}_checkpoint_epoch_{epoch_end}'
-    examine_list = [(0, 0, 15), (15, 15, 0), (34, 34, 3), (3, 3, 34)]  # List of tuples for row selection
 
     # default parameters
     total_length = 10000  # Replace with your actual dataset length
@@ -86,12 +85,12 @@ def main():
     # Generate param_list
     param_lists, series_ids = integrated_list.generate_combined_param_list()
 
-
+    '''
     # Save to .mat file
     savemat(os.path.join(savemat_dir, 'sim_multi_list_02282402.mat'),
             {"param_list": param_lists, "series_ids": series_ids})
     raise RuntimeError("Script stopped after saving outputs.")
-
+    '''
 
     # Encode series_ids into query arrays
     max_values = {'Experiment': 100, 'Type': 100, 'Cell': 10000}
@@ -133,9 +132,13 @@ def main():
 
     if is_cross_level:
         query_partition_lengths = tuple(lengths.values())
+        syn_series_ids, syn_query_index = series_ids_permutation(series_ids, length)
+        examine_list = array_to_list_of_tuples(syn_query_index)  # List of tuples for row selection
         query_arrays = rearrange_array(query_arrays, query_partition_lengths, examine_list)
         cross_level_flag = 'Interpolation'
     else:
+        syn_series_ids = np.array([])
+        syn_query_index = np.array([])
         cross_level_flag = 'Data'
 
     presented_cell_ids = list(range(query_arrays.shape[0]))
@@ -165,36 +168,26 @@ def main():
         sample_data, sample_label, sample_index = dataset_test[0]
         logging.info(f"dataset size: {sample_data.shape}")
         output_image, weights, labels = forward_model(model, dataset_test, query_array=query_array, batch_size=batch_size)
+        output_image_np = output_image.squeeze().cpu().numpy()
+        output_image_np_std = np.std(output_image_np, axis=2)
+        output_image_np_std = output_image_np_std / output_image_np_std.sum()
+        rf_center = find_connected_center(output_image_np_std)
+        rf_temporal = pairwise_mult_sum(output_image_np_std, output_image_np)
+
+        if ii == 0:
+            rf_center_array = rf_center.reshape(1, -1)
+            rf_temporal_array = rf_temporal.reshape(1, -1)
+        else:
+            rf_center_array = np.concatenate((rf_center_array, rf_center.reshape(1, -1)), axis=0)
+            rf_temporal_array = np.concatenate((rf_temporal_array, rf_temporal.reshape(1, -1)), axis=0)
+        rf_spatial_array_list.append(output_image_np_std)
 
         if is_full_figure_draw:
-            output_image_np = output_image.squeeze().cpu().numpy()
             visualizer_est_rf.plot_and_save(output_image_np, plot_type='3D_matrix', num_cols=5)
             visualizer_inout_corr.plot_and_save(None, plot_type='scatter', x_data=labels, y_data=weights,
                                                 xlabel='Labels', ylabel='Weights',
                                                 title='Relationship between Weights and Labels')
-            output_image_np_std = np.std(output_image_np, axis=2)
-            output_image_np_std = output_image_np_std / output_image_np_std.sum()
             visualizer_est_rfstd.plot_and_save(output_image_np_std, plot_type='2D_matrix')
-
-            rf_center = find_connected_center(output_image_np_std)
-            rf_temporal = pairwise_mult_sum(output_image_np_std, output_image_np)
-
-            if ii == 0:
-                rf_center_array = rf_center.reshape(1, -1)
-                rf_temporal_array = rf_temporal.reshape(1, -1)
-            else:
-                rf_center_array = np.concatenate((rf_center_array, rf_center.reshape(1, -1)), axis=0)
-                rf_temporal_array = np.concatenate((rf_temporal_array, rf_temporal.reshape(1, -1)), axis=0)
-            rf_spatial_array_list.append(output_image_np_std)
-
-            '''
-            # Save file
-            np.savez(os.path.join(savemat_dir, 'sim_multi_result.npz'),
-                     output_image=output_image_np, presented_cell_id=presented_cell_id)
-            savemat(os.path.join(savemat_dir, 'sim_multi_result.mat'),
-                    {"output_image": output_image, "presented_cell_id": presented_cell_id})
-            raise RuntimeError("Script stopped after saving outputs.")
-            '''
 
         corrcoef_vals[ii, :] = calculate_correlation(labels, weights)
         ii += 1
@@ -204,7 +197,9 @@ def main():
 
     np.savez(savedata_filename_npz,
              rf_center_array=rf_center_array, rf_temporal_array=rf_temporal_array,
-             rf_spatial_array=rf_spatial_array, corrcoef_vals=corrcoef_vals)
+             rf_spatial_array=rf_spatial_array, corrcoef_vals=corrcoef_vals,
+             query_arrays=query_arrays, series_ids=series_ids,
+             syn_series_ids=syn_series_ids, syn_query_index=syn_query_index)
 
     # Save the dictionary as a .mat file
     savemat(savedata_filename_mat, {'corrcoef_vals': corrcoef_vals})
