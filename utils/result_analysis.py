@@ -1,18 +1,18 @@
 import numpy as np
 from scipy.ndimage import median_filter, gaussian_filter, label, find_objects
-from scipy.stats import mode
 
-def find_connected_center(array_2d, connectivity=8):
+
+def find_combined_center_of_mass(array_2d, connectivity=8, top_n=10):
     """
-    Apply filtering and find the center of mass of the largest connected component
-    in terms of peak intensity.
+    Find the combined center of mass of the top N connected components based on peak intensity.
 
     Args:
     - array_2d: 2D numpy array.
     - connectivity: Connectivity for connected component analysis; 8 for 8-connectivity.
+    - top_n: Number of top connected components to consider.
 
     Returns:
-    - A tuple (y_center, x_center) as the center of mass of the selected connected component.
+    - A tuple (y_center, x_center) as the combined center of mass of the top connected components.
     """
     # Apply a 2D median filter with a 3x3 kernel
     median_filtered = median_filter(array_2d, size=3)
@@ -20,32 +20,28 @@ def find_connected_center(array_2d, connectivity=8):
     # Apply a Gaussian filter with a 5x5 kernel
     gaussian_filtered = gaussian_filter(median_filtered, sigma=5 / 6)
 
-    # Threshold the filtered image to get the most significant features
+    # Threshold the filtered image to get significant features
     threshold = np.mean(gaussian_filtered) + np.std(gaussian_filtered)
     binary_image = gaussian_filtered > threshold
 
     # Label connected components
-    labeled_array, num_features = label(binary_image, structure=np.ones((3, 3)))
+    structure = np.ones((3, 3)) if connectivity == 8 else np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]])
+    labeled_array, num_features = label(binary_image, structure=structure)
 
-    # Find the connected component with the highest peak
+    # Find the peak intensity of each component
     peak_intensities = [np.max(gaussian_filtered[labeled_array == i]) for i in range(1, num_features + 1)]
-    if not peak_intensities:
-        return None  # Return None if no components are found
 
-    highest_peak_component = np.argmax(peak_intensities) + 1  # Component labels start at 1
+    # Sort components by peak intensity and select the top N
+    top_components_indices = np.argsort(peak_intensities)[::-1][:top_n]  # Get indices of top N components
 
-    # Find the center of mass of the component with the highest peak
-    component_slice = find_objects(labeled_array == highest_peak_component)[0]
-    component = gaussian_filtered[component_slice]
-    y, x = np.indices(component.shape)
+    # Create a combined mask for the top N components
+    combined_mask = np.isin(labeled_array, top_components_indices + 1)  # Adjust for 1-based indexing of components
 
-    total_intensity = component.sum()
-    x_center = (x * component).sum() / total_intensity
-    y_center = (y * component).sum() / total_intensity
-
-    # Adjust the center coordinates relative to the original image
-    y_center += component_slice[0].start
-    x_center += component_slice[1].start
+    # Calculate the weighted coordinates for the center of mass
+    y_indices, x_indices = np.indices(array_2d.shape)
+    total_intensity = np.sum(gaussian_filtered[combined_mask])
+    x_center = np.sum(x_indices[combined_mask] * gaussian_filtered[combined_mask]) / total_intensity
+    y_center = np.sum(y_indices[combined_mask] * gaussian_filtered[combined_mask]) / total_intensity
 
     return np.array((y_center, x_center))
 
