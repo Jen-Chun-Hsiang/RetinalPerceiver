@@ -7,7 +7,7 @@ import logging
 from datetime import datetime
 from scipy.io import savemat
 
-from datasets.simulated_target_rf import MultiTargetMatrixGenerator, CellClassLevel, ExperimentalLevel, IntegratedLevel
+from datasets.simulated_target_rf import MultiTargetMatrixGenerator, IntegratedLevel
 from datasets.simulated_dataset import MultiMatrixDataset
 from models.perceiver3d import RetinalPerceiverIO
 from models.cnn3d import RetinalPerceiverIOWithCNN
@@ -55,6 +55,7 @@ def main():
     logging.basicConfig(filename=log_filename,
                         level=logging.INFO,
                         format='%(asctime)s %(levelname)s:%(message)s')
+
     # Check if CUDA is available
     if not torch.cuda.is_available():
         raise RuntimeError("CUDA is not available. Please check your GPU and CUDA installation.")
