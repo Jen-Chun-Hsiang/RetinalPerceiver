@@ -45,7 +45,7 @@ def dynamic_margin_triplet_loss(anchor, positive, negative, similarity_ap, simil
     return losses.mean()
 
 
-def soft_contrastive_loss(embeddings1, embeddings2, similarity_scores, margin=1.0):
+def soft_contrastive_loss_pow2(embeddings1, embeddings2, similarity_scores, margin=1.0):
     """
     For contrastive learning (self-supervised)
     Computes a soft contrastive loss given pairs of embeddings and their similarity scores.
@@ -71,4 +71,24 @@ def soft_contrastive_loss(embeddings1, embeddings2, similarity_scores, margin=1.
 
     # Combine the losses
     loss = loss_similar + loss_dissimilar
+    return loss.mean()
+
+
+def soft_contrastive_loss_log(embeddings_i, embeddings_j, similarity_scores):
+    """
+    Computes the soft contrastive loss for a pair of embeddings and a similarity score.
+
+    Parameters:
+    - embeddings_i: Tensor of shape (batch_size, embedding_size) representing embeddings for instance i.
+    - embeddings_j: Tensor of shape (batch_size, embedding_size) representing embeddings for instance j.
+    - similarity_scores: Tensor of shape (batch_size,) containing continuous similarity scores between 0 and 1 for each pair.
+
+    Returns:
+    - loss: The computed soft contrastive loss.
+    """
+    # Calculate the sigmoid of the dot product between the pairs of embeddings
+    sim_prob = torch.sigmoid(torch.sum(embeddings_i * embeddings_j, dim=1))
+
+    # Compute the binary cross-entropy loss
+    loss = -similarity_scores * torch.log(sim_prob) - (1 - similarity_scores) * torch.log(1 - sim_prob)
     return loss.mean()
