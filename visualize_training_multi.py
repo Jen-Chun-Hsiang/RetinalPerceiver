@@ -26,7 +26,7 @@ def weightedsum_image_plot(output_image_np):
 
 def main():
     stimulus_type = 'SIM20tp022801'
-    epoch_end = 60
+    epoch_end = 100
     is_cross_level = False
     is_full_figure_draw = False
     checkpoint_filename = f'PerceiverIO_{stimulus_type}_checkpoint_epoch_{epoch_end}'
@@ -49,8 +49,6 @@ def main():
     log_name = 'visualize_model'
     # Construct the full path for the log file
     log_filename = os.path.join(saveprint_dir, f'{checkpoint_filename}_training_log_{timestr}.txt')
-    savedata_filename_npz = os.path.join(savedata_dir, f'{checkpoint_filename}_data.npz')
-    savedata_filename_mat = os.path.join(savedata_dir, f'{checkpoint_filename}_data.mat')
 
     # Setup logging
     logging.basicConfig(filename=log_filename,
@@ -143,6 +141,9 @@ def main():
         syn_query_index = np.array([])
         cross_level_flag = 'Data'
 
+    savedata_filename_npz = os.path.join(savedata_dir, f'{checkpoint_filename}_data_{cross_level_flag}.npz')
+    savedata_filename_mat = os.path.join(savedata_dir, f'{checkpoint_filename}_data_{cross_level_flag}.mat')
+
     presented_cell_ids = list(range(query_arrays.shape[0]))
 
     num_cols = 5
@@ -204,16 +205,24 @@ def main():
         ii += 1
 
     rf_spatial_array = np.stack(rf_spatial_array_list, axis=2)
+    rf_spatial_peak_array = np.stack(rf_spatial_peak_array_list, axis=2)
+    rf_spatial_trough_array = np.stack(rf_spatial_trough_array_list, axis=2)
     logging.info(f'correlation coefficient: {corrcoef_vals} \n')
 
     np.savez(savedata_filename_npz,
              rf_center_array=rf_center_array, rf_temporal_array=rf_temporal_array,
              rf_spatial_array=rf_spatial_array, corrcoef_vals=corrcoef_vals,
              query_arrays=query_arrays, series_ids=series_ids,
-             syn_series_ids=syn_series_ids, syn_query_index=syn_query_index)
+             syn_series_ids=syn_series_ids, syn_query_index=syn_query_index,
+             rf_spatial_peak_array=rf_spatial_peak_array, rf_spatial_trough_array=rf_spatial_trough_array)
 
     # Save the dictionary as a .mat file
-    savemat(savedata_filename_mat, {'corrcoef_vals': corrcoef_vals})
-
+    savemat(savedata_filename_mat, {
+        'rf_center_array': rf_center_array, 'rf_temporal_array': rf_temporal_array,
+        'corrcoef_vals': corrcoef_vals, 'rf_spatial_array': rf_spatial_array,
+        'query_arrays': query_arrays, 'series_ids': series_ids,
+        'syn_series_ids': syn_series_ids, 'syn_query_index': syn_query_index,
+        'rf_spatial_peak_array': rf_spatial_peak_array, 'rf_spatial_peak_array': rf_spatial_peak_array
+    })
 if __name__ == "__main__":
     main()
