@@ -183,7 +183,7 @@ def main():
         rf_center = find_connected_center(output_image_np_std)
         rf_temporal = pairwise_mult_sum(output_image_np_std, output_image_np)
         rf_spatial_peak = np.squeeze(output_image_np[np.where(rf_temporal == max(rf_temporal))[0], :, :])
-        rf_spatial_trough = np.squeeze(output_image_np[np.where(-rf_temporal == max(-rf_temporal))[0], :, :])
+        rf_spatial_trough = np.squeeze(output_image_np[np.where(rf_temporal == min(rf_temporal))[0], :, :])
         if ii == 0:
             rf_center_array = rf_center.reshape(1, -1)
             rf_temporal_array = rf_temporal.reshape(1, -1)
