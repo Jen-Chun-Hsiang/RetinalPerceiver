@@ -27,7 +27,7 @@ def weightedsum_image_plot(output_image_np):
 def main():
     stimulus_type = 'SIM20tp022801'
     epoch_end = 60
-    is_cross_level = True
+    is_cross_level = False
     is_full_figure_draw = False
     checkpoint_filename = f'PerceiverIO_{stimulus_type}_checkpoint_epoch_{epoch_end}'
 
@@ -148,6 +148,8 @@ def main():
     num_cols = 5
     corrcoef_vals = np.zeros((query_arrays.shape[0], 1))
     rf_spatial_array_list = []
+    rf_spatial_peak_array_list = []
+    rf_spatial_trough_array_list = []
     ii = 0
     for presented_cell_id in presented_cell_ids:
         query_array = query_arrays[presented_cell_id:presented_cell_id+1, :]
@@ -175,11 +177,12 @@ def main():
         output_image, weights, labels = forward_model(model, dataset_test, query_array=query_array, batch_size=batch_size,
                                                       use_matrix_index=False)
         output_image_np = output_image.squeeze().cpu().numpy()
-        output_image_np_std = np.std(output_image_np, axis=2)
+        output_image_np_std = np.std(output_image_np, axis=0)
         output_image_np_std = output_image_np_std / output_image_np_std.sum()
         rf_center = find_connected_center(output_image_np_std)
         rf_temporal = pairwise_mult_sum(output_image_np_std, output_image_np)
-
+        rf_spatial_peak = np.squeeze(output_image_np[np.where(rf_temporal == max(rf_temporal))[0], :, :])
+        rf_spatial_trough = np.squeeze(output_image_np[np.where(-rf_temporal == max(-rf_temporal))[0], :, :])
         if ii == 0:
             rf_center_array = rf_center.reshape(1, -1)
             rf_temporal_array = rf_temporal.reshape(1, -1)
@@ -187,6 +190,8 @@ def main():
             rf_center_array = np.concatenate((rf_center_array, rf_center.reshape(1, -1)), axis=0)
             rf_temporal_array = np.concatenate((rf_temporal_array, rf_temporal.reshape(1, -1)), axis=0)
         rf_spatial_array_list.append(output_image_np_std)
+        rf_spatial_peak_array_list.append(rf_spatial_peak)
+        rf_spatial_trough_array_list.append(rf_spatial_trough)
 
         if is_full_figure_draw:
             visualizer_est_rf.plot_and_save(output_image_np, plot_type='3D_matrix', num_cols=5)

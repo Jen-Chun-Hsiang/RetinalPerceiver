@@ -52,19 +52,19 @@ def pairwise_mult_sum(matrix_2d, array_3d):
     and then sum over the first two dimensions to result in a 1D array of shape [1 x D].
 
     Args:
-    - matrix_2d: A 2D numpy array of shape (N, M).
-    - array_3d: A 3D numpy array of shape (N, M, D).
+    - matrix_2d: A 2D numpy array of shape (H, W).
+    - array_3d: A 3D numpy array of shape (D, H, W).
 
     Returns:
     - A 1D numpy array of shape [1 x D] resulting from the pairwise multiplication and summation.
     """
     # Check the shapes to ensure compatibility for pairwise multiplication
-    if matrix_2d.shape != array_3d.shape[:2]:
+    if matrix_2d.shape != array_3d.shape[1:3]:
         raise ValueError("The first two dimensions of matrix_2d and array_3d must match.")
 
     # Perform pairwise multiplication
     # The result of this operation is a 3D array with the same shape as array_3d
-    pairwise_mult = matrix_2d[:, :, np.newaxis] * array_3d
+    pairwise_mult = matrix_2d[np.newaxis, :, :] * array_3d
 
     # Sum over the first two dimensions to collapse them
     # The resulting shape will be [1 x D]
