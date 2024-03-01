@@ -68,6 +68,6 @@ def pairwise_mult_sum(matrix_2d, array_3d):
 
     # Sum over the first two dimensions to collapse them
     # The resulting shape will be [1 x D]
-    result = pairwise_mult.sum(axis=(0, 1))
+    result = pairwise_mult.sum(axis=(1, 2))
 
     return np.array(result)

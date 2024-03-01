@@ -182,10 +182,6 @@ def main():
         output_image_np_std = output_image_np_std / output_image_np_std.sum()
         rf_center = find_connected_center(output_image_np_std)
         rf_temporal = pairwise_mult_sum(output_image_np_std, output_image_np)
-        print(f'output_image_np shape: {output_image_np.shape}')
-        print(f'output_image_np_std shape: {output_image_np_std.shape}')
-        print(f'rf_temporal shape: {rf_temporal.shape}')
-        assert len(rf_temporal) == output_image_np.shape[0]
         rf_spatial_peak = np.squeeze(output_image_np[np.where(rf_temporal == max(rf_temporal))[0], :, :])
         rf_spatial_trough = np.squeeze(output_image_np[np.where(rf_temporal == min(rf_temporal))[0], :, :])
         if ii == 0:
