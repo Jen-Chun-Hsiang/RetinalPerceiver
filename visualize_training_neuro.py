@@ -24,7 +24,7 @@ from models.cnn3d import RetinalPerceiverIOWithCNN
 
 
 def main():
-    stimulus_type = '50tpcnn_2024021801_GoodCell16'  # get the name from the check point folder
+    stimulus_type = '50tpcnn_2024022701_GoodCell2'  # get the name from the check point folder
     epoch_end = 40  # the number of epoch in the check_point file
     total_length = 10000
     is_weight_in_label = False  # check if the data is good
@@ -75,7 +75,7 @@ def main():
     experiment_session_table = load_data_from_excel(exp_dir, 'experiment_session')
     experiment_session_table = experiment_session_table.drop('stimulus_type', axis=1)
 
-    included_neuron_table = load_data_from_excel(exp_dir, 'included_neuron_02')
+    included_neuron_table = load_data_from_excel(exp_dir, 'nid_04')
 
     experiment_info_table = load_data_from_excel(exp_dir, 'experiment_info')
     experiment_info_table = experiment_info_table.drop(['species', 'sex', 'day', 'folder_name'], axis=1)
@@ -93,7 +93,7 @@ def main():
     filtered_data = filter_and_merge_data(
         experiment_session_table, experiment_neuron_table,
         selected_experiment_ids=[1],
-        selected_stimulus_types=[2],
+        selected_stimulus_types=[1],
         excluded_session_table=None,
         excluded_neuron_table=None,
         included_session_table=None,
