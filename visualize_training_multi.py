@@ -222,7 +222,7 @@ def main():
         'corrcoef_vals': corrcoef_vals, 'rf_spatial_array': rf_spatial_array,
         'query_arrays': query_arrays, 'series_ids': series_ids,
         'syn_series_ids': syn_series_ids, 'syn_query_index': syn_query_index,
-        'rf_spatial_peak_array': rf_spatial_peak_array, 'rf_spatial_peak_array': rf_spatial_peak_array
+        'rf_spatial_peak_array': rf_spatial_peak_array, 'rf_spatial_trough_array': rf_spatial_trough_array
     })
 if __name__ == "__main__":
     main()
