@@ -200,6 +200,11 @@ class RetinalPerceiverIOWithCNN(nn.Module):
         # cheap way to skip decoder and make sure everything above is fine
         #return self.fc(latents_projected.mean(dim=1))
         # Decode stage
-        return self.decoder(latents_projected, query_array).mean(dim=1)
+
+        predictions, embeddings = self.decoder(latents_projected, query_array)
+        print(f'predictions size: {predictions.shape}')
+        print(f'embeddings size: {embeddings.shape}')
+        raise RuntimeError("Script stopped after saving outputs.")
+        return predictions.mean(dim=1), embeddings
 
 

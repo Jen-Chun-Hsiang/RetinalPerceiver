@@ -1,6 +1,6 @@
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
-
 """
 Idea for contrastive learning:
 (1). Contrastive learning is primarily used to enhance query factor disentanglement, not necessarily to increase predict
@@ -92,3 +92,41 @@ def soft_contrastive_loss_log(embeddings_i, embeddings_j, similarity_scores):
     # Compute the binary cross-entropy loss
     loss = -similarity_scores * torch.log(sim_prob) - (1 - similarity_scores) * torch.log(1 - sim_prob)
     return loss.mean()
+
+
+class CosineNegativePairLoss(nn.Module):
+    def __init__(self, margin=0.1, temperature=0.5):
+        """
+        Initialize the loss function with a margin and a temperature parameter.
+
+        :param margin: A scalar that defines the threshold for penalizing negative pairs
+                       that are too close in terms of cosine distance.
+        :param temperature: A scalar that scales the cosine distances, controlling
+                            the separation in the embedding space.
+        """
+        super(CosineNegativePairLoss, self).__init__()
+        self.margin = margin
+        self.temperature = temperature
+
+    def forward(self, embeddings):
+        """
+        Compute the loss for each pair of negative examples in the batch based on scaled cosine distance.
+
+        :param embeddings: Tensor of shape (batch_size, embedding_dim) containing the embeddings
+                           of the samples. Assumes that each consecutive pair of samples in the batch
+                           are considered a negative pair.
+        """
+        # Calculate cosine similarity for all possible pairs
+        cosine_sim = F.cosine_similarity(embeddings[::2], embeddings[1::2])
+
+        # Convert cosine similarity to cosine distance
+        cosine_dist = 1 - cosine_sim
+
+        # Apply temperature scaling
+        scaled_cosine_dist = cosine_dist / self.temperature
+
+        # Calculate loss based on the margin
+        losses = F.relu(self.margin - scaled_cosine_dist)
+
+        # Return the mean loss over all negative pairs
+        return losses.mean()

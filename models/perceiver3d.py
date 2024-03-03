@@ -336,7 +336,7 @@ class PerceiverIODecoder(nn.Module):
         #attn_output = attn_output + saved_q
         # Apply the output projection
         attn_output = F.gelu(self.out_proj1(attn_output))
-        return self.out_proj2(attn_output)
+        return self.out_proj2(attn_output), attn_output
 
 
 class RetinalPerceiverIO(nn.Module):
@@ -413,7 +413,8 @@ class RetinalPerceiverIO(nn.Module):
         for layer in self.process_layers:
             latents, _ = layer(latents)
 
-        return self.decoder(latents, query_array).mean(dim=1)
+        outputs, _ = self.decoder(latents, query_array)
+        return outputs.mean(dim=1)
 
     def _process_positional_encoding(self, num_batches, num_patches, patches):
         """ Helper function to process positional encoding """

@@ -17,6 +17,7 @@ from torchinfo import summary
 import torch.distributed as dist
 from scipy.io import savemat
 from torch.nn.parallel import DistributedDataParallel
+from utils.query_editor import get_unique_sets, QueryPermutator
 
 
 from datasets.simulated_target_rf import MultiTargetMatrixGenerator, CellClassLevel, ExperimentalLevel, IntegratedLevel
@@ -26,6 +27,7 @@ from datasets.simulated_dataset import MultiMatrixDataset
 from models.perceiver3d import RetinalPerceiverIO
 from models.cnn3d import RetinalPerceiverIOWithCNN
 from utils.training_procedure import Trainer, Evaluator, save_checkpoint, CheckpointLoader
+
 
 def parse_covariance(string):
     try:
@@ -160,6 +162,11 @@ def main():
     query_encoder = SeriesEncoder(max_values, lengths, shuffle_components=shuffle_components)
     query_array = query_encoder.encode(series_ids)
     logging.info(f'query_array size:{query_array.shape} \n')
+
+    query_input_struct = tuple(lengths.keys())
+    query_perm_set = get_unique_sets(series_ids, query_input_struct)
+    query_perm_list = [(1, 1, 0), (0, 1, 0), (0, 0, 1)]
+    query_permutator = QueryPermutator(query_perm_set, query_input_struct, query_perm_list)
     '''
     # Save to .mat file
     savemat(os.path.join(savemat_dir, 'sim_multi_list.mat'),
