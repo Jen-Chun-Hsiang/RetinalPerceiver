@@ -2,6 +2,7 @@ import torch
 from torch.utils.data import DataLoader
 from loss_function import CosineNegativePairLoss
 
+
 class Trainer:
     def __init__(self, model, criterion, optimizer, device, accumulation_steps=1,
                  query_array=None, is_contrastive_learning=False,
