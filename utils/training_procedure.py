@@ -95,7 +95,7 @@ class Trainer:
         outputs_predict, outputs_embedding = self.model(input_matrices, query_vectors)
         num_batch = input_matrices.shape[0]
         perm_series_ids = self.series_ids[matrix_indices]
-        batch_permuted_queries = self.query_permutator(perm_series_ids)
+        batch_permuted_queries = self.query_permutator.generate_batch_perm_list(perm_series_ids)
         contra_loss = 0
         for i, permuted_queries in enumerate(batch_permuted_queries):
             query_array = self.query_encoder.encode(permuted_queries)
