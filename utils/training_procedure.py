@@ -1,6 +1,7 @@
 import torch
 from torch.utils.data import DataLoader
 from .loss_function import CosineNegativePairLoss
+import numpy as np
 
 
 class Trainer:
@@ -25,7 +26,10 @@ class Trainer:
 
             self.query_encoder = query_encoder
             self.query_permutator = query_permutator
-            self.series_ids = series_ids
+            # Convert series_ids to a NumPy array if it's not already
+            series_ids = np.array(series_ids)
+            series_ids_tensor = torch.tensor(series_ids)
+            self.series_ids = series_ids_tensor.float()
             self.neg_contra_loss_fn = CosineNegativePairLoss(margin=margin, temperature=temperature)
 
     def train_one_epoch(self, train_loader):
