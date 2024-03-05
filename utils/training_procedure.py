@@ -2,6 +2,7 @@ import torch
 from torch.utils.data import DataLoader
 from .loss_function import CosineNegativePairLoss
 import numpy as np
+from operator import itemgetter
 
 
 class Trainer:
@@ -26,9 +27,7 @@ class Trainer:
 
             self.query_encoder = query_encoder
             self.query_permutator = query_permutator
-            # Convert series_ids to a NumPy array if it's not already
-            series_ids = np.array(series_ids)
-            self.series_ids = torch.tensor(series_ids)
+            self.series_ids = series_ids
             self.neg_contra_loss_fn = CosineNegativePairLoss(margin=margin, temperature=temperature)
 
     def train_one_epoch(self, train_loader):
@@ -93,7 +92,7 @@ class Trainer:
         input_matrices, targets = input_matrices.to(self.device), targets.to(self.device)
         outputs_predict, outputs_embedding = self.model(input_matrices, query_vectors)
         num_batch = input_matrices.shape[0]
-        perm_series_ids = self.series_ids[matrix_indices]
+        perm_series_ids = [self.series_ids[i] for i in matrix_indices]
         batch_permuted_queries = self.query_permutator.generate_batch_perm_list(perm_series_ids)
         contra_loss = 0
         for i, permuted_queries in enumerate(batch_permuted_queries):

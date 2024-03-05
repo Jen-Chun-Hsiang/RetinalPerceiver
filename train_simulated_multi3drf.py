@@ -158,8 +158,8 @@ def main():
                                        getattr(config, 'experimental5', None)])
     # Generate param_list
     param_list, series_ids = integrated_list.generate_combined_param_list()
-    print(type(series_ids))
-    print(f'series_ids shape: {series_ids.shape}')
+    #print(type(series_ids))
+    #print(f'series_ids shape: {series_ids.shape}')
     # Encode series_ids into query arrays
     max_values = {'Experiment': 100, 'Type': 100, 'Cell': 10000}
     lengths = {'Experiment': 6, 'Type': 6, 'Cell': 24}
