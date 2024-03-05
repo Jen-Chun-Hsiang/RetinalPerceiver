@@ -1,6 +1,6 @@
 import torch
 from torch.utils.data import DataLoader
-from loss_function import CosineNegativePairLoss
+from .loss_function import CosineNegativePairLoss
 
 
 class Trainer:
