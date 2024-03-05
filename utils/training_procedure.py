@@ -28,8 +28,7 @@ class Trainer:
             self.query_permutator = query_permutator
             # Convert series_ids to a NumPy array if it's not already
             series_ids = np.array(series_ids)
-            series_ids_tensor = torch.tensor(series_ids)
-            self.series_ids = series_ids_tensor.float()
+            self.series_ids = torch.tensor(series_ids)
             self.neg_contra_loss_fn = CosineNegativePairLoss(margin=margin, temperature=temperature)
 
     def train_one_epoch(self, train_loader):
@@ -99,6 +98,7 @@ class Trainer:
         contra_loss = 0
         for i, permuted_queries in enumerate(batch_permuted_queries):
             query_array = self.query_encoder.encode(permuted_queries)
+            query_array = torch.from_numpy(query_array)
             query_vectors = query_array.float().to(self.device)
             _, perm_embedding = self.model(input_matrices, query_vectors)
             contra_loss += self.neg_contra_loss_fn(perm_embedding.view(num_batch, -1),
