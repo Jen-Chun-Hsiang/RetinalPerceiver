@@ -73,7 +73,7 @@ class Trainer:
         query_vectors = self.query_array[matrix_indices]
         query_vectors = query_vectors.float().to(self.device)
         input_matrices, targets = input_matrices.to(self.device), targets.to(self.device)
-        outputs = self.model(input_matrices, query_vectors)
+        outputs, _ = self.model(input_matrices, query_vectors)
         try:
             assert outputs.shape == targets.shape
         except Exception as e:
