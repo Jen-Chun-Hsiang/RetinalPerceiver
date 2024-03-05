@@ -88,7 +88,6 @@ class Trainer:
     def _process_batch_with_query_contrast(self, data):
         input_matrices, targets, matrix_indices = data
         query_vectors = self.query_array[matrix_indices]
-        print(f'query_vectors 1 shape {query_vectors.shape}')
         query_vectors = query_vectors.float().to(self.device)
         input_matrices, targets = input_matrices.to(self.device), targets.to(self.device)
         outputs_predict, outputs_embedding = self.model(input_matrices, query_vectors)
@@ -98,8 +97,7 @@ class Trainer:
         contra_loss = 0
         for i, permuted_queries in enumerate(batch_permuted_queries):
             query_array = self.query_encoder.encode(permuted_queries)
-            query_vectors = torch.from_numpy(query_array)
-            print(f'query_vectors 2 shape{query_vectors.shape}')
+            query_vectors = torch.from_numpy(query_array).unsqueeze(1)
             query_vectors = query_vectors.float().to(self.device)
             _, perm_embedding = self.model(input_matrices, query_vectors)
             contra_loss += self.neg_contra_loss_fn(perm_embedding.view(num_batch, -1),
