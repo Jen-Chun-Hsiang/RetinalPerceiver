@@ -20,11 +20,10 @@ class QueryPermutator:
             if len(perm_pattern) != self.input_struct_length:
                 raise ValueError(f"Permutation pattern {perm_pattern} does not match the length of query_input_struct.")
 
-        self.query_perm_list = list(query_perm_list)
-
     def generate_perm_list(self, input_query):
         # Validate input_query length matches query_input_struct
         if len(input_query) != self.input_struct_length:
+            print(f"input_query: {input_query}")
             raise ValueError("input_query does not match the structure length.")
 
         permuted_queries = []
@@ -50,6 +49,23 @@ class QueryPermutator:
             permuted_queries.append(tuple(new_query))
 
         return permuted_queries
+
+    def generate_batch_perm_list(self, input_queries):
+        # Initialize a list of lists for each permutation pattern
+        batch_permuted_queries = [[] for _ in self.query_perm_list]
+
+        for input_query in input_queries:
+            if len(input_query) != self.input_struct_length:
+                raise ValueError("An input_query in the batch does not match the structure length.")
+
+            # Generate permuted queries for this input query
+            permuted_queries = self.generate_perm_list(input_query)
+
+            # Distribute permuted queries across the initialized lists based on their pattern
+            for pattern_index, permuted_query in enumerate(permuted_queries):
+                batch_permuted_queries[pattern_index].append(permuted_query)
+
+        return batch_permuted_queries
 
 
 def get_unique_sets(series_ids, query_input_struct):

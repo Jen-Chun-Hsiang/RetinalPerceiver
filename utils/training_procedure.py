@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader
 class Trainer:
     def __init__(self, model, criterion, optimizer, device, accumulation_steps=1,
                  query_array=None, is_contrastive_learning=False,
-                 query_encoder=None, query_permutator=None):
+                 query_encoder=None, query_permutator=None, series_ids=None):
         self.model = model
         self.criterion = criterion
         self.optimizer = optimizer
@@ -19,9 +19,12 @@ class Trainer:
             self.is_query_array = False
         self.is_contrastive_learning = is_contrastive_learning
         if self.is_contrastive_learning:
+            if query_encoder is None or query_permutator is None or series_ids is None:
+                raise ValueError("Not enough inputs in Trainer to perform contrastive learning.")
+
             self.query_encoder = query_encoder
             self.query_permutator = query_permutator
-
+            self.series_ids = series_ids
 
     def train_one_epoch(self, train_loader):
         self.model.train()  # Set the model to training mode
@@ -83,7 +86,11 @@ class Trainer:
         query_vectors = self.query_array[matrix_indices]
         query_vectors = query_vectors.float().to(self.device)
         input_matrices, targets = input_matrices.to(self.device), targets.to(self.device)
-        outputs = self.model(input_matrices, query_vectors)
+        outputs, _ = self.model(input_matrices, query_vectors)
+        num_batch = input_matrices.shape[0]
+        perm_series_ids = self.series_ids[matrix_indices]
+        self.query_permutator(perm_series_ids)
+
 
     def _compute_loss(self, outputs, targets):
         return self.criterion(outputs.squeeze(), targets.squeeze())

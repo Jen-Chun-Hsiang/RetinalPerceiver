@@ -248,9 +248,11 @@ def main():
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
     # Initialize the Trainer
-    trainer = Trainer(model, criterion, optimizer, device, args.accumulation_steps, query_array=query_array)
+    trainer = Trainer(model, criterion, optimizer, device, args.accumulation_steps,
+                      query_array=query_array, series_ids=series_ids)
     # Initialize the Evaluator
-    evaluator = Evaluator(model, criterion, device, query_array=query_array)
+    evaluator = Evaluator(model, criterion, device, query_array=query_array,
+                          series_ids=series_ids)
 
     # Optionally, load from checkpoint
     if args.load_checkpoint:
