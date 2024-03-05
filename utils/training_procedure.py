@@ -109,6 +109,44 @@ class Trainer:
         loss.backward()  # Compute the backward pass only
 
 
+class Evaluator(Trainer):
+    def __init__(self, model, criterion, device,
+                 query_array=None, is_contrastive_learning=False,
+                 query_encoder=None, query_permutator=None, series_ids=None,
+                 margin=0.1, temperature=0.1):
+        # Initialize the parent class without an optimizer as it's not needed for evaluation
+        super().__init__(model, criterion, None, device, query_array=query_array,
+                         is_contrastive_learning=is_contrastive_learning, query_encoder=query_encoder,
+                         series_ids=series_ids, query_permutator=query_permutator,
+                         margin=margin, temperature=temperature)
+
+    def evaluate(self, eval_loader):
+        self.model.eval()  # Set the model to evaluation mode
+        total_eval_loss = 0
+        with torch.no_grad():  # Ensure no gradients are computed
+            for batch_idx, data in enumerate(eval_loader):
+                if self.is_query_array:
+                    if self.is_contrastive_learning:
+                        loss = self._process_batch_with_query_contrast(data)
+                    else:
+                        loss = self._process_batch_with_query(data)
+                else:
+                    loss = self._process_batch(data)
+
+                if loss is not None:
+                    total_eval_loss += loss.item()
+                else:
+                    raise ValueError(
+                        f"Loss is None for batch {batch_idx}. Check your model's output and loss function.")
+
+        avg_eval_loss = total_eval_loss / len(eval_loader)
+        return avg_eval_loss
+
+    def _update_parameters(self, loss):
+        pass  # Override to prevent any parameter updates
+
+
+'''
 class Evaluator:
     def __init__(self, model, criterion, device, query_array=None):
         self.model = model
@@ -164,9 +202,11 @@ class Evaluator:
 
     def _compute_loss(self, outputs, targets):
         return self.criterion(outputs.squeeze(), targets.squeeze())
+'''
 
 
-def save_checkpoint(epoch, model, optimizer, args, training_losses, validation_losses, file_path):
+def save_checkpoint(epoch, model, optimizer, args, training_losses,
+                    validation_losses, validation_contra_losses, file_path):
     """
     Saves a checkpoint of the training process.
 
@@ -184,7 +224,8 @@ def save_checkpoint(epoch, model, optimizer, args, training_losses, validation_l
         'optimizer_state_dict': optimizer.state_dict(),
         'args': args,
         'training_losses': training_losses,
-        'validation_losses': validation_losses
+        'validation_losses': validation_losses,
+        'validation_contra_losses': validation_contra_losses
     }
     torch.save(checkpoint, file_path)
 
@@ -195,6 +236,7 @@ class CheckpointLoader:
         self.start_epoch = None
         self.training_losses = None
         self.validation_losses = None
+        self.validation_contra_losses = None
         self.args = None
         self.checkpoint = torch.load(checkpoint_path, map_location=device)
 
@@ -237,6 +279,11 @@ class CheckpointLoader:
         """ Return the list of recorded validation losses. """
         self.validation_losses = self.checkpoint.get('validation_losses', [])
         return self.validation_losses
+
+    def load_validation_losses(self):
+        """ Return the list of recorded validation losses. """
+        self.validation_contra_losses = self.checkpoint.get('validation_contra_losses', [])
+        return self.validation_contra_losses
 
 
 def forward_model(model, dataset, query_array=None, batch_size=16,

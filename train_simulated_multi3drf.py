@@ -108,9 +108,13 @@ def parse_args():
                         help='Input kernel size as three separate integers. Default is (2, 2, 2)')
     parser.add_argument('--stride', nargs=3, type=int, default=[1, 1, 1],
                         help='Input stride as three separate integers. Default is (1, 1, 1)')
+    parser.add_argument('--margin', type=float, default=0.1, help='Margin for contrastive learning')
+    parser.add_argument('--temperature', type=float, default=0.1, help='Temperature for contrastive learning')
     # System computing enhancement
     parser.add_argument('--parallel_processing', action='store_true', help='Enable parallel_processing')
     parser.add_argument('--accumulation_steps', type=int, default=1, help='Accumulate gradients')
+    parser.add_argument('--is_contrastive_learning', action='store_true', help='Enable contrastive learning')
+
     # Plot parameters
     parser.add_argument('--num_cols', type=int, default=5, help='Number of columns in a figure')
 
@@ -249,10 +253,15 @@ def main():
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
     # Initialize the Trainer
     trainer = Trainer(model, criterion, optimizer, device, args.accumulation_steps,
-                      query_array=query_array, series_ids=series_ids)
+                      query_array=query_array, is_contrastive_learning=args.is_contrastive_learning,
+                      series_ids=series_ids, query_permutator=query_permutator, margin=args.margin,
+                      temperature=args.temperature)
     # Initialize the Evaluator
-    evaluator = Evaluator(model, criterion, device, query_array=query_array,
-                          series_ids=series_ids)
+    evaluator_contra = Evaluator(model, criterion, device, query_array=query_array,
+                          is_contrastive_learning=args.is_contrastive_learning,
+                          series_ids=series_ids, query_permutator=query_permutator,
+                          margin=args.margin, temperature=args.temperature)
+    evaluator = Evaluator(model, criterion, device, query_array=query_array)
 
     # Optionally, load from checkpoint
     if args.load_checkpoint:
@@ -264,6 +273,7 @@ def main():
         start_epoch = 0
         training_losses = []
         validation_losses = []
+        validation_contra_losses = []
         start_time = time.time()  # Capture the start time
 
     for epoch in range(start_epoch, args.epochs):
@@ -273,6 +283,8 @@ def main():
         # torch.cuda.empty_cache()
         avg_val_loss = evaluator.evaluate(val_loader)
         validation_losses.append(avg_val_loss)
+        avg_val_loss = evaluator_contra.evaluate(val_loader)
+        validation_contra_losses.append(avg_val_loss)
 
         # Print training status
         if (epoch + 1) % 5 == 0:
@@ -288,6 +300,7 @@ def main():
             logging.info(f"Allocated memory: {torch.cuda.memory_allocated() / 1e6} MB \n"
                          f"Max memory allocated: {torch.cuda.max_memory_allocated() / 1e6} MB \n")
             save_checkpoint(epoch, model, optimizer, args, training_losses, validation_losses,
+                            validation_contra_losses,
                             os.path.join(savemodel_dir, checkpoint_filename))
 
     if args.parallel_processing:
