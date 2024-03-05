@@ -95,7 +95,7 @@ def soft_contrastive_loss_log(embeddings_i, embeddings_j, similarity_scores):
 
 
 class CosineNegativePairLoss(nn.Module):
-    def __init__(self, margin=0.1, temperature=0.5):
+    def __init__(self, margin=0.1, temperature=0.1):
         """
         Initialize the loss function with a margin and a temperature parameter.
 
@@ -108,16 +108,23 @@ class CosineNegativePairLoss(nn.Module):
         self.margin = margin
         self.temperature = temperature
 
-    def forward(self, embeddings):
+    def forward(self, embeddings, anchors):
         """
         Compute the loss for each pair of negative examples in the batch based on scaled cosine distance.
 
         :param embeddings: Tensor of shape (batch_size, embedding_dim) containing the embeddings
                            of the samples. Assumes that each consecutive pair of samples in the batch
                            are considered a negative pair.
+        :param anchors: Tensor of shape (batch_size, embedding_dim) containing the embeddings
+                        of the corresponding anchors. Assumes that each embedding in the `embeddings`
+                        tensor has a corresponding anchor in this tensor.
         """
+        # Normalize the embeddings and anchors to have unit norm
+        embeddings = F.normalize(embeddings, p=2, dim=1)
+        anchors = F.normalize(anchors, p=2, dim=1)
+
         # Calculate cosine similarity for all possible pairs
-        cosine_sim = F.cosine_similarity(embeddings[::2], embeddings[1::2])
+        cosine_sim = F.cosine_similarity(embeddings, anchors, dim=1)
 
         # Convert cosine similarity to cosine distance
         cosine_dist = 1 - cosine_sim

@@ -1,12 +1,13 @@
 import torch
 from torch.utils.data import DataLoader
-# from loss_function import CosineNegativePairLoss
+from loss_function import CosineNegativePairLoss
 
 
 class Trainer:
     def __init__(self, model, criterion, optimizer, device, accumulation_steps=1,
                  query_array=None, is_contrastive_learning=False,
-                 query_encoder=None, query_permutator=None, series_ids=None):
+                 query_encoder=None, query_permutator=None, series_ids=None,
+                 margin=0.1, temperature=0.1):
         self.model = model
         self.criterion = criterion
         self.optimizer = optimizer
@@ -25,6 +26,7 @@ class Trainer:
             self.query_encoder = query_encoder
             self.query_permutator = query_permutator
             self.series_ids = series_ids
+            self.neg_contra_loss_fn = CosineNegativePairLoss(margin=margin, temperature=temperature)
 
     def train_one_epoch(self, train_loader):
         self.model.train()  # Set the model to training mode
@@ -86,11 +88,19 @@ class Trainer:
         query_vectors = self.query_array[matrix_indices]
         query_vectors = query_vectors.float().to(self.device)
         input_matrices, targets = input_matrices.to(self.device), targets.to(self.device)
-        outputs, _ = self.model(input_matrices, query_vectors)
+        outputs_predict, outputs_embedding = self.model(input_matrices, query_vectors)
         num_batch = input_matrices.shape[0]
         perm_series_ids = self.series_ids[matrix_indices]
-        self.query_permutator(perm_series_ids)
+        batch_permuted_queries = self.query_permutator(perm_series_ids)
+        contra_loss = 0
+        for i, permuted_queries in enumerate(batch_permuted_queries):
+            query_array = self.query_encoder.encode(permuted_queries)
+            query_vectors = query_array.float().to(self.device)
+            _, perm_embedding = self.model(input_matrices, query_vectors)
+            contra_loss += self.neg_contra_loss_fn(perm_embedding.view(num_batch, -1),
+                                                   outputs_embedding.view(num_batch, -1))
 
+        return self._compute_loss(outputs_predict, targets) + contra_loss
 
     def _compute_loss(self, outputs, targets):
         return self.criterion(outputs.squeeze(), targets.squeeze())
