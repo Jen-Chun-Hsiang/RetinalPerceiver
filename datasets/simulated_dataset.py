@@ -1,25 +1,14 @@
 import torch
-import numpy as np
-from torch.utils.data import Dataset
-import time
-
-import torch
-import numpy as np
-from torch.utils.data import Dataset
-import time
-import random
-
-import torch
-import random
-import numpy as np
-import time
-import matplotlib.pyplot as plt
-from torch.utils.data import Dataset
-import math
-import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.utils.data import Dataset
 from torch.nn.modules.utils import _pair, _quadruple
+import random
+import numpy as np
+import time
+import math
+import matplotlib.pyplot as plt
+
 
 class MatrixDataset(Dataset):
     def __init__(self, target_matrix, length, device, combination_set=None, ratio_for_one=0.5,
@@ -71,8 +60,8 @@ class MatrixDataset(Dataset):
     def generate_matrix(self, matrix_type):
         # Definitions for matrix types 1, 2, and 3 as before
         if matrix_type == 1:
-            initial_noise = torch.rand(self.initial_size, device=self.device)
-            return F.interpolate(initial_noise, size=self.dimensions, mode='nearest')
+            initial_noise = torch.rand((1, *self.initial_size), device=self.device)
+            return F.interpolate(initial_noise.unsqueeze(0), size=self.dimensions, mode='nearest')
         elif matrix_type == 2:
             p = self.ratio_for_one
             if not 0 <= p <= 1:
