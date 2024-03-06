@@ -318,9 +318,11 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
                     weights, _ = model(images, query_vectors)
             else:
                 images, labels = data
-                weights = model(images).squeeze()
+                weights, _ = model(images).squeeze()
 
             #images = images.to(next(model.parameters()).device)
+            print(f'weights type: {type(weights)}')
+            print(f'weights shape: {weights.shape}')
             all_weights.extend(weights.cpu().tolist())
             all_labels.extend(labels.cpu().tolist() if torch.is_tensor(labels) else labels)
 
