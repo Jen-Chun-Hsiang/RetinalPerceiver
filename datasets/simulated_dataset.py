@@ -61,7 +61,7 @@ class MatrixDataset(Dataset):
         # Definitions for matrix types 1, 2, and 3 as before
         if matrix_type == 1:
             initial_noise = torch.rand((1, *self.initial_size), device=self.device)
-            return F.interpolate(initial_noise.unsqueeze(0), size=self.dimensions, mode='nearest').squeeze((0, 1))
+            return F.interpolate(initial_noise.unsqueeze(0), size=self.dimensions, mode='nearest').squeeze()
         elif matrix_type == 2:
             p = self.ratio_for_one
             if not 0 <= p <= 1:
