@@ -27,7 +27,7 @@ from utils.utils import SeriesEncoder
 from models.perceiver3d import RetinalPerceiverIO
 from models.cnn3d import RetinalPerceiverIOWithCNN
 from utils.training_procedure import Trainer, Evaluator, save_checkpoint, CheckpointLoader
-
+from utils.loss_function import loss_functions
 
 def parse_covariance(string):
     try:
@@ -93,6 +93,9 @@ def parse_args():
                         help='Input kernel size as three separate integers. Default is (2, 2, 2)')
     parser.add_argument('--stride', nargs=3, type=int, default=[1, 1, 1],
                         help='Input stride as three separate integers. Default is (1, 1, 1)')
+    parser.add_argument('--loss_fn', type=str, default='MSE', choices=list(loss_functions.keys()),
+                        help='The name of the loss function to use (default: MSE)')
+
     # System computing enhancement
     parser.add_argument('--parallel_processing', action='store_true', help='Enable parallel_processing')
     parser.add_argument('--accumulation_steps', type=int, default=1, help='Accumulate gradients')
@@ -272,7 +275,7 @@ def main():
     sys.stdout = old_stdout
     logging.info(buffer.getvalue())
 
-    criterion = nn.MSELoss()
+    criterion = loss_functions[args.loss_fn]
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
     # Initialize the Trainer
     trainer = Trainer(model, criterion, optimizer, device, args.accumulation_steps,

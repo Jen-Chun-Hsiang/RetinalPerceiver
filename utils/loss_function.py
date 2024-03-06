@@ -137,3 +137,11 @@ class CosineNegativePairLoss(nn.Module):
 
         # Return the mean loss over all negative pairs
         return losses.mean()
+
+
+# Define the mapping of loss function names to their PyTorch implementations
+loss_functions = {
+    'MSE': nn.MSELoss(),
+    'Poisson': nn.PoissonNLLLoss(log_input=False, full=True, reduction='mean'),
+    # Add additional loss functions here as needed
+}
