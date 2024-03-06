@@ -199,7 +199,8 @@ def main():
         sample_data, sample_label, sample_index = train_dataset[0]
         logging.info(f"dataset size: {sample_data.shape}")
         # if specified query array, always make sure is_weight_in_label
-        dataset_test = MultiMatrixDataset(sample_data, length=total_length, device=device, combination_set=[1])
+        dataset_test = MultiMatrixDataset(sample_data, length=total_length, device=device, combination_set=[1],
+                                          initial_size=(20, 30, 40))
         output_image, weights, labels = forward_model(model, dataset_test, query_array=query_array_one,
                                                       batch_size=8, use_matrix_index=False,
                                                       is_weight_in_label=is_weight_in_label)

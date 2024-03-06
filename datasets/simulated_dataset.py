@@ -22,7 +22,8 @@ import torch.nn.functional as F
 from torch.nn.modules.utils import _pair, _quadruple
 
 class MatrixDataset(Dataset):
-    def __init__(self, target_matrix, length, device, combination_set=None, ratio_for_one=0.5):
+    def __init__(self, target_matrix, length, device, combination_set=None, ratio_for_one=0.5,
+                 initial_size=(20, 20, 24)):
         """
         Args:
             target_matrix (numpy.ndarray or torch.Tensor): A target 3D matrix for operations.
@@ -49,6 +50,7 @@ class MatrixDataset(Dataset):
         self.ratio_for_one = ratio_for_one
         self.combination_set = combination_set if combination_set is not None else [1]
         self.median_filter = MedianPool2d(kernel_size=4, same=True)
+        self.initial_size = initial_size
 
     def __len__(self):
         return self.length
@@ -69,7 +71,8 @@ class MatrixDataset(Dataset):
     def generate_matrix(self, matrix_type):
         # Definitions for matrix types 1, 2, and 3 as before
         if matrix_type == 1:
-            return torch.rand(self.dimensions, device=self.device)
+            initial_noise = torch.rand((1, 1, *self.initial_size), device=self.device)
+            return F.interpolate(initial_noise, size=self.dimensions, mode='nearest')
         elif matrix_type == 2:
             p = self.ratio_for_one
             if not 0 <= p <= 1:
