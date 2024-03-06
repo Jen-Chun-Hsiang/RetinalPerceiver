@@ -71,7 +71,7 @@ class MatrixDataset(Dataset):
     def generate_matrix(self, matrix_type):
         # Definitions for matrix types 1, 2, and 3 as before
         if matrix_type == 1:
-            initial_noise = torch.rand((1, 1, *self.initial_size), device=self.device)
+            initial_noise = torch.rand(self.initial_size, device=self.device)
             return F.interpolate(initial_noise, size=self.dimensions, mode='nearest')
         elif matrix_type == 2:
             p = self.ratio_for_one
