@@ -153,7 +153,8 @@ class SharpenFilter(nn.Module):
 
 class MultiMatrixDataset(MatrixDataset):
     def __init__(self, target_matrices, length, device, combination_set=None, ratio_for_one=0.5,
-                 add_noise=False, noise_level=0.1, use_relu=False, output_offset=0.12):
+                 add_noise=False, noise_level=0.1, use_relu=False, output_offset=0.12,
+                 initial_size=(20, 20, 24)):
         """
         Args:
                     target_matrices (numpy.ndarray or torch.Tensor): A 4D matrix.
@@ -175,7 +176,7 @@ class MultiMatrixDataset(MatrixDataset):
             raise ValueError("target_matrices must be either a numpy array or a torch tensor")
 
         # Initialize the base MatrixDataset with the first matrix (as a placeholder)
-        super().__init__(target_matrices[0], length, device, combination_set, ratio_for_one)
+        super().__init__(target_matrices[0], length, device, combination_set, ratio_for_one, initial_size)
 
         # Normalize and store each matrix in the first dimension of target_matrices
         self.target_matrices = []
