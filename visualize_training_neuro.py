@@ -25,7 +25,7 @@ from models.cnn3d import RetinalPerceiverIOWithCNN
 
 def main():
     stimulus_type = '50tpcnn_2024022701_GoodCell2'  # get the name from the check point folder
-    epoch_end = 40  # the number of epoch in the check_point file
+    epoch_end = 110  # the number of epoch in the check_point file
     total_length = 10000
     is_weight_in_label = False  # check if the data is good
     is_full_figure_draw = True  # determine whether draw for each neuro or just get stats

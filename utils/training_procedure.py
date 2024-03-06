@@ -315,7 +315,7 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
                     # print(f'images shape: {images.shape}')
                     if query_vectors.size(0) != images.size(0):
                         query_vectors = query_vectors[:images.size(0), :, :]
-                    weights = model(images, query_vectors)
+                    weights, _ = model(images, query_vectors)
             else:
                 images, labels = data
                 weights = model(images).squeeze()
