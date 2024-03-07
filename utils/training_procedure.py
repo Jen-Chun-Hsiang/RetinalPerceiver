@@ -209,7 +209,8 @@ class Evaluator:
 
 
 def save_checkpoint(epoch, model, optimizer, args, training_losses,
-                    validation_losses, validation_contra_losses, file_path):
+                    validation_losses, validation_contra_losses=None,
+                    file_path=None):
     """
     Saves a checkpoint of the training process.
 

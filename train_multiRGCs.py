@@ -109,6 +109,8 @@ def parse_args():
 def main():
     # for running a new set of neurons, remember to change the neu_dir and
     args = parse_args()
+    config_module = f"configs.sims.{args.config_name}"
+    config = __import__(config_module, fromlist=[''])
     filename_fixed = args.experiment_name
     savemodel_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/CheckPoints/'
     saveprint_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Prints/'
@@ -192,19 +194,13 @@ def main():
     raise RuntimeError("Script stopped after saving outputs.")
     '''
 
-    # construct the query array for query encoder
-    query_df = pd.DataFrame(query_array, columns=['experiment_id', 'neuron_id'])
-    query_array = pd.merge(query_df, experiment_info_table, on='experiment_id', how='left')
-    query_array = query_array[['experiment_id', 'species_id', 'sex_id', 'neuron_id']]
-    query_array['neuron_unique_id'] = query_array['experiment_id'] * 10000 + query_array['neuron_id']
-    query_array = query_array.drop(['neuron_id'], axis=1)
-    query_array = query_array.to_numpy()
+    query_array = getattr(config, 'query_array', None)
 
     # Encode series_ids into query arrays
-    max_values = {'Experiment': 1000, 'Species': 9, 'Sex': 3, 'Neuron': 10000000}
-    lengths = {'Experiment': 7, 'Species': 2, 'Sex': 1, 'Neuron': 15}
-    shuffle_components = ['Neuron']
-    query_encoder = SeriesEncoder(max_values, lengths, shuffle_components=shuffle_components)
+    query_encoder = SeriesEncoder(getattr(config, 'query_max_values', None),
+                                  getattr(config, 'query_lengths', None),
+                                  shuffle_components=getattr(config, 'query_shuffle_components', None))
+    # query_encoder = SeriesEncoder(max_values, lengths, shuffle_components=shuffle_components)
     query_array = query_encoder.encode(query_array)
     logging.info(f'query_array size:{query_array.shape} \n')
     # get data spit with chucks
@@ -279,9 +275,9 @@ def main():
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
     # Initialize the Trainer
     trainer = Trainer(model, criterion, optimizer, device, args.accumulation_steps,
-                      query_array)
+                      query_array=query_array)
     # Initialize the Evaluator
-    evaluator = Evaluator(model, criterion, device, query_array)
+    evaluator = Evaluator(model, criterion, device, query_array=query_array)
 
     # Optionally, load from checkpoint
     if args.load_checkpoint:
@@ -322,7 +318,7 @@ def main():
             assert validation_losses is not None, "validation_losses is None or undefined"
 
             save_checkpoint(epoch, model, optimizer, args, training_losses, validation_losses,
-                            os.path.join(savemodel_dir, checkpoint_filename))
+                            file_path=os.path.join(savemodel_dir, checkpoint_filename))
 
 
 if __name__ == '__main__':
