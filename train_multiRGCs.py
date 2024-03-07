@@ -21,7 +21,7 @@ import torch.multiprocessing as mp
 # from torch.nn.parallel import DistributedDataParallel
 
 from datasets.neuron_dataset import RetinalDataset, DataConstructor
-from datasets.neuron_dataset import train_val_split, load_mat_to_dataframe, load_data_from_excel, filter_and_merge_data
+from datasets.neuron_dataset import train_val_split, load_data_from_excel, filter_and_merge_data
 from utils.utils import plot_and_save_3d_matrix_with_timestamp as plot3dmat
 from utils.utils import SeriesEncoder
 from models.perceiver3d import RetinalPerceiverIO
@@ -48,6 +48,7 @@ def parse_covariance(string):
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Script for Model Training to get 3D RF in simulation")
+    parser.add_argument('--config_name', type=str, default='neuro_exp1_2cell_030624', help='Config file name for data generation')
     parser.add_argument('--experiment_name', type=str, default='new_experiment', help='Experiment name')
     parser.add_argument('--model', type=str, choices=['RetinalPerceiver', 'RetinalCNN'], required=True,
                         help='Model to train')
@@ -109,7 +110,7 @@ def parse_args():
 def main():
     # for running a new set of neurons, remember to change the neu_dir and
     args = parse_args()
-    config_module = f"configs.sims.{args.config_name}"
+    config_module = f"configs.neuros.{args.config_name}"
     config = __import__(config_module, fromlist=[''])
     filename_fixed = args.experiment_name
     savemodel_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/CheckPoints/'
@@ -118,8 +119,6 @@ def main():
     image_root_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Stimulus/'
     link_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Link/'
     resp_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Response/'
-    exp_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/ExperimentSheets.xlsx'
-    neu_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/experiment_neuron_022724.mat'
     savemat_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Matfiles/'
     # Generate a timestamp
     timestr = datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -145,25 +144,10 @@ def main():
     # logging.info(f'Number of workers: {num_workers} \n')
     logging.info(f'CUDA counts: {torch.cuda.device_count} \n')
 
-    experiment_session_table = load_data_from_excel(exp_dir, 'experiment_session')
-    experiment_session_table = experiment_session_table.drop('stimulus_type', axis=1)
-
-    included_neuron_table = load_data_from_excel(exp_dir, 'nid_04')
-
-    experiment_info_table = load_data_from_excel(exp_dir, 'experiment_info')
-    experiment_info_table = experiment_info_table.drop(['species', 'sex', 'day', 'folder_name'], axis=1)
-
-    experiment_neuron_table = load_mat_to_dataframe(neu_dir, 'experiment_neuron_table', 'column_name')
-    experiment_neuron_table.iloc[:, 0:3] = experiment_neuron_table.iloc[:, 0:3].astype('int64')
-    # make sure the format is correct
-    experiment_neuron_table.fillna(-1, inplace=True)
-    experiment_neuron_table['experiment_id'] = experiment_neuron_table['experiment_id'].astype('int64')
-    experiment_neuron_table['session_id'] = experiment_neuron_table['session_id'].astype('int64')
-    experiment_neuron_table['neuron_id'] = experiment_neuron_table['neuron_id'].astype('int64')
-    experiment_neuron_table['quality'] = experiment_neuron_table['quality'].astype('float')
-    # make sure the neuron id is matching while indexing
-    # experiment_neuron_table['neuron_id'] = experiment_neuron_table['neuron_id'] - 1
-
+    experiment_session_table = getattr(config, 'experiment_session_table', None)
+    included_neuron_table = getattr(config, 'included_neuron_table', None)
+    experiment_info_table = getattr(config, 'experiment_info_table', None)
+    experiment_neuron_table = getattr(config, 'experiment_neuron_table', None)
     filtered_data = filter_and_merge_data(
         experiment_session_table, experiment_neuron_table,
         selected_experiment_ids=[1],
@@ -194,7 +178,13 @@ def main():
     raise RuntimeError("Script stopped after saving outputs.")
     '''
 
-    query_array = getattr(config, 'query_array', None)
+    # construct the query array for query encoder
+    query_df = pd.DataFrame(query_array, columns=['experiment_id', 'neuron_id'])
+    query_array = pd.merge(query_df, experiment_info_table, on='experiment_id', how='left')
+    query_array = query_array[['experiment_id', 'species_id', 'sex_id', 'neuron_id']]
+    query_array['neuron_unique_id'] = query_array['experiment_id'] * 10000 + query_array['neuron_id']
+    query_array = query_array.drop(['neuron_id'], axis=1)
+    query_array = query_array.to_numpy()
 
     # Encode series_ids into query arrays
     query_encoder = SeriesEncoder(getattr(config, 'query_max_values', None),
