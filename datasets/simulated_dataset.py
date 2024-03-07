@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 
 class MatrixDataset(Dataset):
     def __init__(self, target_matrix, length, device, combination_set=None, ratio_for_one=0.5,
-                 initial_size=(20, 20, 24)):
+                 initial_size=None):
         """
         Args:
             target_matrix (numpy.ndarray or torch.Tensor): A target 3D matrix for operations.
@@ -60,6 +60,9 @@ class MatrixDataset(Dataset):
     def generate_matrix(self, matrix_type):
         # Definitions for matrix types 1, 2, and 3 as before
         if matrix_type == 1:
+            if self.initial_size is None:
+                self.initial_size = self.dimensions
+
             initial_noise = torch.rand((1, *self.initial_size), device=self.device)
             return F.interpolate(initial_noise.unsqueeze(0), size=self.dimensions, mode='nearest').squeeze()
         elif matrix_type == 2:
