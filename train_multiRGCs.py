@@ -261,8 +261,7 @@ def main():
     sys.stdout = old_stdout
     logging.info(buffer.getvalue())
 
-    # criterion = loss_functions[args.loss_fn]
-    criterion = nn.MSELoss()
+    criterion = loss_functions[args.loss_fn]
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
     # Initialize the Trainer
     trainer = Trainer(model, criterion, optimizer, device, args.accumulation_steps,
