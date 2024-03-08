@@ -284,7 +284,7 @@ class CheckpointLoader:
         self.validation_losses = self.checkpoint.get('validation_losses', [])
         return self.validation_losses
 
-    def load_validation_losses(self):
+    def load_validation_contra_losses(self):
         """ Return the list of recorded validation losses. """
         self.validation_contra_losses = self.checkpoint.get('validation_contra_losses', [])
         return self.validation_contra_losses
