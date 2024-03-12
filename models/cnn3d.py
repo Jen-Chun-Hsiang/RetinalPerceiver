@@ -22,12 +22,15 @@ class RetinalCNN(nn.Module):
         # 3D convolutional layer to handle depth
         self.conv3d = nn.Conv3d(in_channels=1, out_channels=self.conv3d_out_channels,
                                 kernel_size=(input_depth, 1, 1), stride=1, padding=0)
+        self.bn3d = nn.BatchNorm3d(self.conv3d_out_channels)  # Batch normalization for 3D conv
 
         # 2D Convolutional layers
         self.conv1 = nn.Conv2d(in_channels=self.conv3d_out_channels, out_channels=32,
                                kernel_size=self.conv2_1st_layer_kernel, stride=1, padding=1)
+        self.bn1 = nn.BatchNorm2d(32)  # Batch normalization for 2D conv1
         self.conv2 = nn.Conv2d(in_channels=32, out_channels=self.conv2_out_channels,
                                kernel_size=self.conv2_2nd_layer_kernel, stride=1, padding=1)
+        self.bn2 = nn.BatchNorm2d(self.conv2_out_channels)  # Batch normalization for 2D conv2
         self.pool = nn.MaxPool2d(2, 2)
 
         # Calculate the size of the flattened output after the last pooling layer
@@ -41,29 +44,36 @@ class RetinalCNN(nn.Module):
         with torch.no_grad():
             dummy_input = torch.zeros(1, 1, input_depth, input_height, input_width)
             dummy_input = self.conv3d(dummy_input)
+            dummy_input = self.bn3d(dummy_input)
             new_height, new_width = dummy_input.size(3), dummy_input.size(4)
             dummy_input = dummy_input.view(1, self.conv3d_out_channels, new_height, new_width)
-            dummy_input = self.pool(F.relu(self.conv1(dummy_input)))
-            dummy_input = self.pool(F.relu(self.conv2(dummy_input)))
+            dummy_input = F.softplus(self.bn1(self.conv1(dummy_input)))
+            dummy_input = self.pool(dummy_input)
+            dummy_input = F.softplus(self.bn2(self.conv2(dummy_input)))
+            dummy_input = self.pool(dummy_input)
             return int(np.prod(dummy_input.size()[1:]))
 
     def forward(self, x):
         # 3D convolutional layer
         x = self.conv3d(x)
+        x = self.bn3d(x)
         new_height, new_width = x.size(3), x.size(4)
         x = x.view(-1, self.conv3d_out_channels, new_height, new_width)
 
         # 2D convolutional layers with pooling
-        x = self.pool(F.relu(self.conv1(x)))
-        x = self.pool(F.relu(self.conv2(x)))
+        x = F.softplus(self.bn1(self.conv1(x)))
+        x = self.pool(x)
+        x = F.softplus(self.bn2(self.conv2(x)))
+        x = self.pool(x)
 
         # Flatten the output for the fully connected layer
         x = x.view(-1, self._to_linear)
 
         # Fully connected layers
-        x = F.relu(self.fc1(x))
+        x = F.softplus(self.fc1(x))
         x = self.fc2(x)
         return x
+
 
 class FourierFeaturePositionalEncoding2D(nn.Module):
     def __init__(self, height, width, num_bands):
@@ -102,12 +112,15 @@ class FrontEndRetinalCNN(RetinalCNN):
     def forward(self, x):
         # 3D convolutional layer
         x = self.conv3d(x)
+        x = self.bn3d(x)
         new_height, new_width = x.size(3), x.size(4)
         x = x.view(-1, self.conv3d_out_channels, new_height, new_width)
 
         # 2D convolutional layers with pooling
-        x = self.pool(F.relu(self.conv1(x)))
-        x = self.pool(F.relu(self.conv2(x)))
+        x = F.softplus(self.bn1(self.conv1(x)))
+        x = self.pool(x)
+        x = F.softplus(self.bn2(self.conv2(x)))
+        x = self.pool(x)
 
         # Stop here to output the feature map instead of flattening and passing through fully connected layers
         return x
@@ -116,10 +129,13 @@ class FrontEndRetinalCNN(RetinalCNN):
         with torch.no_grad():
             dummy_input = torch.zeros(1, 1, input_depth, input_height, input_width)
             dummy_input = self.conv3d(dummy_input)
+            dummy_input = self.bn3d(dummy_input)
             new_height, new_width = dummy_input.size(3), dummy_input.size(4)
             dummy_input = dummy_input.view(1, self.conv3d_out_channels, new_height, new_width)
-            dummy_input = self.pool(F.relu(self.conv1(dummy_input)))
-            dummy_input = self.pool(F.relu(self.conv2(dummy_input)))
+            dummy_input = F.softplus(self.bn1(self.conv1(dummy_input)))
+            dummy_input = self.pool(dummy_input)
+            dummy_input = F.softplus(self.bn2(self.conv2(dummy_input)))
+            dummy_input = self.pool(dummy_input)
             return dummy_input.size(2), dummy_input.size(3)  # return height and width
 
 
