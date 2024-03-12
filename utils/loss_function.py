@@ -142,6 +142,6 @@ class CosineNegativePairLoss(nn.Module):
 # Define the mapping of loss function names to their PyTorch implementations
 loss_functions = {
     'MSE': nn.MSELoss(),
-    'Poisson': nn.PoissonNLLLoss(log_input=False, full=True, reduction='mean'),
+    'Poisson': nn.PoissonNLLLoss(log_input=False, full=False, reduction='mean'),
     # Add additional loss functions here as needed
 }
