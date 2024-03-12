@@ -151,7 +151,7 @@ def main():
     filtered_data = filter_and_merge_data(
         experiment_session_table, experiment_neuron_table,
         selected_experiment_ids=[1],
-        selected_stimulus_types=[1, 2],
+        selected_stimulus_types=[1, 2, 3],
         excluded_session_table=None,
         excluded_neuron_table=None,
         included_session_table=None,
