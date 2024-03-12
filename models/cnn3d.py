@@ -5,6 +5,7 @@ import numpy as np
 from models.perceiver3d import PerceiverIODecoder
 from utils.utils import add_gradient
 
+
 class RetinalCNN(nn.Module):
     def __init__(self, input_depth, input_height, input_width, output_size=1, hidden_size=128, conv3d_out_channels=10, conv2_out_channels=64, conv2_1st_layer_kernel=4,
                  conv2_2nd_layer_kernel=5):
