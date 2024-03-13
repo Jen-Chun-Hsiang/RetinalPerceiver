@@ -196,6 +196,8 @@ def main():
     query_array = query_array.drop(['neuron_id'], axis=1)
     query_array = query_array.to_numpy()
 
+    del experiment_session_table, included_neuron_table, experiment_info_table, experiment_neuron_table
+    del query_df, data_constructor, filtered_data
 
     logging.info(f'query_array size:{query_array.shape} \n')
 
@@ -219,6 +221,7 @@ def main():
     # plot and save the target_matrix figure
     plot3dmat(movie[0, 0, :, :, :].squeeze(), args.num_cols, savefig_dir, file_prefix='plot_3D_matrix')
 
+    del movie, labels, index, dataiter
     # Model, Loss, and Optimizer
     if args.model == 'AdaptiveCNN':
         model = StyleCNN(input_depth=args.input_depth, input_height=args.input_height, input_width=args.input_width,
