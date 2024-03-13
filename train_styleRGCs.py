@@ -50,7 +50,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Script for Model Training to get 3D RF in simulation")
     parser.add_argument('--config_name', type=str, default='neuro_exp1_2cell_030624', help='Config file name for data generation')
     parser.add_argument('--experiment_name', type=str, default='new_experiment', help='Experiment name')
-    parser.add_argument('--model', type=str, choices=['RetinalPerceiver', 'RetinalCNN'], required=True,
+    parser.add_argument('--model', type=str, choices=['RetinalPerceiver', 'RetinalCNN', 'AdaptiveCNN'], required=True,
                         help='Model to train')
     parser.add_argument('--input_depth', type=int, default=20, help='Number of time points')
     parser.add_argument('--input_height', type=int, default=30, help='Heights of the input')
@@ -61,10 +61,16 @@ def parse_args():
     parser.add_argument('--output_size', type=int, default=1, help='Number of neurons for prediction')
     parser.add_argument('--conv3d_out_channels', type=int, default=10, help='Number of temporal in CNN3D')
     parser.add_argument('--conv2_out_channels', type=int, default=64, help='Number of output in 2nd convolution layer')
-    parser.add_argument('--conv2_1st_layer_kernel', type=int, default=4,
+    parser.add_argument('--conv2_1st_layer_kernel', type=int, default=3,
                         help='Size of kernel in 1st layer of 2d convolution layer')
-    parser.add_argument('--conv2_2nd_layer_kernel', type=int, default=5,
+    parser.add_argument('--conv2_2nd_layer_kernel', type=int, default=3,
                         help='Size of kernel in 2nd layer of 2d convolution layer')
+    parser.add_argument('--conv2_3rd_layer_kernel', type=int, default=3,
+                        help='Size of kernel in 3rd layer of 2d convolution layer')
+    parser.add_argument('--momentum', type=float, default=0.1, help='Window for moving batch normalization')
+    # embedding size
+    parser.add_argument('--num_dataset', type=int, default=100, help='Number of potential experiments')
+    parser.add_argument('--num_neuron', type=int, default=1000, help='Number of encoding neurons')
     # Training procedure
     parser.add_argument('--epochs', type=int, default=100, help='Number of training epochs')
     parser.add_argument('--batch_size', type=int, default=64, help='Batch size for training')
