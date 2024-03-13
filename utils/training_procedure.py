@@ -15,11 +15,6 @@ class Trainer:
         self.optimizer = optimizer
         self.device = device
         self.accumulation_steps = accumulation_steps
-        if query_array is not None:
-            self.is_query_array = True
-            self.query_array = torch.from_numpy(query_array).unsqueeze(1)
-        else:
-            self.is_query_array = False
 
         self.is_contrastive_learning = is_contrastive_learning
         if self.is_contrastive_learning:
@@ -32,6 +27,15 @@ class Trainer:
             self.neg_contra_loss_fn = CosineNegativePairLoss(margin=margin, temperature=temperature)
         self.is_selective_layers = is_selective_layers
         self.lambda_l1 = lambda_l1
+
+        if query_array is not None:
+            self.is_query_array = True
+            if self.is_selective_layers:
+                self.query_array = torch.from_numpy(query_array)
+            else:
+                self.query_array = torch.from_numpy(query_array).unsqueeze(1)
+        else:
+            self.is_query_array = False
 
     def train_one_epoch(self, train_loader):
         self.model.train()  # Set the model to training mode
@@ -115,8 +119,8 @@ class Trainer:
         query_vectors = self.query_array[matrix_indices]
         input_matrices, targets = input_matrices.to(self.device), targets.to(self.device)
 
-        dataset_ids = query_vectors[:, 0]
-        neuron_ids = query_vectors[:, 3]
+        dataset_ids = query_vectors[:, 0].to(self.device)
+        neuron_ids = query_vectors[:, 3].to(self.device)
         outputs_predict = self.model(input_matrices, dataset_ids, neuron_ids)
 
         l1_loss = self._l1_regularization(self.model.spamap.spatial_embedding.weight[neuron_ids], self.lambda_l1) + \
