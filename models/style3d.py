@@ -171,4 +171,4 @@ class StyleCNN(nn.Module):
         # Flatten the output for the fully connected layer
         x = self.feamap(x, neuron_id)
         x = self.spamap(x, neuron_id)
-        return F.softplut(x)
+        return F.softplus(x)
