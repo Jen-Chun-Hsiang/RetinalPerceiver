@@ -102,6 +102,8 @@ def parse_args():
                         help='Input stride as three separate integers. Default is (1, 1, 1)')
     parser.add_argument('--loss_fn', type=str, default='MSE', choices=list(loss_functions.keys()),
                         help='The name of the loss function to use (default: MSE)')
+    parser.add_argument('--is_selective_layers', action='store_true', help='Enable L1 penalty for feature and spatial selection')
+    parser.add_argument('--lambda_l1', type=float, default=0.01, help='L1 weight penalty for selective layers')
 
     # System computing enhancement
     parser.add_argument('--parallel_processing', action='store_true', help='Enable parallel_processing')
@@ -268,9 +270,10 @@ def main():
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
     # Initialize the Trainer
     trainer = Trainer(model, criterion, optimizer, device, args.accumulation_steps,
-                      query_array=query_array)
+                      query_array=query_array, is_selective_layers=args.is_selective_layers, lambda_l1=args.lambda_l1)
     # Initialize the Evaluator
-    evaluator = Evaluator(model, criterion, device, query_array=query_array)
+    evaluator = Evaluator(model, criterion, device, query_array=query_array,
+                          is_selective_layers=args.is_selective_layers, lambda_l1=args.lambda_l1)
 
     # Optionally, load from checkpoint
     if args.load_checkpoint:
