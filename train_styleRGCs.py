@@ -254,17 +254,13 @@ def main():
         logging.info(f'Initial parallel processing on on {torch.cuda.device_count()} \n')
 
     logging.info(f'Model: {args.model} \n')
+
+    '''
     old_stdout = sys.stdout
     sys.stdout = buffer = StringIO()
-    '''
-    summary(model,
-            input_data=(
-                torch.rand(1, args.input_channels, args.input_depth, args.input_height, args.input_width).to(device),
-                torch.rand(1, 1, query_array.shape[1]).to(device)
-            ))
-    '''
     sys.stdout = old_stdout
     logging.info(buffer.getvalue())
+    '''
 
     criterion = loss_functions[args.loss_fn]
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
