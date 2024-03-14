@@ -4,10 +4,13 @@ import numpy as np
 from PIL import Image
 import torch
 from torchvision.transforms import ToTensor
+import torch.nn.functional as F
+
 
 def normalize_image(image_array):
     """Normalize image array to the range [-1, 1]."""
     return (image_array / 255.0) * 2.0 - 1.0
+
 
 def process_session_images(session_path, output_file):
     """Process all images in a session and save them in an HDF5 file."""
@@ -26,6 +29,7 @@ def process_session_images(session_path, output_file):
                 # Store the normalized image array in the HDF5 file with frame index as the key
                 hfile.create_dataset(str(frame_index), data=img_array, compression="gzip")
 
+
 def process_experiment_folders(root_folder):
     """Process all experiment folders in the root folder."""
     for folder in os.listdir(root_folder):
@@ -40,9 +44,11 @@ def process_experiment_folders(root_folder):
 
 
 class PNGToTensorConverter:
-    def __init__(self, root_dir, overwrite=False):
+    def __init__(self, root_dir, overwrite=False, scale_factor=1 / 2.5, padding_size=5):
         self.root_dir = root_dir
         self.overwrite = overwrite
+        self.scale_factor = scale_factor
+        self.padding_size = padding_size
         self.to_tensor = ToTensor()
 
     def convert_directory(self, directory):
@@ -66,11 +72,26 @@ class PNGToTensorConverter:
         image = Image.open(file_path)
         tensor = self.to_tensor(image)
 
+        if self.scale_factor != 1:
+            interp_mode = 'nearest'
+            input_tensor = tensor.unsqueeze(0).unsqueeze(0)
+            # Apply padding
+            padded_tensor = F.pad(input_tensor,
+                                  (self.padding_size, self.padding_size, self.padding_size, self.padding_size),
+                                  mode='reflect')
+
+            # Rescale the tensor
+            rescaled_tensor = F.interpolate(padded_tensor, scale_factor=self.scale_factor, mode=interp_mode)
+            new_padding_size = int(self.padding_size * self.scale_factor)
+            if new_padding_size > 0:
+                rescaled_tensor = rescaled_tensor[:, :, new_padding_size:-new_padding_size,
+                                  new_padding_size:-new_padding_size]
+
+            tensor = rescaled_tensor.squeeze()
+
         # Save the tensor
         torch.save(tensor, tensor_file_path)
         print(f"Saved tensor to {tensor_file_path}")
 
     def start_conversion(self):
         self.convert_directory(self.root_dir)
-
-
