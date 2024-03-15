@@ -147,7 +147,7 @@ class StyleCNN(nn.Module):
 
     def _get_conv_output(self, input_depth, input_height, input_width):
         with torch.no_grad():
-            dummy_dataset_ids = torch.randint(0, 100, (1,))
+            dummy_dataset_ids = torch.randint(0, 1, (1,))
             dummy_input = torch.zeros(1, 1, input_depth, input_height, input_width)
             dummy_input = self.avgpool3d(dummy_input)
             dummy_input = self.conv3d(dummy_input).squeeze(2)
@@ -159,7 +159,6 @@ class StyleCNN(nn.Module):
 
     def forward(self, x, dataset_id, neuron_id):
         # 3D convolutional layer
-        print(dataset_id)
         x = self.avgpool3d(x)
         x = self.conv3d(x).squeeze(2)
         x = self.bn3d(x, dataset_id)
