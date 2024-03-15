@@ -163,7 +163,6 @@ class StyleCNN(nn.Module):
         x = self.conv3d(x).squeeze(2)
         x = self.bn3d(x, dataset_id)
 
-
         # 2D convolutional layers with pooling
         x = F.softplus(self.bn1(self.conv1(x), dataset_id))
         x = F.softplus(self.bn2(self.conv2(x), dataset_id))
