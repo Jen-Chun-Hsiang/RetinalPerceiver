@@ -159,9 +159,11 @@ class StyleCNN(nn.Module):
 
     def forward(self, x, dataset_id, neuron_id):
         # 3D convolutional layer
+        print(dataset_id)
         x = self.avgpool3d(x)
         x = self.conv3d(x).squeeze(2)
         x = self.bn3d(x, dataset_id)
+
 
         # 2D convolutional layers with pooling
         x = F.softplus(self.bn1(self.conv1(x), dataset_id))
