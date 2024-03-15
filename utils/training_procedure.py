@@ -270,8 +270,8 @@ class CheckpointLoader:
         self.validation_losses = None
         self.validation_contra_losses = None
         self.args = None
-        # self.checkpoint = torch.load(checkpoint_path, map_location=device)
-        self.checkpoint = torch.load(checkpoint_path)
+        self.checkpoint = torch.load(checkpoint_path, map_location=device)
+        # self.checkpoint = torch.load(checkpoint_path)
 
     def load_args(self):
         """
