@@ -192,8 +192,9 @@ def main():
     query_df = pd.DataFrame(query_array, columns=['experiment_id', 'neuron_id'])
     query_array = pd.merge(query_df, experiment_info_table, on='experiment_id', how='left')
     query_array = query_array[['experiment_id', 'species_id', 'sex_id', 'neuron_id']]
-    query_array['neuron_unique_id'] = query_array['experiment_id'] * 12 + query_array['neuron_id'] - 50
-    query_array = query_array.drop(['neuron_id'], axis=1)
+    query_array['neuron_unique_id_unsorted'] = query_array['experiment_id'] * 1000 + query_array['neuron_id']
+    query_array['neuron_unique_id'] = pd.factorize(query_array['neuron_unique_id_unsorted'])[0]
+    query_array = query_array.drop(['neuron_id', 'neuron_unique_id_unsorted'], axis=1)
     query_array = query_array.to_numpy()
 
     del experiment_session_table, included_neuron_table, experiment_info_table, experiment_neuron_table
@@ -302,15 +303,9 @@ def main():
     for epoch in range(start_epoch, args.epochs):
         avg_train_loss = trainer.train_one_epoch(train_loader)
         training_losses.append(avg_train_loss)
-        logging.info(f'epoch count - training: {epoch} \n')
-        logging.info(f"Allocated memory: {torch.cuda.memory_allocated() / 1e6} MB \n"
-                     f"Max memory allocated: {torch.cuda.max_memory_allocated() / 1e6} MB \n")
         # torch.cuda.empty_cache()
         avg_val_loss = evaluator.evaluate(val_loader)
         validation_losses.append(avg_val_loss)
-        logging.info(f'epoch count - validation: {epoch} \n')
-        logging.info(f"Allocated memory: {torch.cuda.memory_allocated() / 1e6} MB \n"
-                     f"Max memory allocated: {torch.cuda.max_memory_allocated() / 1e6} MB \n")
         # Print training status
         if (epoch + 1) % 5 == 0:
             elapsed_time = time.time() - start_time
