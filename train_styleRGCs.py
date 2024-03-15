@@ -192,7 +192,7 @@ def main():
     query_df = pd.DataFrame(query_array, columns=['experiment_id', 'neuron_id'])
     query_array = pd.merge(query_df, experiment_info_table, on='experiment_id', how='left')
     query_array = query_array[['experiment_id', 'species_id', 'sex_id', 'neuron_id']]
-    query_array['neuron_unique_id'] = query_array['experiment_id'] * 32 + query_array['neuron_id']
+    query_array['neuron_unique_id'] = query_array['experiment_id'] * 12 + query_array['neuron_id']
     query_array = query_array.drop(['neuron_id'], axis=1)
     query_array = query_array.to_numpy()
 
@@ -200,6 +200,7 @@ def main():
     del query_df, data_constructor, filtered_data
 
     logging.info(f'query_array size:{query_array.shape} \n')
+    logging.info(f'query_array:{query_array} \n')
 
     # get data spit with chucks
     train_indices, val_indices = train_val_split(len(data_array), args.chunk_size, test_size=1-args.train_proportion)
@@ -272,10 +273,11 @@ def main():
     # Initialize the Trainer
     trainer = Trainer(model, criterion, optimizer, device, args.accumulation_steps,
                       query_array=query_array, is_selective_layers=args.is_selective_layers, lambda_l1=args.lambda_l1)
+    logging.info('Trainer is loaded \n')
     # Initialize the Evaluator
     evaluator = Evaluator(model, criterion, device, query_array=query_array,
                           is_selective_layers=args.is_selective_layers, lambda_l1=args.lambda_l1)
-
+    logging.info('Evaluator is loaded \n')
     # Optionally, load from checkpoint
     if args.load_checkpoint:
         checkpoint_loader = CheckpointLoader(checkpoint_path=args.checkpoint_path, device=device)
@@ -287,15 +289,16 @@ def main():
         training_losses = []
         validation_losses = []
         start_time = time.time()  # Capture the start time
+        logging.info('No checkpoint \n')
 
     for epoch in range(start_epoch, args.epochs):
         avg_train_loss = trainer.train_one_epoch(train_loader)
         training_losses.append(avg_train_loss)
-
+        logging.info(f'epoch count - training: {epoch} \n')
         # torch.cuda.empty_cache()
         avg_val_loss = evaluator.evaluate(val_loader)
         validation_losses.append(avg_val_loss)
-
+        logging.info(f'epoch count - validation: {epoch} \n')
         # Print training status
         if (epoch + 1) % 5 == 0:
             elapsed_time = time.time() - start_time
