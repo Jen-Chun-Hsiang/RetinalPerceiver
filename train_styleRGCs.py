@@ -194,7 +194,9 @@ def main():
     query_array = query_array[['experiment_id', 'species_id', 'sex_id', 'neuron_id']]
     query_array['neuron_unique_id_unsorted'] = query_array['experiment_id'] * 1000 + query_array['neuron_id']
     query_array['neuron_unique_id'] = pd.factorize(query_array['neuron_unique_id_unsorted'])[0]
-    query_array = query_array.drop(['neuron_id', 'neuron_unique_id_unsorted'], axis=1)
+    query_array['experiment_unique_id'] = pd.factorize(query_array['experiment_id'])[0]
+    query_array = query_array.drop(['neuron_id', 'neuron_unique_id_unsorted', 'experiment_id'], axis=1)
+    query_array = query_array[['experiment_unique_id', 'species_id', 'sex_id', 'neuron_unique_id']]
     query_array = query_array.to_numpy()
 
     del experiment_session_table, included_neuron_table, experiment_info_table, experiment_neuron_table
