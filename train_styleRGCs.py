@@ -192,7 +192,7 @@ def main():
     query_df = pd.DataFrame(query_array, columns=['experiment_id', 'neuron_id'])
     query_array = pd.merge(query_df, experiment_info_table, on='experiment_id', how='left')
     query_array = query_array[['experiment_id', 'species_id', 'sex_id', 'neuron_id']]
-    query_array['neuron_unique_id'] = query_array['experiment_id'] * 12 + query_array['neuron_id']
+    query_array['neuron_unique_id'] = query_array['experiment_id'] * 12 + query_array['neuron_id'] - 50
     query_array = query_array.drop(['neuron_id'], axis=1)
     query_array = query_array.to_numpy()
 
