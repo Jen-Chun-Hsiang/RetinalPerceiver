@@ -202,6 +202,7 @@ def main():
     logging.info(f'query_array size:{query_array.shape} \n')
     logging.info(f'query_array:{query_array} \n')
 
+
     # get data spit with chucks
     train_indices, val_indices = train_val_split(len(data_array), args.chunk_size, test_size=1-args.train_proportion)
     # get dataset
@@ -222,6 +223,13 @@ def main():
     # plot and save the target_matrix figure
     plot3dmat(movie[0, 0, :, :, :].squeeze(), args.num_cols, savefig_dir, file_prefix='plot_3D_matrix')
 
+    dummy_query_array = torch.from_numpy(query_array)
+    dummy_query_vectors = dummy_query_array[index]
+    dummy_dataset_ids = dummy_query_vectors[:, 0]
+    dummy_neuron_ids = dummy_query_vectors[:, 3]
+    logging.info(f'dummy_dataset_ids: {dummy_dataset_ids} \n')
+    logging.info(f'dummy_neuron_ids: {dummy_neuron_ids} \n')
+    del dummy_query_array, dummy_query_vectors, dummy_dataset_ids, dummy_neuron_ids
     del movie, labels, index, dataiter
     # Model, Loss, and Optimizer
     if args.model == 'AdaptiveCNN':
