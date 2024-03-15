@@ -24,7 +24,7 @@ from models.cnn3d import RetinalPerceiverIOWithCNN
 
 
 def main():
-    stimulus_type = '50tpcnn_2024031101_GoodCell2'  # get the name from the check point folder
+    stimulus_type = '50tpcnn_2024031102_GoodCell2'  # get the name from the check point folder
     epoch_end = 100  # the number of epoch in the check_point file
     total_length = 10000
     initial_size = (10, 24, 32)
