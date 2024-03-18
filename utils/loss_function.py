@@ -136,7 +136,7 @@ class CosineNegativePairLoss(nn.Module):
         losses = F.relu(self.margin - scaled_cosine_dist)
 
         # Return the mean loss over all negative pairs
-        return losses.mean()
+        return losses
 
 
 # Define the mapping of loss function names to their PyTorch implementations

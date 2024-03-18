@@ -109,8 +109,8 @@ class Trainer:
             query_vectors = torch.from_numpy(query_array).unsqueeze(1)
             query_vectors = query_vectors.float().to(self.device)
             _, perm_embedding = self.model(input_matrices, query_vectors)
-            contra_loss += self.neg_contra_loss_fn(perm_embedding.view(num_batch, -1),
-                                                   outputs_embedding.view(num_batch, -1))
+            contra_loss += torch.matmul(targets.T, self.neg_contra_loss_fn(perm_embedding.view(num_batch, -1),
+                                                   outputs_embedding.view(num_batch, -1)))
 
         return self._compute_loss(outputs_predict, targets) + contra_loss
 
