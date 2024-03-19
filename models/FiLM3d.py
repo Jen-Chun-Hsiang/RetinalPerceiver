@@ -141,8 +141,7 @@ class FiLMCNN(nn.Module):
         # neuron specific projection layers
         self.feamap = NeuronSpecificFeatureModulation(num_channels=self.conv2_out_channels,
                                                       embedding_size=self.neuronid_embedding_length)
-        self.spamap = NeuronSpecificSpatialAttention(num_channels=self.conv2_out_channels,
-                                                     height=self._to_proj_h, width=self._to_proj_w,
+        self.spamap = NeuronSpecificSpatialAttention(height=self._to_proj_h, width=self._to_proj_w,
                                                      embedding_size=self.neuronid_embedding_length)
         self.dataset_id_encoder = UniqueIdEncoder(num_to_encode=num_dataset,
                                                   embedding_dim=self.dataset_embedding_length)
