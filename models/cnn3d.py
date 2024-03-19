@@ -227,3 +227,90 @@ class RetinalPerceiverIOWithCNN(nn.Module):
         return predictions.mean(dim=1), embeddings
 
 
+class QueryEmbeddingCNN(nn.Module):
+    def __init__(self, input_depth, input_height, input_width, latent_dim=128, output_dim=1, query_dim=6,
+                 num_latents=16, heads=4, use_layer_norm=False, num_bands=10, conv3d_out_channels=10,
+                 conv2_out_channels=64, conv2_1st_layer_kernel=4, conv2_2nd_layer_kernel=5, device=None):
+        super().__init__()
+        self.latent_dim = latent_dim
+        self.query_dim = query_dim
+        self.num_latents = num_latents
+        self.heads = heads
+        self.use_layer_norm = use_layer_norm
+        self.device = device
+
+        # Initialize the FrontEndRetinalCNN
+        self.front_end_cnn = FrontEndRetinalCNN(input_depth=input_depth,
+                                                input_height=input_height,
+                                                input_width=input_width,
+                                                conv3d_out_channels=conv3d_out_channels,
+                                                conv2_out_channels=conv2_out_channels,
+                                                conv2_1st_layer_kernel=conv2_1st_layer_kernel,
+                                                conv2_2nd_layer_kernel=conv2_2nd_layer_kernel)
+
+        # Get the output dimensions of FrontEndRetinalCNN
+        cnn_output_height, cnn_output_width = self.front_end_cnn.get_output_dimensions(input_depth, input_height,
+                                                                                       input_width)
+
+        # Initialize Fourier Feature Positional Encoding with the correct dimensions
+        self.positional_encoding = FourierFeaturePositionalEncoding2D(cnn_output_height, cnn_output_width, num_bands)
+
+        # Calculate the total number of channels after concatenating CNN output and positional encoding
+        self.total_channels = conv2_out_channels + 4 * num_bands  # 4*num_bands for sin and cos for both height and width
+
+        # Initialize the linear projection layer
+        self.linear_to_num_latent = nn.Linear(cnn_output_height * cnn_output_width, num_latents)
+
+        self.linear_to_latent_dim = nn.Linear(self.total_channels, self.latent_dim)
+
+        # Initialize the Perceiver IO Decoder
+        self.decoder = PerceiverIODecoder(latent_dim=self.latent_dim,
+                                          query_dim=self.query_dim,
+                                          output_dim=output_dim,
+                                          heads=self.heads,
+                                          use_layer_norm=self.use_layer_norm)
+
+        # Initialize latent array
+        self.latents = nn.Parameter(torch.randn(self.num_latents, self.latent_dim))
+        # cheap linear decoder
+        self.fc = nn.Linear(latent_dim, output_dim)
+
+    def forward(self, input_array, query_array):
+        # Pass input through the Front End CNN
+        query_array = query_array
+        query_array = query_array.repeat(1, self.num_latents, 1)
+        query_array = add_gradient(query_array, dim=1, start=-1, end=1)
+
+        cnn_output = self.front_end_cnn(input_array)
+        # Apply positional encoding
+        pos_encoding = self.positional_encoding().unsqueeze(0).repeat(cnn_output.size(0), 1, 1, 1).to(self.device)
+        # Concatenate the CNN output with the positional encoding
+        try:
+            cnn_output_with_pos = torch.cat([cnn_output, pos_encoding], dim=1)
+        except Exception as e:
+            print(e)
+            print(cnn_output.device)
+            print(pos_encoding.device)
+
+        # Reshape and project the spatial dimensions to num_latents
+        batch_size, num_channels, height, width = cnn_output_with_pos.shape
+        cnn_output_flattened = cnn_output_with_pos.view(batch_size, num_channels, -1)
+        latents_projected = self.linear_to_num_latent(cnn_output_flattened).permute(0, 2, 1)
+
+        # Project the channels to latent_dim
+        latents_projected = latents_projected.view(batch_size, self.num_latents, -1)
+        latents_projected = self.linear_to_latent_dim(latents_projected)
+
+        # cheap way to skip decoder and make sure everything above is fine
+        #return self.fc(latents_projected.mean(dim=1))
+        # Decode stage
+
+        predictions, embeddings = self.decoder(latents_projected, query_array)
+        '''
+        print(f'predictions size: {predictions.shape}') #  torch.Size([32, 256, 1])
+        print(f'embeddings size: {embeddings.shape}') # torch.Size([32, 256, 64])
+        raise RuntimeError("Script stopped after saving outputs.")
+        '''
+        return predictions.mean(dim=1), embeddings
+
+

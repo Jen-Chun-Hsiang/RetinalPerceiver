@@ -13,6 +13,7 @@ import numpy as np
 import logging
 import time
 import pandas as pd
+import gc
 
 # from io import StringIO
 # import sys
@@ -315,11 +316,9 @@ def main():
 
     for epoch in range(start_epoch, args.epochs):
         torch.cuda.empty_cache()
+        gc.collect()
         avg_train_loss = trainer.train_one_epoch(train_loader)
         training_losses.append(avg_train_loss)
-        logging.info(f'epoch (training): {epoch} \n')
-        logging.info(f"Allocated memory: {torch.cuda.memory_allocated() / 1e6} MB \n"
-                     f"Max memory allocated: {torch.cuda.max_memory_allocated() / 1e6} MB \n")
         # torch.cuda.empty_cache()
         avg_val_loss = evaluator.evaluate(val_loader)
         validation_losses.append(avg_val_loss)
