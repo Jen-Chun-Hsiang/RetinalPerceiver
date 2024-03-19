@@ -2,6 +2,17 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
+class UniqueIdEncoder(nn.Module):
+    def __init__(self, num_to_encode, embedding_dim):
+        super(UniqueIdEncoder, self).__init__()
+        self.feature_embedding = nn.Embedding(num_embeddings=num_to_encode, embedding_dim=embedding_dim)
+
+    def forward(self, unique_ids):
+        embeddings = self.feature_embedding(unique_ids)
+        return embeddings
+
+
 class AdaptiveBatchNorm(nn.Module):
     def __init__(self, num_features, embedding_size, eps=1e-5, momentum=0.1):
         super(AdaptiveBatchNorm, self).__init__()
@@ -30,7 +41,8 @@ class AdaptiveBatchNorm(nn.Module):
     def forward(self, x, embeddings):
         if self.training:
             self.num_batches_tracked += 1
-            exponential_average_factor = self.momentum if self.momentum is not None else 1.0 / float(self.num_batches_tracked)
+            exponential_average_factor = self.momentum if self.momentum is not None else 1.0 / float(
+                self.num_batches_tracked)
 
             # Compute current batch statistics
             mean = x.mean([0, 2, 3])
@@ -62,8 +74,8 @@ class NeuronSpecificSpatialAttention(nn.Module):
 
     def forward(self, x, embeddings):
         batch_size, _, H, W = x.shape
-        spatial_gamma = self.fc_spatial_gamma(embeddings).view(batch_size, 1, H, W)  #.expand_as(x)
-        spatial_beta = self.fc_spatial_beta(embeddings).view(batch_size, 1, H, W)  #.expand_as(x)
+        spatial_gamma = self.fc_spatial_gamma(embeddings).view(batch_size, 1, H, W)  # .expand_as(x)
+        spatial_beta = self.fc_spatial_beta(embeddings).view(batch_size, 1, H, W)  # .expand_as(x)
         output = spatial_gamma * x + spatial_beta
         return output, spatial_gamma
 
@@ -86,8 +98,8 @@ class NeuronSpecificFeatureModulation(nn.Module):
 class FiLMCNN(nn.Module):
     def __init__(self, input_depth, input_height, input_width,
                  conv3d_out_channels=10, conv2_out_channels=64, conv2_1st_layer_kernel=3,
-                 conv2_2nd_layer_kernel=3, conv2_3rd_layer_kernel=3,
-                 dataset_embedding_length=10, neuronid_embedding_length = 10, momentum=0.1):
+                 conv2_2nd_layer_kernel=3, conv2_3rd_layer_kernel=3, num_dataset=10, num_neuron=10,
+                 dataset_embedding_length=10, neuronid_embedding_length=10, momentum=0.1):
         super().__init__()
         self.input_depth = input_depth
         self.input_height = input_height
@@ -105,8 +117,9 @@ class FiLMCNN(nn.Module):
         self.avgpool3d = nn.AvgPool3d((1, 2, 2))
         self.conv3d = nn.Conv3d(in_channels=1, out_channels=self.conv3d_out_channels,
                                 kernel_size=(input_depth, 1, 1), stride=1, padding=0)
-        self.bn3d = AdaptiveBatchNorm(num_features=self.conv2_out_channels, embedding_size=self.dataset_embedding_length,
-                                     momentum=self.momentum)  # Batch normalization for 3D conv
+        self.bn3d = AdaptiveBatchNorm(num_features=self.conv2_out_channels,
+                                      embedding_size=self.dataset_embedding_length,
+                                      momentum=self.momentum)  # Batch normalization for 3D conv
 
         # 2D Convolutional layers
         self.conv1 = nn.Conv2d(in_channels=self.conv3d_out_channels, out_channels=self.conv2_out_channels,
@@ -131,6 +144,9 @@ class FiLMCNN(nn.Module):
         self.spamap = NeuronSpecificSpatialAttention(num_channels=self.conv2_out_channels,
                                                      height=self._to_proj_h, width=self._to_proj_w,
                                                      embedding_size=self.neuronid_embedding_length)
+        self.dataset_id_encoder = UniqueIdEncoder(num_to_encode=num_dataset,
+                                                  embedding_dim=self.dataset_embedding_length)
+        self.neuron_id_encoder = UniqueIdEncoder(num_to_encode=num_neuron, embedding_dim=self.neuronid_embedding_length)
 
     def _get_conv_output(self, input_depth, input_height, input_width):
         with torch.no_grad():
@@ -144,7 +160,11 @@ class FiLMCNN(nn.Module):
             dummy_input = F.softplus(self.bn3(self.conv3(dummy_input), dummy_dataset_embeddings))
             return dummy_input.shape[-2], dummy_input.shape[-1]
 
-    def forward(self, x, dataset_embeddings, neuron_embeddings):
+    def forward(self, x, dataset_ids, neuron_ids):
+        # Get embedding from unique ids
+        dataset_embeddings = self.dataset_id_encoder(dataset_ids)
+        neuron_embeddings = self.neuron_id_encoder(neuron_ids)
+
         # 3D convolutional layer
         x = self.avgpool3d(x)
         x = self.conv3d(x).squeeze(2)
@@ -156,6 +176,6 @@ class FiLMCNN(nn.Module):
         x = F.softplus(self.bn3(self.conv3(x), dataset_embeddings))
 
         # Flatten the output for the fully connected layer
-        x, feature_gamma = self.feamap(x, neuron_embeddings)
-        x, spatial_gamma = self.spamap(x, neuron_embeddings)
+        x, feature_gamma = F.softplus(self.feamap(x, neuron_embeddings))
+        x, spatial_gamma = F.softplus(self.spamap(x, neuron_embeddings))
         return F.softplus(x), feature_gamma, spatial_gamma
