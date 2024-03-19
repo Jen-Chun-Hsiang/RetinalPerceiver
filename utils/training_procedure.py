@@ -147,13 +147,13 @@ class Trainer:
 class Evaluator(Trainer):
     def __init__(self, model, criterion, device,
                  query_array=None, is_contrastive_learning=False, is_selective_layers=False,
-                 query_encoder=None, query_permutator=None, series_ids=None,
+                 query_encoder=None, query_permutator=None, series_ids=None, is_feature_L1=False,
                  margin=0.1, temperature=0.1, lambda_l1=0.01):
         # Initialize the parent class without an optimizer as it's not needed for evaluation
         super().__init__(model, criterion, None, device, query_array=query_array,
                          is_contrastive_learning=is_contrastive_learning, is_selective_layers=is_selective_layers,
                          query_encoder=query_encoder, series_ids=series_ids, query_permutator=query_permutator,
-                         margin=margin, temperature=temperature, lambda_l1=lambda_l1)
+                         margin=margin, temperature=temperature, lambda_l1=lambda_l1, is_feature_L1=False,)
 
     def evaluate(self, eval_loader):
         self.model.eval()  # Set the model to evaluation mode
