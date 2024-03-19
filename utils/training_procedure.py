@@ -123,14 +123,14 @@ class Trainer:
         dataset_ids = query_vectors[:, 0].to(self.device)
         neuron_ids = query_vectors[:, 3].to(self.device)
         if self.is_feature_L1:
+            outputs_predict, feature_gamma, spatial_gamma = self.model(input_matrices, dataset_ids, neuron_ids)
+            l1_loss = self._l1_regularization(feature_gamma, self.lambda_l1) + \
+                      self._l1_regularization(spatial_gamma, self.lambda_l1)
+        else:
             outputs_predict = self.model(input_matrices, dataset_ids, neuron_ids)
 
             l1_loss = self._l1_regularization(self.model.spamap.spatial_embedding.weight[neuron_ids], self.lambda_l1) + \
                       self._l1_regularization(self.model.feamap.channel_embedding.weight[neuron_ids], self.lambda_l1)
-        else:
-            outputs_predict, feature_gamma, spatial_gamma = self.model(input_matrices, dataset_ids, neuron_ids)
-            l1_loss = self._l1_regularization(feature_gamma, self.lambda_l1) + \
-                      self._l1_regularization(spatial_gamma, self.lambda_l1)
 
         return self._compute_loss(outputs_predict, targets) + l1_loss
 
@@ -153,7 +153,7 @@ class Evaluator(Trainer):
         super().__init__(model, criterion, None, device, query_array=query_array,
                          is_contrastive_learning=is_contrastive_learning, is_selective_layers=is_selective_layers,
                          query_encoder=query_encoder, series_ids=series_ids, query_permutator=query_permutator,
-                         margin=margin, temperature=temperature, lambda_l1=lambda_l1, is_feature_L1=False,)
+                         margin=margin, temperature=temperature, lambda_l1=lambda_l1, is_feature_L1=is_feature_L1,)
 
     def evaluate(self, eval_loader):
         self.model.eval()  # Set the model to evaluation mode
