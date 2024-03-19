@@ -28,6 +28,7 @@ from utils.utils import plot_and_save_3d_matrix_with_timestamp as plot3dmat
 from models.perceiver3d import RetinalPerceiverIO
 from models.cnn3d import RetinalPerceiverIOWithCNN
 from models.style3d import StyleCNN
+from models.FiLM3d import FiLMCNN
 from utils.training_procedure import Trainer, Evaluator, save_checkpoint, CheckpointLoader
 from utils.loss_function import loss_functions
 
@@ -52,8 +53,8 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Script for Model Training to get 3D RF in simulation")
     parser.add_argument('--config_name', type=str, default='neuro_exp1_2cell_030624', help='Config file name for data generation')
     parser.add_argument('--experiment_name', type=str, default='new_experiment', help='Experiment name')
-    parser.add_argument('--model', type=str, choices=['RetinalPerceiver', 'RetinalCNN', 'AdaptiveCNN'], required=True,
-                        help='Model to train')
+    parser.add_argument('--model', type=str, choices=['RetinalPerceiver', 'RetinalCNN', 'AdaptiveCNN', 'FiLMCNN'],
+                        required=True, help='Model to train')
     parser.add_argument('--input_depth', type=int, default=20, help='Number of time points')
     parser.add_argument('--input_height', type=int, default=30, help='Heights of the input')
     parser.add_argument('--input_width', type=int, default=40, help='Width of the input')
@@ -71,8 +72,10 @@ def parse_args():
                         help='Size of kernel in 3rd layer of 2d convolution layer')
     parser.add_argument('--momentum', type=float, default=0.1, help='Window for moving batch normalization')
     # embedding size
-    parser.add_argument('--num_dataset', type=int, default=100, help='Number of potential experiments')
-    parser.add_argument('--num_neuron', type=int, default=1000, help='Number of encoding neurons')
+    parser.add_argument('--num_dataset', type=int, default=10, help='Number of potential experiments')
+    parser.add_argument('--num_neuron', type=int, default=100, help='Number of encoding neurons')
+    parser.add_argument('--dataset_embedding_length', type=int, default=5, help='Length of embedding for dataset ids')
+    parser.add_argument('--neuronid_embedding_length', type=int, default=16, help='Length of embedding for neuron ids')
     # Training procedure
     parser.add_argument('--epochs', type=int, default=100, help='Number of training epochs')
     parser.add_argument('--batch_size', type=int, default=64, help='Batch size for training')
@@ -105,6 +108,8 @@ def parse_args():
     parser.add_argument('--loss_fn', type=str, default='MSE', choices=list(loss_functions.keys()),
                         help='The name of the loss function to use (default: MSE)')
     parser.add_argument('--is_selective_layers', action='store_true', help='Enable L1 penalty for feature and spatial selection')
+    parser.add_argument('--is_feature_L1', action='store_true',
+                        help='Enable L1 penalty for FiLM type for attention module')
     parser.add_argument('--lambda_l1', type=float, default=0.01, help='L1 weight penalty for selective layers')
 
     # System computing enhancement
@@ -241,6 +246,13 @@ def main():
                          conv2_1st_layer_kernel=args.conv2_1st_layer_kernel, conv2_2nd_layer_kernel=args.conv2_2nd_layer_kernel,
                          conv2_3rd_layer_kernel=args.conv2_3rd_layer_kernel, num_dataset=args.num_dataset,
                          momentum=args.momentum, num_neuron=args.num_neuron).to(device)
+    elif args.model == 'FiLMCNN':
+        model = FiLMCNN(input_depth=args.input_depth, input_height=args.input_height, input_width=args.input_width,
+                         conv3d_out_channels=args.conv3d_out_channels, conv2_out_channels=args.conv2_out_channels,
+                         conv2_1st_layer_kernel=args.conv2_1st_layer_kernel, conv2_2nd_layer_kernel=args.conv2_2nd_layer_kernel,
+                         conv2_3rd_layer_kernel=args.conv2_3rd_layer_kernel, num_dataset=args.num_dataset,
+                         dataset_embedding_length=args.dataset_embedding_length, num_neuron=args.num_neuron,
+                         neuronid_embedding_length=args.neuronid_embedding_length, momentum=args.momentum).to(device)
     elif args.model == 'RetinalPerceiver':
         model = RetinalPerceiverIO(input_dim=args.input_channels, latent_dim=args.hidden_size,
                                    output_dim=args.output_size,
@@ -282,11 +294,11 @@ def main():
     criterion = loss_functions[args.loss_fn]
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
     # Initialize the Trainer
-    trainer = Trainer(model, criterion, optimizer, device, args.accumulation_steps,
+    trainer = Trainer(model, criterion, optimizer, device, args.accumulation_steps, is_feature_L1=args.is_feature_L1,
                       query_array=query_array, is_selective_layers=args.is_selective_layers, lambda_l1=args.lambda_l1)
     logging.info('Trainer is loaded \n')
     # Initialize the Evaluator
-    evaluator = Evaluator(model, criterion, device, query_array=query_array,
+    evaluator = Evaluator(model, criterion, device, query_array=query_array, is_feature_L1=args.is_feature_L1,
                           is_selective_layers=args.is_selective_layers, lambda_l1=args.lambda_l1)
     logging.info('Evaluator is loaded \n')
     # Optionally, load from checkpoint

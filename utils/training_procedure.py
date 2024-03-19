@@ -8,7 +8,7 @@ from operator import itemgetter
 class Trainer:
     def __init__(self, model, criterion, optimizer, device, accumulation_steps=1,
                  query_array=None, is_contrastive_learning=False, is_selective_layers=False,
-                 query_encoder=None, query_permutator=None, series_ids=None,
+                 query_encoder=None, query_permutator=None, series_ids=None, is_feature_L1=False,
                  margin=0.1, temperature=0.1, lambda_l1=0.01):
         self.model = model
         self.criterion = criterion
@@ -26,6 +26,7 @@ class Trainer:
             self.series_ids = series_ids
             self.neg_contra_loss_fn = CosineNegativePairLoss(margin=margin, temperature=temperature)
         self.is_selective_layers = is_selective_layers
+        self.is_feature_L1 = is_feature_L1
         self.lambda_l1 = lambda_l1
 
         if query_array is not None:
@@ -110,7 +111,7 @@ class Trainer:
             query_vectors = query_vectors.float().to(self.device)
             _, perm_embedding = self.model(input_matrices, query_vectors)
             contra_loss += torch.matmul(targets.T, self.neg_contra_loss_fn(perm_embedding.view(num_batch, -1),
-                                                   outputs_embedding.view(num_batch, -1)))
+                                                                           outputs_embedding.view(num_batch, -1)))
 
         return self._compute_loss(outputs_predict, targets) + contra_loss
 
@@ -121,10 +122,15 @@ class Trainer:
 
         dataset_ids = query_vectors[:, 0].to(self.device)
         neuron_ids = query_vectors[:, 3].to(self.device)
-        outputs_predict = self.model(input_matrices, dataset_ids, neuron_ids)
+        if self.is_feature_L1:
+            outputs_predict = self.model(input_matrices, dataset_ids, neuron_ids)
 
-        l1_loss = self._l1_regularization(self.model.spamap.spatial_embedding.weight[neuron_ids], self.lambda_l1) + \
-                  self._l1_regularization(self.model.feamap.channel_embedding.weight[neuron_ids], self.lambda_l1)
+            l1_loss = self._l1_regularization(self.model.spamap.spatial_embedding.weight[neuron_ids], self.lambda_l1) + \
+                      self._l1_regularization(self.model.feamap.channel_embedding.weight[neuron_ids], self.lambda_l1)
+        else:
+            outputs_predict, feature_gamma, spatial_gamma = self.model(input_matrices, dataset_ids, neuron_ids)
+            l1_loss = self._l1_regularization(feature_gamma, self.lambda_l1) + \
+                      self._l1_regularization(spatial_gamma, self.lambda_l1)
 
         return self._compute_loss(outputs_predict, targets) + l1_loss
 
@@ -350,9 +356,9 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
                 images, labels = data
                 weights, _ = model(images).squeeze()
 
-            #images = images.to(next(model.parameters()).device)
-            #print(f'weights type: {type(weights)}')
-            #print(f'weights shape: {weights.shape}')
+            # images = images.to(next(model.parameters()).device)
+            # print(f'weights type: {type(weights)}')
+            # print(f'weights shape: {weights.shape}')
             all_weights.extend(weights.cpu().tolist())
             all_labels.extend(labels.cpu().tolist() if torch.is_tensor(labels) else labels)
 
@@ -377,7 +383,7 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
     for data in dataloader:
         if use_query:
             images, _, matrix_indices = data
-            #query_vectors = query_array_tensor[matrix_indices].to(images.device)
+            # query_vectors = query_array_tensor[matrix_indices].to(images.device)
             weights_batch = normalized_weights[idx:idx + images.size(0)].to(images.device).view(-1, 1, 1, 1, 1)
             weighted_images = images * weights_batch
         else:
@@ -396,6 +402,3 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
         idx += images.size(0)
 
     return weighted_sum, all_weights, all_labels
-
-
-
