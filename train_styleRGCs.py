@@ -134,7 +134,6 @@ def main():
     image_root_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Stimulus/'
     link_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Link/'
     resp_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Response/'
-    # savemat_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Matfiles/'
     # Generate a timestamp
     timestr = datetime.now().strftime('%Y%m%d_%H%M%S')
 
@@ -209,7 +208,6 @@ def main():
 
     logging.info(f'query_array size:{query_array.shape} \n')
     logging.info(f'query_array:{query_array} \n')
-
 
     # get data spit with chucks
     train_indices, val_indices = train_val_split(len(data_array), args.chunk_size, test_size=1-args.train_proportion)
@@ -306,7 +304,8 @@ def main():
         checkpoint_loader = CheckpointLoader(checkpoint_path=args.checkpoint_path, device=device)
         model, optimizer = checkpoint_loader.load_checkpoint(model, optimizer)
         start_epoch = checkpoint_loader.get_epoch()
-        training_losses, validation_losses = checkpoint_loader.get_training_losses(), checkpoint_loader.get_validation_losses()
+        training_losses = checkpoint_loader.get_training_losses()
+        validation_losses = checkpoint_loader.get_validation_losses()
     else:
         start_epoch = 0
         training_losses = []
@@ -317,9 +316,15 @@ def main():
     for epoch in range(start_epoch, args.epochs):
         avg_train_loss = trainer.train_one_epoch(train_loader)
         training_losses.append(avg_train_loss)
+        logging.info(f'epoch (training): {epoch} \n')
+        logging.info(f"Allocated memory: {torch.cuda.memory_allocated() / 1e6} MB \n"
+                     f"Max memory allocated: {torch.cuda.max_memory_allocated() / 1e6} MB \n")
         # torch.cuda.empty_cache()
         avg_val_loss = evaluator.evaluate(val_loader)
         validation_losses.append(avg_val_loss)
+        logging.info(f'epoch (validation): {epoch} \n')
+        logging.info(f"Allocated memory: {torch.cuda.memory_allocated() / 1e6} MB \n"
+                     f"Max memory allocated: {torch.cuda.max_memory_allocated() / 1e6} MB \n")
         # Print training status
         if (epoch + 1) % 5 == 0:
             elapsed_time = time.time() - start_time
