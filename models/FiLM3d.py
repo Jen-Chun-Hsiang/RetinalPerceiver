@@ -67,7 +67,7 @@ class AdaptiveBatchNorm(nn.Module):
 
 # NeuronSpecificSpatialAttention definition from previous context
 class NeuronSpecificSpatialAttention(nn.Module):
-    def __init__(self, num_channels, height, width, embedding_size):
+    def __init__(self, height, width, embedding_size):
         super(NeuronSpecificSpatialAttention, self).__init__()
         self.fc_spatial_gamma = nn.Linear(embedding_size, height * width)
         self.fc_spatial_beta = nn.Linear(embedding_size, height * width)
@@ -176,6 +176,8 @@ class FiLMCNN(nn.Module):
         x = F.softplus(self.bn3(self.conv3(x), dataset_embeddings))
 
         # Flatten the output for the fully connected layer
-        x, feature_gamma = F.softplus(self.feamap(x, neuron_embeddings))
-        x, spatial_gamma = F.softplus(self.spamap(x, neuron_embeddings))
-        return F.softplus(x), feature_gamma, spatial_gamma
+        x, feature_gamma = self.feamap(x, neuron_embeddings)
+        x = F.softplus(x).sum(dim=1, keepdim=True)
+        x, spatial_gamma = self.spamap(x, neuron_embeddings)
+        x = F.softplus(x).sum(dim=(2, 3), keepdim=True)
+        return F.softplus(x).sum(dim=(1, 2, 3)), feature_gamma, spatial_gamma
