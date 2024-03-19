@@ -314,6 +314,7 @@ def main():
         logging.info('No checkpoint \n')
 
     for epoch in range(start_epoch, args.epochs):
+        torch.cuda.empty_cache()
         avg_train_loss = trainer.train_one_epoch(train_loader)
         training_losses.append(avg_train_loss)
         logging.info(f'epoch (training): {epoch} \n')
