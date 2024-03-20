@@ -67,7 +67,7 @@ class Trainer:
             else:
                 raise ValueError(f"Loss is None for batch {batch_idx}. Check your model's output and loss function.")
 
-            if (batch_idx + 1) % self.accumulation_steps == 0:
+            if (batch_idx + 1) % self.accumulation_steps == 0 or (batch_idx + 1) == len(train_loader):
                 self.optimizer.step()  # Perform optimization step
                 self.optimizer.zero_grad()  # Zero gradients for the next accumulation
 
