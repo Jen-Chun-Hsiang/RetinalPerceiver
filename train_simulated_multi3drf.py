@@ -110,6 +110,7 @@ def parse_args():
                         help='Input stride as three separate integers. Default is (1, 1, 1)')
     parser.add_argument('--margin', type=float, default=0.1, help='Margin for contrastive learning')
     parser.add_argument('--temperature', type=float, default=0.1, help='Temperature for contrastive learning')
+    parser.add_argument('--contrastive_factor', type=float, default=0.01, help='Temperature for contrastive learning')
     # System computing enhancement
     parser.add_argument('--parallel_processing', action='store_true', help='Enable parallel_processing')
     parser.add_argument('--accumulation_steps', type=int, default=1, help='Accumulate gradients')
@@ -256,12 +257,13 @@ def main():
     trainer = Trainer(model, criterion, optimizer, device, args.accumulation_steps,
                       query_array=query_array, is_contrastive_learning=args.is_contrastive_learning,
                       series_ids=series_ids, query_permutator=query_permutator, query_encoder=query_encoder,
-                      margin=args.margin, temperature=args.temperature)
+                      margin=args.margin, temperature=args.temperature, contrastive_factor=args.contrastive_factor)
     # Initialize the Evaluator
     evaluator_contra = Evaluator(model, criterion, device, query_array=query_array,
                                  is_contrastive_learning=args.is_contrastive_learning,
                                  series_ids=series_ids, query_permutator=query_permutator, query_encoder=query_encoder,
-                                 margin=args.margin, temperature=args.temperature)
+                                 margin=args.margin, temperature=args.temperature,
+                                 contrastive_factor=args.contrastive_factor)
     evaluator = Evaluator(model, criterion, device, query_array=query_array)
 
     # Optionally, load from checkpoint

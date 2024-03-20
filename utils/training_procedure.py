@@ -13,7 +13,7 @@ class Trainer:
     def __init__(self, model, criterion, optimizer, device, accumulation_steps=1,
                  query_array=None, is_contrastive_learning=False, is_selective_layers=False,
                  query_encoder=None, query_permutator=None, series_ids=None, is_feature_L1=False,
-                 margin=0.1, temperature=0.1, lambda_l1=0.01):
+                 margin=0.1, temperature=0.1, lambda_l1=0.01, contrastive_factor=0.01):
         self.model = model
         self.criterion = criterion
         self.optimizer = optimizer
@@ -32,6 +32,7 @@ class Trainer:
         self.is_selective_layers = is_selective_layers
         self.is_feature_L1 = is_feature_L1
         self.lambda_l1 = lambda_l1
+        self.contrastive_factor = contrastive_factor
 
         if query_array is not None:
             self.is_query_array = True
@@ -114,7 +115,7 @@ class Trainer:
             query_vectors = torch.from_numpy(query_array).unsqueeze(1)
             query_vectors = query_vectors.float().to(self.device)
             _, perm_embedding = self.model(input_matrices, query_vectors)
-            contra_loss += torch.matmul(targets.T, self.neg_contra_loss_fn(perm_embedding.view(num_batch, -1),
+            contra_loss += self.contrastive_factor*torch.matmul(targets.T, self.neg_contra_loss_fn(perm_embedding.view(num_batch, -1),
                                                                            outputs_embedding.view(num_batch, -1)))
 
         return self._compute_loss(outputs_predict, targets) + contra_loss
@@ -149,12 +150,13 @@ class Evaluator(Trainer):
     def __init__(self, model, criterion, device,
                  query_array=None, is_contrastive_learning=False, is_selective_layers=False,
                  query_encoder=None, query_permutator=None, series_ids=None, is_feature_L1=False,
-                 margin=0.1, temperature=0.1, lambda_l1=0.01):
+                 margin=0.1, temperature=0.1, lambda_l1=0.01, contrastive_factor=0.01):
         # Initialize the parent class without an optimizer as it's not needed for evaluation
         super().__init__(model, criterion, None, device, query_array=query_array,
                          is_contrastive_learning=is_contrastive_learning, is_selective_layers=is_selective_layers,
                          query_encoder=query_encoder, series_ids=series_ids, query_permutator=query_permutator,
-                         margin=margin, temperature=temperature, lambda_l1=lambda_l1, is_feature_L1=is_feature_L1, )
+                         margin=margin, temperature=temperature, lambda_l1=lambda_l1, is_feature_L1=is_feature_L1,
+                         contrastive_factor=contrastive_factor)
 
     def evaluate(self, eval_loader):
         self.model.eval()  # Set the model to evaluation mode
