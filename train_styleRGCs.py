@@ -14,6 +14,7 @@ import logging
 import time
 import pandas as pd
 import gc
+import psutil
 
 # from io import StringIO
 # import sys
@@ -32,6 +33,22 @@ from models.style3d import StyleCNN
 from models.FiLM3d import FiLMCNN
 from utils.training_procedure import Trainer, Evaluator, save_checkpoint, CheckpointLoader
 from utils.loss_function import loss_functions
+
+
+def get_cpu_free_memory():
+    memory = psutil.virtual_memory()
+    free_memory_bytes = memory.free  # Free memory in bytes
+    return free_memory_bytes
+
+
+def get_gpu_free_memory(device_id=0):
+    torch.cuda.synchronize(device_id)
+    torch.cuda.empty_cache()  # Clear any cached memory to get a more accurate reading
+    total_memory = torch.cuda.get_device_properties(device_id).total_memory
+    allocated_memory = torch.cuda.memory_allocated(device_id)
+    free_memory = total_memory - allocated_memory
+    return free_memory
+
 
 def parse_covariance(string):
     try:
@@ -153,6 +170,8 @@ def main():
     # If CUDA is available, continue with the rest of the script
     device = torch.device("cuda")
     torch.cuda.empty_cache()
+    device_id = 0
+    torch.cuda.set_device(device_id)
 
     # num_workers = os.cpu_count()
     # mp.set_start_method('spawn', force=True)
@@ -324,8 +343,8 @@ def main():
         avg_val_loss = evaluator.evaluate(val_loader)
         validation_losses.append(avg_val_loss)
         logging.info(f'epoch (validation): {epoch} \n')
-        logging.info(f"Allocated memory: {torch.cuda.memory_allocated() / 1e6} MB \n"
-                     f"Max memory allocated: {torch.cuda.max_memory_allocated() / 1e6} MB \n")
+        logging.info(f"CPU free memory: {get_cpu_free_memory() / 1e6} MB \n"
+                     f"Max memory allocated: {get_gpu_free_memory(device_id) / 1e6} MB \n")
         # Print training status
         if (epoch + 1) % 5 == 0:
             elapsed_time = time.time() - start_time
