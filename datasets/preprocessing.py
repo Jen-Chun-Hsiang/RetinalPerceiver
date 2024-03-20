@@ -75,6 +75,7 @@ class PNGToTensorConverter:
         if self.scale_factor != 1:
             interp_mode = 'nearest'
             input_tensor = tensor.unsqueeze(0).unsqueeze(0)
+            print(input_tensor.shape)
             # Apply padding
             padded_tensor = F.pad(input_tensor,
                                   (self.padding_size, self.padding_size, self.padding_size, self.padding_size),
