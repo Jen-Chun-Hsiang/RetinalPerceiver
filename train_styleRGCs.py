@@ -344,7 +344,9 @@ def main():
         validation_losses.append(avg_val_loss)
         logging.info(f'epoch (validation): {epoch} \n')
         logging.info(f"CPU free memory: {get_cpu_free_memory() / 1e6} MB \n"
-                     f"Max memory allocated: {get_gpu_free_memory(device_id) / 1e6} MB \n")
+                     f"GPU from memory: {get_gpu_free_memory(device_id) / 1e6} MB \n")
+        logging.info(f"GPU Allocated memory: {torch.cuda.memory_allocated() / 1e6} MB \n"
+                     f"GPU Max memory allocated: {torch.cuda.max_memory_allocated() / 1e6} MB \n")
         # Print training status
         if (epoch + 1) % 5 == 0:
             elapsed_time = time.time() - start_time
