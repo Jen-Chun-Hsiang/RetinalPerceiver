@@ -133,7 +133,7 @@ class CosineNegativePairLoss(nn.Module):
         scaled_cosine_dist = cosine_dist / self.temperature
 
         # Calculate loss based on the margin
-        losses = F.relu(self.margin - scaled_cosine_dist)
+        losses = F.softplus(self.margin - scaled_cosine_dist)
 
         # Return the mean loss over all negative pairs
         return losses
