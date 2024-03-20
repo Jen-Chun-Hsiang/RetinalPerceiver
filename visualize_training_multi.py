@@ -25,8 +25,8 @@ def weightedsum_image_plot(output_image_np):
     plt.ylabel("Height")
 
 def main():
-    stimulus_type = 'SIMContra031301'
-    epoch_end = 100
+    stimulus_type = 'SIMContra031702'
+    epoch_end = 70
     is_cross_level = False
     is_full_figure_draw = False
     checkpoint_filename = f'PerceiverIO_{stimulus_type}_checkpoint_epoch_{epoch_end}'
@@ -168,7 +168,7 @@ def main():
 
         # Initialize the dataset with the device
 
-        plot3dmat(target_matrix[0, :, :, :], num_cols, savefig_dir, file_prefix=f'plot_3D_matrix_{cross_level_flag}_{presented_cell_id}')
+        # plot3dmat(target_matrix[0, :, :, :], num_cols, savefig_dir, file_prefix=f'plot_3D_matrix_{cross_level_flag}_{presented_cell_id}')
         dataset_test = MultiMatrixDataset(target_matrix, length=total_length, device=device, combination_set=[1],
                                      add_noise=args.add_noise, noise_level=args.noise_level, use_relu=args.use_relu,
                                      output_offset=args.output_offset)
