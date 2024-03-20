@@ -66,9 +66,13 @@ def main():
 
     # Load the training and model parameters
     checkpoint_loader = CheckpointLoader(checkpoint_path=checkpoint_path, device=device)
-    training_losses, validation_losses = checkpoint_loader.load_training_losses(), checkpoint_loader.load_validation_losses()
+    training_losses = checkpoint_loader.load_training_losses()
+    validation_losses = checkpoint_loader.load_validation_losses()
+    validation_contra_losses = checkpoint_loader.load_validation_contra_losses()
     logging.info(f'training_losses:{training_losses} \n')
     logging.info(f'validation_losses:{validation_losses} \n')
+    logging.info(f'validation_contra_losses:{validation_contra_losses} \n')
+    ValueError(f"Temporal stop {timestr}! (remove after use)")
     visualizer_prog.plot_and_save(None, plot_type='line', line1=training_losses, line2=validation_losses,
                                   xlabel='Epochs', ylabel='Loss')
     args = checkpoint_loader.load_args()
