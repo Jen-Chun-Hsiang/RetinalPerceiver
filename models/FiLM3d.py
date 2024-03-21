@@ -162,7 +162,7 @@ class FiLMCNN(nn.Module):
     def forward(self, x, dataset_ids, neuron_ids):
         # Get embedding from unique ids
         dataset_embeddings = self.dataset_id_encoder(dataset_ids)
-        neuron_embeddings = self.neuron_id_encoder(neuron_ids)
+        # neuron_embeddings = self.neuron_id_encoder(neuron_ids)
 
         # 3D convolutional layer
         x = self.avgpool3d(x)
@@ -173,10 +173,14 @@ class FiLMCNN(nn.Module):
         x = F.softplus(self.bn1(self.conv1(x), dataset_embeddings))
         x = F.softplus(self.bn2(self.conv2(x), dataset_embeddings))
         x = F.softplus(self.bn3(self.conv3(x), dataset_embeddings))
+        feature_gamma, spatial_gamma=None, None
 
+        ''' (temporal remove to see what is wrong
         # Flatten the output for the fully connected layer
         x, feature_gamma = self.feamap(x, neuron_embeddings)
         x = F.softplus(x).sum(dim=1, keepdim=True)
         x, spatial_gamma = self.spamap(x, neuron_embeddings)
         x = F.softplus(x).sum(dim=(2, 3), keepdim=True)
+        '''
         return F.softplus(x).sum(dim=(1, 2, 3)), feature_gamma, spatial_gamma
+
