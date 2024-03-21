@@ -114,7 +114,7 @@ class FiLMCNN(nn.Module):
         self.momentum = momentum
 
         # 3D convolutional layer to handle depth
-        # self.avgpool3d = nn.AvgPool3d((1, 2, 2))
+        self.avgpool3d = nn.AvgPool3d((1, 2, 2))
         self.conv3d = nn.Conv3d(in_channels=1, out_channels=self.conv3d_out_channels,
                                 kernel_size=(input_depth, 1, 1), stride=1, padding=0)
         self.bn3d = AdaptiveBatchNorm(num_features=self.conv2_out_channels,
@@ -153,7 +153,7 @@ class FiLMCNN(nn.Module):
         with torch.no_grad():
             dummy_dataset_embeddings = torch.randn(1, self.dataset_embedding_length)
             dummy_input = torch.zeros(1, 1, input_depth, input_height, input_width)
-            # dummy_input = self.avgpool3d(dummy_input)
+            dummy_input = self.avgpool3d(dummy_input)
             dummy_input = self.conv3d(dummy_input).squeeze(2)
             dummy_input = self.bn3d(dummy_input, dummy_dataset_embeddings)
             dummy_input = F.softplus(self.bn1(self.conv1(dummy_input), dummy_dataset_embeddings))
@@ -167,7 +167,7 @@ class FiLMCNN(nn.Module):
         # neuron_embeddings = self.neuron_id_encoder(neuron_ids)
 
         # 3D convolutional layer
-        # x = self.avgpool3d(x)
+        x = self.avgpool3d(x)
         x = self.conv3d(x).squeeze(2)
         x = self.bn3d(x, dataset_embeddings)
 
