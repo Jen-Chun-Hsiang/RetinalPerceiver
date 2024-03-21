@@ -339,18 +339,19 @@ def main():
         gc.collect()
         avg_train_loss = trainer.train_one_epoch(train_loader)
         training_losses.append(avg_train_loss)
-        torch.cuda.empty_cache()
-        gc.collect()
+
+        # torch.cuda.empty_cache()
+        # gc.collect()
         avg_val_loss = evaluator.evaluate(val_loader)
         validation_losses.append(avg_val_loss)
-        logging.info(f'epoch (validation): {epoch} \n')
-        logging.info(f"CPU free memory: {get_cpu_free_memory() / 1e6} MB \n"
-                     f"GPU from memory: {get_gpu_free_memory(device_id) / 1e6} MB \n")
-        memory_summary = torch.cuda.memory_summary(abbreviated=False)
-        logging.info(f"GPU monitoring: \n {memory_summary} \n")
+        # logging.info(f'epoch (validation): {epoch} \n')
+        # logging.info(f"CPU free memory: {get_cpu_free_memory() / 1e6} MB \n"
+        #              f"GPU from memory: {get_gpu_free_memory(device_id) / 1e6} MB \n")
+        # memory_summary = torch.cuda.memory_summary(abbreviated=False)
+        # logging.info(f"GPU monitoring: \n {memory_summary} \n")
         # memory_summary = torch.cuda.memory_summary(device, abbreviated=False)
         # logging.info(f"specific GPU monitoring: \n { memory_summary}  \n")
-        logging.info(f"\tTraining Loss: {avg_train_loss:.4f}, Validation Loss: {avg_val_loss:.4f} \n")
+        # logging.info(f"\tTraining Loss: {avg_train_loss:.4f}, Validation Loss: {avg_val_loss:.4f} \n")
         # logging.info(f"GPU Allocated memory: {torch.cuda.memory_allocated() / 1e6} MB \n"
         #             f"GPU Max memory allocated: {torch.cuda.max_memory_allocated() / 1e6} MB \n")
         # Print training status
