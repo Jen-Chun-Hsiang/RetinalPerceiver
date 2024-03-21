@@ -139,12 +139,12 @@ class FiLMCNN(nn.Module):
         self._to_proj_h, self._to_proj_w = self._get_conv_output(input_depth, input_height, input_width)
 
         # neuron specific projection layers
-        '''  (temporal remove to see what is wrong)
+
         self.feamap = NeuronSpecificFeatureModulation(num_channels=self.conv2_out_channels,
                                                       embedding_size=self.neuronid_embedding_length)
         self.spamap = NeuronSpecificSpatialAttention(height=self._to_proj_h, width=self._to_proj_w,
                                                      embedding_size=self.neuronid_embedding_length)
-        '''
+
         self.dataset_id_encoder = UniqueIdEncoder(num_to_encode=num_dataset,
                                                   embedding_dim=self.dataset_embedding_length)
         self.neuron_id_encoder = UniqueIdEncoder(num_to_encode=num_neuron, embedding_dim=self.neuronid_embedding_length)
@@ -164,7 +164,7 @@ class FiLMCNN(nn.Module):
     def forward(self, x, dataset_ids, neuron_ids):
         # Get embedding from unique ids
         dataset_embeddings = self.dataset_id_encoder(dataset_ids)
-        # neuron_embeddings = self.neuron_id_encoder(neuron_ids)
+        neuron_embeddings = self.neuron_id_encoder(neuron_ids)
 
         # 3D convolutional layer
         x = self.avgpool3d(x)
@@ -175,14 +175,14 @@ class FiLMCNN(nn.Module):
         x = F.softplus(self.bn1(self.conv1(x), dataset_embeddings))
         x = F.softplus(self.bn2(self.conv2(x), dataset_embeddings))
         x = F.softplus(self.bn3(self.conv3(x), dataset_embeddings))
-        feature_gamma, spatial_gamma = None, None
+        # feature_gamma, spatial_gamma = None, None
 
-        ''' (temporal remove to see what is wrong)
+
         # Flatten the output for the fully connected layer
         x, feature_gamma = self.feamap(x, neuron_embeddings)
         x = F.softplus(x).sum(dim=1, keepdim=True)
         x, spatial_gamma = self.spamap(x, neuron_embeddings)
         x = F.softplus(x).sum(dim=(2, 3), keepdim=True)
-        '''
+
         return F.softplus(x).sum(dim=(1, 2, 3)), feature_gamma, spatial_gamma
 
