@@ -134,7 +134,7 @@ class Trainer:
             #          _l1_regularization(spatial_gamma, self.lambda_l1)
         else:
             outputs_predict = self.model(input_matrices, dataset_ids, neuron_ids)
-
+            raise ValueError(f"Temporal close {neuron_ids}.")
             l1_loss = _l1_regularization(self.model.spamap.spatial_embedding.weight[neuron_ids], self.lambda_l1) + \
                       _l1_regularization(self.model.feamap.channel_embedding.weight[neuron_ids], self.lambda_l1)
 
