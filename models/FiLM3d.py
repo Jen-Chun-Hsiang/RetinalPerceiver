@@ -139,7 +139,7 @@ class FiLMCNN(nn.Module):
         self._to_proj_h, self._to_proj_w = self._get_conv_output(input_depth, input_height, input_width)
 
         # neuron specific projection layers
-        '''
+        '''  (temporal remove to see what is wrong)
         self.feamap = NeuronSpecificFeatureModulation(num_channels=self.conv2_out_channels,
                                                       embedding_size=self.neuronid_embedding_length)
         self.spamap = NeuronSpecificSpatialAttention(height=self._to_proj_h, width=self._to_proj_w,
@@ -177,7 +177,7 @@ class FiLMCNN(nn.Module):
         x = F.softplus(self.bn3(self.conv3(x), dataset_embeddings))
         feature_gamma, spatial_gamma = None, None
 
-        ''' (temporal remove to see what is wrong
+        ''' (temporal remove to see what is wrong)
         # Flatten the output for the fully connected layer
         x, feature_gamma = self.feamap(x, neuron_embeddings)
         x = F.softplus(x).sum(dim=1, keepdim=True)
