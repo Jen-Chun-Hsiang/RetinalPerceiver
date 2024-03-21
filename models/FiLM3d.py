@@ -9,7 +9,7 @@ class UniqueIdEncoder(nn.Module):
         self.feature_embedding = nn.Embedding(num_embeddings=num_to_encode, embedding_dim=embedding_dim)
 
     def forward(self, unique_ids):
-        embeddings = self.feature_embedding(unique_ids)
+        embeddings = self.feature_embedding(unique_ids).clone()
         return embeddings
 
 
