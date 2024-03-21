@@ -59,8 +59,8 @@ class AdaptiveBatchNorm(nn.Module):
         x_hat = (x - mean[None, :, None, None]) / torch.sqrt(var[None, :, None, None] + self.eps)
 
         # Generate dataset-specific scale (gamma) and shift (beta) using embeddings
-        gamma = self.fc_gamma(embeddings).view(-1, self.num_features, 1, 1)
-        beta = self.fc_beta(embeddings).view(-1, self.num_features, 1, 1)
+        gamma = self.fc_gamma(embeddings).view(-1, self.num_features, 1, 1).clone()
+        beta = self.fc_beta(embeddings).view(-1, self.num_features, 1, 1).clone()
 
         return gamma * x_hat + beta
 
@@ -74,8 +74,8 @@ class NeuronSpecificSpatialAttention(nn.Module):
 
     def forward(self, x, embeddings):
         batch_size, _, H, W = x.shape
-        spatial_gamma = self.fc_spatial_gamma(embeddings).view(batch_size, 1, H, W)  # .expand_as(x)
-        spatial_beta = self.fc_spatial_beta(embeddings).view(batch_size, 1, H, W)  # .expand_as(x)
+        spatial_gamma = self.fc_spatial_gamma(embeddings).view(batch_size, 1, H, W).clone()  # .expand_as(x)
+        spatial_beta = self.fc_spatial_beta(embeddings).view(batch_size, 1, H, W).clone()  # .expand_as(x)
         output = spatial_gamma * x + spatial_beta
         return output, spatial_gamma
 
@@ -89,8 +89,8 @@ class NeuronSpecificFeatureModulation(nn.Module):
 
     def forward(self, x, embeddings):
         batch_size, _, _, _ = x.shape
-        feature_gamma = self.fc_feature_gamma(embeddings).view(batch_size, -1, 1, 1)
-        feature_beta = self.fc_feature_beta(embeddings).view(batch_size, -1, 1, 1)
+        feature_gamma = self.fc_feature_gamma(embeddings).view(batch_size, -1, 1, 1).clone()
+        feature_beta = self.fc_feature_beta(embeddings).view(batch_size, -1, 1, 1).clone()
         output = feature_gamma * x + feature_beta
         return output, feature_gamma
 
