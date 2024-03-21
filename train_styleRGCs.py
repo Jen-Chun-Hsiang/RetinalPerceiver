@@ -348,8 +348,9 @@ def main():
                      f"GPU from memory: {get_gpu_free_memory(device_id) / 1e6} MB \n")
         memory_summary = torch.cuda.memory_summary(abbreviated=False)
         logging.info(f"GPU monitoring: \n {memory_summary} \n")
-        memory_summary = torch.cuda.memory_summary(device, abbreviated=False)
-        logging.info(f"specific GPU monitoring: \n { memory_summary}  \n")
+        # memory_summary = torch.cuda.memory_summary(device, abbreviated=False)
+        # logging.info(f"specific GPU monitoring: \n { memory_summary}  \n")
+        logging.info(f"\tTraining Loss: {avg_train_loss:.4f}, Validation Loss: {avg_val_loss:.4f} \n")
         # logging.info(f"GPU Allocated memory: {torch.cuda.memory_allocated() / 1e6} MB \n"
         #             f"GPU Max memory allocated: {torch.cuda.max_memory_allocated() / 1e6} MB \n")
         # Print training status
