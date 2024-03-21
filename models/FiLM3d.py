@@ -9,7 +9,7 @@ class UniqueIdEncoder(nn.Module):
         self.feature_embedding = nn.Embedding(num_embeddings=num_to_encode, embedding_dim=embedding_dim)
 
     def forward(self, unique_ids):
-        embeddings = self.feature_embedding(unique_ids).clone()
+        embeddings = self.feature_embedding(unique_ids)
         return embeddings
 
 
@@ -59,8 +59,8 @@ class AdaptiveBatchNorm(nn.Module):
         x_hat = (x - mean[None, :, None, None]) / torch.sqrt(var[None, :, None, None] + self.eps)
 
         # Generate dataset-specific scale (gamma) and shift (beta) using embeddings
-        gamma = self.fc_gamma(embeddings).view(-1, self.num_features, 1, 1).clone()
-        beta = self.fc_beta(embeddings).view(-1, self.num_features, 1, 1).clone()
+        gamma = self.fc_gamma(embeddings).view(-1, self.num_features, 1, 1)
+        beta = self.fc_beta(embeddings).view(-1, self.num_features, 1, 1)
 
         return gamma * x_hat + beta
 
@@ -89,8 +89,8 @@ class NeuronSpecificFeatureModulation(nn.Module):
 
     def forward(self, x, embeddings):
         batch_size, _, _, _ = x.shape
-        feature_gamma = self.fc_feature_gamma(embeddings).view(batch_size, -1, 1, 1).clone()
-        feature_beta = self.fc_feature_beta(embeddings).view(batch_size, -1, 1, 1).clone()
+        feature_gamma = self.fc_feature_gamma(embeddings).view(batch_size, -1, 1, 1)
+        feature_beta = self.fc_feature_beta(embeddings).view(batch_size, -1, 1, 1)
         output = feature_gamma * x + feature_beta
         return output, feature_gamma
 
