@@ -129,8 +129,9 @@ class Trainer:
         neuron_ids = query_vectors[:, 3].to(self.device)
         if self.is_feature_L1:
             outputs_predict, feature_gamma, spatial_gamma = self.model(input_matrices, dataset_ids, neuron_ids)
-            l1_loss = _l1_regularization(feature_gamma, self.lambda_l1) + \
-                      _l1_regularization(spatial_gamma, self.lambda_l1)
+            l1_loss = 0
+            #l1_loss = _l1_regularization(feature_gamma, self.lambda_l1) + \
+            #          _l1_regularization(spatial_gamma, self.lambda_l1)
         else:
             outputs_predict = self.model(input_matrices, dataset_ids, neuron_ids)
 
