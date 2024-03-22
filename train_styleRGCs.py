@@ -320,13 +320,17 @@ def main():
     evaluator = Evaluator(model, criterion, device, query_array=query_array, is_feature_L1=args.is_feature_L1,
                           is_selective_layers=args.is_selective_layers, lambda_l1=args.lambda_l1)
     logging.info('Evaluator is loaded \n')
+
     # Optionally, load from checkpoint
     if args.load_checkpoint:
-        checkpoint_loader = CheckpointLoader(checkpoint_path=args.checkpoint_path, device=device)
+        checkpoint_loader = CheckpointLoader(os.path.join(savemodel_dir, args.checkpoint_path), device=device)
         model, optimizer = checkpoint_loader.load_checkpoint(model, optimizer)
-        start_epoch = checkpoint_loader.get_epoch()
-        training_losses = checkpoint_loader.get_training_losses()
-        validation_losses = checkpoint_loader.get_validation_losses()
+        start_epoch = checkpoint_loader.load_epoch()
+        training_losses = checkpoint_loader.load_training_losses()
+        validation_losses = checkpoint_loader.load_validation_losses()
+        logging.info('Load checkpoint \n')
+        start_time = time.time()  # Capture the start time
+        # args = checkpoint_loader.load_args() #
     else:
         start_epoch = 0
         training_losses = []
@@ -367,7 +371,8 @@ def main():
             checkpoint_filename = f'{filename_fixed}_checkpoint_epoch_{epoch + 1}.pth'
             logging.info(f"Allocated memory: {torch.cuda.memory_allocated() / 1e6} MB \n"
                          f"Max memory allocated: {torch.cuda.max_memory_allocated() / 1e6} MB \n")
-
+            memory_summary = torch.cuda.memory_summary(device, abbreviated=False)
+            logging.info(f"specific GPU monitoring: \n {memory_summary}  \n")
             # Assert statements to check that neither variable is None or undefined
             assert training_losses is not None, "training_losses is None or undefined"
             assert validation_losses is not None, "validation_losses is None or undefined"
