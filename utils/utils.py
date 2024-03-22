@@ -3,6 +3,7 @@ import os
 import numpy as np
 from datetime import datetime
 import matplotlib.pyplot as plt
+import hashlib
 
 
 # Function to evaluate the model on validation data
@@ -239,7 +240,7 @@ class DataVisualizer:
 
 
 class SeriesEncoder:
-    def __init__(self, max_values, lengths, order=None, shuffle_components=None, seed=42):
+    def __init__(self, max_values, lengths, encoding_method='max_spacing', order=None, shuffle_components=None, seed=42):
         """
         Initialize the encoder with maximum values, lengths, and optional order and shuffle settings.
         max_values: Dictionary with keys specifying the maximum values for each component.
@@ -248,15 +249,22 @@ class SeriesEncoder:
         shuffle_components: List of components to be shuffled, default is empty.
         seed: Random seed for consistency.
         """
+        # Validate encoding_method
+        valid_encoding_methods = ['max_spacing', 'uniform']
+        if encoding_method not in valid_encoding_methods:
+            raise ValueError(
+                f"Invalid encoding_method '{encoding_method}'. Valid options are: {valid_encoding_methods}")
+
         self.max_values = max_values
         self.lengths = lengths
+        self.encoding_method = encoding_method
         self.order = order if order is not None else list(max_values.keys())
         self.shuffle_components = shuffle_components if shuffle_components is not None else []
         np.random.seed(seed)
-        self.bases = self.calculate_bases(max_values, lengths)
+        self.bases = self._calculate_bases(max_values, lengths)
         self.shuffle_indices = {component: np.random.permutation(lengths[component]) for component in self.shuffle_components}
 
-    def calculate_bases(self, max_values, lengths):
+    def _calculate_bases(self, max_values, lengths):
         """ Calculate optimal bases for each component. """
         bases = {}
         for component, max_val in max_values.items():
@@ -265,7 +273,19 @@ class SeriesEncoder:
             bases[component] = base
         return bases
 
-    def encode_component(self, value, max_value, length, base, component):
+    def encode_component_uniformly(self, id, length, component):
+        """ Encode a component uniformly based on the input ID. """
+        seed = int(hashlib.sha256(f"{id}-{component}".encode()).hexdigest(), 16) % (2 ** 32)
+        rng = np.random.default_rng(seed)
+        encoded = rng.uniform(-1, 1, size=length)
+
+        if component in self.shuffle_components:
+            shuffle_idx = self.shuffle_indices[component]
+            encoded = encoded[shuffle_idx]
+
+        return encoded
+
+    def encode_component_max_spacing(self, value, max_value, length, base, component):
         """ Encode a value using base representation and apply shuffling if needed. """
         encoded = np.zeros(length)
         for i in range(length):
@@ -292,9 +312,12 @@ class SeriesEncoder:
             for component, value in zip(self.order, input_values):
                 max_value = self.max_values[component]
                 length = self.lengths[component]
-                base = self.bases[component]
-                # randomize = component in self.shuffle_components
-                encoded_vector.extend(self.encode_component(value, max_value, length, base, component))
+
+                if self.encoding_method == 'uniform':
+                    encoded_vector.extend(self.encode_component_uniformly(value, length, component))
+                elif self.encoding_method == 'max_spacing':
+                    base = self.bases[component]
+                    encoded_vector.extend(self.encode_component_max_spacing(value, max_value, length, base, component))
             encoded_vectors.append(np.array(encoded_vector))
 
         # Concatenate along a new dimension
