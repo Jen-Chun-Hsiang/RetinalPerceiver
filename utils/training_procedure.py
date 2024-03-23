@@ -9,7 +9,8 @@ class Trainer:
     def __init__(self, model, criterion, optimizer, device, accumulation_steps=1,
                  query_array=None, is_contrastive_learning=False, is_selective_layers=False,
                  query_encoder=None, query_permutator=None, series_ids=None, is_feature_L1=False,
-                 margin=0.1, temperature=0.1, lambda_l1=0.01, contrastive_factor=0.01):
+                 margin=0.1, temperature=0.1, lambda_l1=0.01, contrastive_factor=0.01,
+                 l1_weight=0.01):
         self.model = model
         self.criterion = criterion
         self.optimizer = optimizer
@@ -29,6 +30,7 @@ class Trainer:
         self.is_feature_L1 = is_feature_L1
         self.lambda_l1 = lambda_l1
         self.contrastive_factor = contrastive_factor
+        self.l1_weight = l1_weight
 
         if query_array is not None:
             self.is_query_array = True
@@ -125,9 +127,8 @@ class Trainer:
         neuron_ids = query_vectors[:, 3].to(self.device)
         if self.is_feature_L1:
             outputs_predict, feature_gamma, spatial_gamma = self.model(input_matrices, dataset_ids, neuron_ids)
-            l1_loss = 0
-            #l1_loss = _l1_regularization(feature_gamma, self.lambda_l1) + \
-            #          _l1_regularization(spatial_gamma, self.lambda_l1)
+            l1_loss = self.l1_weight*(self._l1_regularization(feature_gamma, self.lambda_l1) +
+                                      self._l1_regularization(spatial_gamma, self.lambda_l1))
         else:
             outputs_predict = self.model(input_matrices, dataset_ids, neuron_ids)
             raise ValueError(f"Temporal close {neuron_ids}.")
@@ -150,13 +151,14 @@ class Evaluator(Trainer):
     def __init__(self, model, criterion, device,
                  query_array=None, is_contrastive_learning=False, is_selective_layers=False,
                  query_encoder=None, query_permutator=None, series_ids=None, is_feature_L1=False,
-                 margin=0.1, temperature=0.1, lambda_l1=0.01, contrastive_factor=0.01):
+                 margin=0.1, temperature=0.1, lambda_l1=0.01, contrastive_factor=0.01,
+                 l1_weight=0.01):
         # Initialize the parent class without an optimizer as it's not needed for evaluation
         super().__init__(model, criterion, None, device, query_array=query_array,
                          is_contrastive_learning=is_contrastive_learning, is_selective_layers=is_selective_layers,
                          query_encoder=query_encoder, series_ids=series_ids, query_permutator=query_permutator,
                          margin=margin, temperature=temperature, lambda_l1=lambda_l1, is_feature_L1=is_feature_L1,
-                         contrastive_factor=contrastive_factor)
+                         contrastive_factor=contrastive_factor, l1_weight=l1_weight)
 
     def evaluate(self, eval_loader):
         self.model.eval()  # Set the model to evaluation mode

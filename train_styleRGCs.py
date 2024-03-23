@@ -129,6 +129,7 @@ def parse_args():
     parser.add_argument('--is_feature_L1', action='store_true',
                         help='Enable L1 penalty for FiLM type for attention module')
     parser.add_argument('--lambda_l1', type=float, default=0.01, help='L1 weight penalty for selective layers')
+    parser.add_argument('--l1_weight', type=float, default=0.01, help='Weight of l1 for FiLM')
 
     # System computing enhancement
     parser.add_argument('--parallel_processing', action='store_true', help='Enable parallel_processing')
@@ -314,11 +315,13 @@ def main():
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
     # Initialize the Trainer
     trainer = Trainer(model, criterion, optimizer, device, args.accumulation_steps, is_feature_L1=args.is_feature_L1,
-                      query_array=query_array, is_selective_layers=args.is_selective_layers, lambda_l1=args.lambda_l1)
+                      query_array=query_array, is_selective_layers=args.is_selective_layers, lambda_l1=args.lambda_l1,
+                      l1_weight=args.l1_weight)
     logging.info('Trainer is loaded \n')
     # Initialize the Evaluator
     evaluator = Evaluator(model, criterion, device, query_array=query_array, is_feature_L1=args.is_feature_L1,
-                          is_selective_layers=args.is_selective_layers, lambda_l1=args.lambda_l1)
+                          is_selective_layers=args.is_selective_layers, lambda_l1=args.lambda_l1,
+                          l1_weight=args.l1_weight)
     logging.info('Evaluator is loaded \n')
 
     # Optionally, load from checkpoint
