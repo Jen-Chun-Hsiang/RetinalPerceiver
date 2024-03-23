@@ -341,6 +341,8 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
     use_query = query_array_tensor is not None
 
     model_type = 'FiLMCNN'
+    if model_type == 'FiLMCNN':
+        query_array_tensor = torch.from_numpy(query_array)
     # First pass: Compute weights for all images
     with torch.no_grad():
         for data in dataloader:
@@ -350,7 +352,7 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
                     query_vectors = query_array_tensor[matrix_indices].to(images.device)
                     weights = model(images, query_vectors).squeeze()
                 if model_type == 'FiLMCNN':
-                    query_vectors = query_array_tensor.repeat(batch_size, 1, 1).squeeze()
+                    query_vectors = query_array_tensor
                     #input_matrices = input_matrices.to(images.device)
                     #print(query_vectors.shape)
                     dataset_ids = query_vectors[:, 0].to(images.device)
