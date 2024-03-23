@@ -171,7 +171,7 @@ def main():
     # If CUDA is available, continue with the rest of the script
     device = torch.device("cuda")
     torch.cuda.empty_cache()
-    torch.backends.cudnn.benchmark = False
+    # torch.backends.cudnn.benchmark = False
     device_id = 0
     torch.cuda.set_device(device_id)
 
