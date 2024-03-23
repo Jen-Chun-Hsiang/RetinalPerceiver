@@ -352,7 +352,7 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
                     query_vectors = query_array_tensor[matrix_indices].to(images.device)
                     weights = model(images, query_vectors).squeeze()
                 if model_type == 'FiLMCNN':
-                    query_vectors = query_array_tensor
+                    query_vectors = query_array_tensor.repeat(batch_size, 1)
                     #input_matrices = input_matrices.to(images.device)
                     #print(query_vectors.shape)
                     dataset_ids = query_vectors[:, 0].to(images.device)
