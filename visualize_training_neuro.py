@@ -18,6 +18,8 @@ from utils.utils import DataVisualizer, SeriesEncoder
 from utils.utils import calculate_correlation
 from models.perceiver3d import RetinalPerceiverIO
 from models.cnn3d import RetinalPerceiverIOWithCNN
+from models.style3d import StyleCNN
+from models.FiLM3d import FiLMCNN
 # (0) identify the cell we have modeled their responses
 # (1) show the receptive field with the white noise
 # (2) show the response to the test set
