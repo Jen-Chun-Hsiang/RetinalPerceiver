@@ -351,10 +351,10 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
                     weights = model(images, query_vectors).squeeze()
                 if model_type == 'FiLMCNN':
                     query_vectors =  query_array_tensor.repeat(batch_size, 1, 1)
-                    input_matrices = input_matrices.to(images.device)
+                    #input_matrices = input_matrices.to(images.device)
                     dataset_ids = query_vectors[:, 0].to(images.device)
                     neuron_ids = query_vectors[:, 3].to(images.device)
-                    weights, _, _ = self.model(input_matrices, dataset_ids, neuron_ids)
+                    weights, _, _ = model(images, dataset_ids, neuron_ids)
 
                 else:
                     query_vectors = query_array_tensor.repeat(batch_size, 1, 1).to(images.device)
