@@ -24,10 +24,11 @@ from models.cnn3d import RetinalPerceiverIOWithCNN
 
 
 def main():
-    stimulus_type = '50tpcnn_2024031102_GoodCell2'  # get the name from the check point folder
-    epoch_end = 100  # the number of epoch in the check_point file
+    stimulus_type = 'FiLM_2024031901_GoodCell2'  # get the name from the check point folder
+    epoch_end = 110  # the number of epoch in the check_point file
     total_length = 10000
     initial_size = (10, 24, 32)
+    is_encoding_query = False
     is_weight_in_label = False  # check if the data is good
     is_full_figure_draw = True  # determine whether draw for each neuro or just get stats
     savefig_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Figures/'
@@ -40,6 +41,7 @@ def main():
     link_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Link/'
     resp_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Response/'
     mat_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Matfiles/'
+
 
     # Compile the regarding parameters
     checkpoint_filename = f'PerceiverIO_{stimulus_type}_checkpoint_epoch_{epoch_end}'
@@ -70,26 +72,16 @@ def main():
     visualizer_prog.plot_and_save(None, plot_type='line', line1=training_losses, line2=validation_losses,
                                   xlabel='Epochs', ylabel='Loss')
     args = checkpoint_loader.load_args()
+    config_module = f"configs.neuros.{args.config_name}"
+    config = __import__(config_module, fromlist=[''])
 
     # In the upcoming training procedure, the tables below will be saved with the training file
     # Load and make sure the table is correct
-    experiment_session_table = load_data_from_excel(exp_dir, 'experiment_session')
-    experiment_session_table = experiment_session_table.drop('stimulus_type', axis=1)
 
-    included_neuron_table = load_data_from_excel(exp_dir, 'nid_04')
-
-    experiment_info_table = load_data_from_excel(exp_dir, 'experiment_info')
-    experiment_info_table = experiment_info_table.drop(['species', 'sex', 'day', 'folder_name'], axis=1)
-
-    experiment_neuron_table = load_mat_to_dataframe(neu_dir, 'experiment_neuron_table', 'column_name')
-    experiment_neuron_table.iloc[:, 0:3] = experiment_neuron_table.iloc[:, 0:3].astype('int64')
-
-    experiment_neuron_table.fillna(-1, inplace=True)
-    experiment_neuron_table['experiment_id'] = experiment_neuron_table['experiment_id'].astype('int64')
-    experiment_neuron_table['session_id'] = experiment_neuron_table['session_id'].astype('int64')
-    experiment_neuron_table['neuron_id'] = experiment_neuron_table['neuron_id'].astype('int64')
-    experiment_neuron_table['quality'] = experiment_neuron_table['quality'].astype('float')
-    #experiment_neuron_table['neuron_id'] = experiment_neuron_table['neuron_id']
+    experiment_session_table = getattr(config, 'experiment_session_table', None)
+    included_neuron_table = getattr(config, 'included_neuron_table', None)
+    experiment_info_table = getattr(config, 'experiment_info_table', None)
+    experiment_neuron_table = getattr(config, 'experiment_neuron_table', None)
 
     filtered_data = filter_and_merge_data(
         experiment_session_table, experiment_neuron_table,
@@ -126,42 +118,68 @@ def main():
     query_df = pd.DataFrame(query_array, columns=['experiment_id', 'neuron_id'])
     query_array = pd.merge(query_df, experiment_info_table, on='experiment_id', how='left')
     query_array = query_array[['experiment_id', 'species_id', 'sex_id', 'neuron_id']]
-    query_array['neuron_unique_id'] = query_array['experiment_id'] * 10000 + query_array['neuron_id']
-    query_array = query_array.drop(['neuron_id'], axis=1)
+
+    if is_encoding_query:
+        query_array['neuron_unique_id'] = query_array['experiment_id'] * 10000 + query_array['neuron_id']
+        query_array = query_array.drop(['neuron_id'], axis=1)
+    else:
+        query_array['neuron_unique_id_unsorted'] = query_array['experiment_id'] * 1000 + query_array['neuron_id']
+        query_array['neuron_unique_id'] = pd.factorize(query_array['neuron_unique_id_unsorted'])[0]
+        query_array['experiment_unique_id'] = pd.factorize(query_array['experiment_id'])[0]
+        query_array = query_array.drop(['neuron_id', 'neuron_unique_id_unsorted', 'experiment_id'], axis=1)
+        query_array = query_array[['experiment_unique_id', 'species_id', 'sex_id', 'neuron_unique_id']]
+
     query_array = query_array.to_numpy()
 
-    # Encode series_ids into query arrays
-    max_values = {'Experiment': 1000, 'Species': 9, 'Sex': 3, 'Neuron': 10000000}
-    lengths = {'Experiment': 7, 'Species': 2, 'Sex': 1, 'Neuron': 15}
-    shuffle_components = ['Neuron']
-    query_encoder = SeriesEncoder(max_values, lengths, shuffle_components=shuffle_components)
-    query_array = query_encoder.encode(query_array)
+    if is_encoding_query:
+        # Encode series_ids into query arrays
+        max_values = {'Experiment': 1000, 'Species': 9, 'Sex': 3, 'Neuron': 10000000}
+        lengths = {'Experiment': 7, 'Species': 2, 'Sex': 1, 'Neuron': 15}
+        shuffle_components = ['Neuron']
+        query_encoder = SeriesEncoder(max_values, lengths, shuffle_components=shuffle_components)
+        query_array = query_encoder.encode(query_array)
+
+    del experiment_session_table, included_neuron_table, experiment_info_table, experiment_neuron_table
+    del query_df, data_constructor, filtered_data
+
     logging.info(f'query_array size:{query_array.shape} \n')
 
     # Get how many unique cells are there
     train_indices, val_indices = train_val_split(len(data_array), args.chunk_size, test_size=1 - args.train_proportion)
-    # get dataset
     train_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir, train_indices,
                                    args.chunk_size, device=device, cache_size=args.cache_size,
                                    image_loading_method=args.image_loading_method)
-    #train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
 
     check_loader = DataLoader(train_dataset, batch_size=2, shuffle=True)
     dataiter = iter(check_loader)
     movie, labels, index = next(dataiter)
     logging.info(f'movie clip: {movie.shape} labels:{labels} index:{index} \n')
+
+    '''
     queryvec = torch.from_numpy(query_array).unsqueeze(1)
     queryvec = queryvec[index]
     logging.info(f'query vector: {queryvec.shape} \n')
+    '''
 
     # Initialize the DataVisualizer
     visualizer_est_rf = DataVisualizer(savefig_dir, file_prefix=f'{stimulus_type}_Estimate_RF')
     visualizer_est_rfstd = DataVisualizer(savefig_dir, file_prefix=f'{stimulus_type}_Estimate_RF_std')
     visualizer_inout_corr = DataVisualizer(savefig_dir, file_prefix=f'{stimulus_type}_Input_output_correlation')
 
-
-    # Model, Loss, and Optimizer
-    if args.model == 'RetinalPerceiver':
+    if args.model == 'AdaptiveCNN':
+        model = StyleCNN(input_depth=args.input_depth, input_height=args.input_height, input_width=args.input_width,
+                         conv3d_out_channels=args.conv3d_out_channels, conv2_out_channels=args.conv2_out_channels,
+                         conv2_1st_layer_kernel=args.conv2_1st_layer_kernel, conv2_2nd_layer_kernel=args.conv2_2nd_layer_kernel,
+                         conv2_3rd_layer_kernel=args.conv2_3rd_layer_kernel, num_dataset=args.num_dataset,
+                         momentum=args.momentum, num_neuron=args.num_neuron).to(device)
+    elif args.model == 'FiLMCNN':
+        model = FiLMCNN(input_depth=args.input_depth, input_height=args.input_height, input_width=args.input_width,
+                         conv3d_out_channels=args.conv3d_out_channels, conv2_out_channels=args.conv2_out_channels,
+                         conv2_1st_layer_kernel=args.conv2_1st_layer_kernel, conv2_2nd_layer_kernel=args.conv2_2nd_layer_kernel,
+                         conv2_3rd_layer_kernel=args.conv2_3rd_layer_kernel, num_dataset=args.num_dataset,
+                         dataset_embedding_length=args.dataset_embedding_length, num_neuron=args.num_neuron,
+                         neuronid_embedding_length=args.neuronid_embedding_length, momentum=args.momentum).to(device)
+    elif args.model == 'RetinalPerceiver':
         model = RetinalPerceiverIO(input_dim=args.input_channels, latent_dim=args.hidden_size,
                                    output_dim=args.output_size,
                                    num_latents=args.num_latent, heads=args.num_head, depth=args.num_iter,

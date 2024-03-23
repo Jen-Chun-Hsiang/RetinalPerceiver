@@ -5,10 +5,6 @@ import numpy as np
 from operator import itemgetter
 
 
-def _l1_regularization(weight, lambda_l1):
-    return lambda_l1 * torch.abs(weight).sum()
-
-
 class Trainer:
     def __init__(self, model, criterion, optimizer, device, accumulation_steps=1,
                  query_array=None, is_contrastive_learning=False, is_selective_layers=False,
@@ -145,6 +141,9 @@ class Trainer:
 
     def _update_parameters(self, loss):
         loss.backward()  # Compute the backward pass only
+
+    def _l1_regularization(self, weight, lambda_l1):
+        return lambda_l1 * torch.abs(weight).sum()
 
 
 class Evaluator(Trainer):

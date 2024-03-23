@@ -111,6 +111,8 @@ def parse_args():
     parser.add_argument('--margin', type=float, default=0.1, help='Margin for contrastive learning')
     parser.add_argument('--temperature', type=float, default=0.1, help='Temperature for contrastive learning')
     parser.add_argument('--contrastive_factor', type=float, default=0.01, help='Temperature for contrastive learning')
+    parser.add_argument('--encoding_method', type=str, default='max_spacing', help='Choose the SeriesEncoder method ('
+                                                                                   'max_spacing or uniform)')
     # System computing enhancement
     parser.add_argument('--parallel_processing', action='store_true', help='Enable parallel_processing')
     parser.add_argument('--accumulation_steps', type=int, default=1, help='Accumulate gradients')
@@ -159,13 +161,12 @@ def main():
                                        getattr(config, 'experimental5', None)])
     # Generate param_list
     param_list, series_ids = integrated_list.generate_combined_param_list()
-    #print(type(series_ids))
-    #print(f'series_ids shape: {series_ids.shape}')
+
     # Encode series_ids into query arrays
     max_values = {'Experiment': 100, 'Type': 100, 'Cell': 10000}
     lengths = {'Experiment': 6, 'Type': 6, 'Cell': 24}
     shuffle_components = ['Cell']
-    query_encoder = SeriesEncoder(max_values, lengths, shuffle_components=shuffle_components)
+    query_encoder = SeriesEncoder(max_values, lengths, encoding_method=args.encoding_method, shuffle_components=shuffle_components)
     query_array = query_encoder.encode(series_ids)
     logging.info(f'query_array size:{query_array.shape} \n')
 
