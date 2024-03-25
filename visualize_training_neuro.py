@@ -26,7 +26,7 @@ from models.FiLM3d import FiLMCNN
 
 
 def main():
-    stimulus_type = 'FiLM_2024031901_GoodCell2'  # get the name from the check point folder
+    stimulus_type = 'FiLM_2024032202_GoodCell2'  # get the name from the check point folder
     epoch_end = 160  # the number of epoch in the check_point file
     total_length = 10000
     initial_size = (10, 24, 32)
