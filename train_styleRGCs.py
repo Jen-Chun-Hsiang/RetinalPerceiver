@@ -224,13 +224,14 @@ def main():
     logging.info(f'query_array size:{query_array.shape} \n')
     logging.info(f'query_array:{query_array} \n')
 
-
+    '''
     # Save to .mat file
     # filtered_data_mat = {col: filtered_data[col].values for col in filtered_data.columns}
     savemat(os.path.join(savemat_dir, 'train_neuro_list.mat'),
             {"data_array": data_array, "query_array": query_array,
              "query_index": query_index, "firing_rate_array": firing_rate_array})
     raise RuntimeError("Script stopped after saving outputs.")
+    '''
 
     # get data spit with chucks
     train_indices, val_indices = train_val_split(len(data_array), args.chunk_size, test_size=1-args.train_proportion)
