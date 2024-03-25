@@ -356,7 +356,7 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
                 if model_type == 'FiLMCNN':
                     query_vectors = query_array_tensor.repeat(batch_size, 1)
                     #input_matrices = input_matrices.to(images.device)
-                    #print(query_vectors.shape)
+                    print(query_vectors.shape)
                     dataset_ids = query_vectors[:, 0].to(images.device)
                     neuron_ids = query_vectors[:, 3].to(images.device)
                     weights, _, _ = model(images, dataset_ids, neuron_ids)
