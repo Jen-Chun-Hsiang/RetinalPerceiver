@@ -166,7 +166,8 @@ def main():
     max_values = {'Experiment': 100, 'Type': 100, 'Cell': 10000}
     lengths = {'Experiment': 6, 'Type': 6, 'Cell': 24}
     shuffle_components = ['Cell']
-    query_encoder = SeriesEncoder(max_values, lengths, encoding_method=args.encoding_method, shuffle_components=shuffle_components)
+    query_encoder = SeriesEncoder(max_values, lengths, encoding_method=args.encoding_method,
+                                  shuffle_components=shuffle_components)
     query_array = query_encoder.encode(series_ids)
     logging.info(f'query_array size:{query_array.shape} \n')
 
