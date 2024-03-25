@@ -31,7 +31,7 @@ def main():
     total_length = 10000
     initial_size = (10, 24, 32)
     is_encoding_query = False  # whether SeriesEncode was applied (or default embedding)
-    is_weight_in_label = True  # check if the data is good
+    is_weight_in_label = False  # check if the data is good
     is_full_figure_draw = True  # determine whether draw for each neuro or just get stats
     savefig_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Figures/'
     saveprint_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Prints/'

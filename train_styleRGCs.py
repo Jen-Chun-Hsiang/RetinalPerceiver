@@ -323,6 +323,9 @@ def main():
                           is_selective_layers=args.is_selective_layers, lambda_l1=args.lambda_l1,
                           l1_weight=args.l1_weight)
     logging.info('Evaluator is loaded \n')
+    evaluator_predict = Evaluator(model, criterion, device, query_array=query_array, is_feature_L1=args.is_feature_L1,
+                                  is_selective_layers=args.is_selective_layers, lambda_l1=args.lambda_l1,
+                                  l1_weight=0)
 
     # Optionally, load from checkpoint
     if args.load_checkpoint:
@@ -331,6 +334,7 @@ def main():
         start_epoch = checkpoint_loader.load_epoch()
         training_losses = checkpoint_loader.load_training_losses()
         validation_losses = checkpoint_loader.load_validation_losses()
+        validation_contra_losses = checkpoint_loader.load_validation_contra_losses()
         logging.info('Load checkpoint \n')
         start_time = time.time()  # Capture the start time
         # args = checkpoint_loader.load_args() #
@@ -338,6 +342,7 @@ def main():
         start_epoch = 0
         training_losses = []
         validation_losses = []
+        validation_contra_losses = []
         start_time = time.time()  # Capture the start time
         logging.info('No checkpoint \n')
 
@@ -347,10 +352,12 @@ def main():
         avg_train_loss = trainer.train_one_epoch(train_loader)
         training_losses.append(avg_train_loss)
 
-        torch.cuda.empty_cache()
-        gc.collect()
         avg_val_loss = evaluator.evaluate(val_loader)
         validation_losses.append(avg_val_loss)
+
+        avg_val_loss = evaluator_predict.evaluate(val_loader)
+        validation_contra_losses.append(avg_val_loss)
+
         logging.info(f'epoch (validation): {epoch} \n')
         # logging.info(f"CPU free memory: {get_cpu_free_memory() / 1e6} MB \n"
         #              f"GPU from memory: {get_gpu_free_memory(device_id) / 1e6} MB \n")
@@ -381,6 +388,7 @@ def main():
             assert validation_losses is not None, "validation_losses is None or undefined"
 
             save_checkpoint(epoch, model, optimizer, args, training_losses, validation_losses,
+                            validation_contra_losses,
                             file_path=os.path.join(savemodel_dir, checkpoint_filename))
 
 

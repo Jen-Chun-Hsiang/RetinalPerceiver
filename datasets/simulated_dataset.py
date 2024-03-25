@@ -59,22 +59,22 @@ class MatrixDataset(Dataset):
 
     def generate_matrix(self, matrix_type):
         # Definitions for matrix types 1, 2, and 3 as before
-        if matrix_type == 1:
+        if matrix_type == 1:  # white noise with defined size
             if self.initial_size is None:
                 self.initial_size = self.dimensions
 
             initial_noise = torch.rand((1, *self.initial_size), device=self.device)
             return F.interpolate(initial_noise.unsqueeze(0), size=self.dimensions, mode='nearest').squeeze()
-        elif matrix_type == 2:
+        elif matrix_type == 2:  # random 0 and 1
             p = self.ratio_for_one
             if not 0 <= p <= 1:
                 raise ValueError("Threshold probability p must be between 0 and 1")
             return torch.bernoulli(p * torch.ones(self.dimensions, device=self.device))
-        elif matrix_type == 3:
+        elif matrix_type == 3:  # random contrast full field
             base = torch.rand(self.dimensions[0], device=self.device)
             replicated_base = base.unsqueeze(1).unsqueeze(2).expand(*self.dimensions)
             return replicated_base
-        elif matrix_type == 4:
+        elif matrix_type == 4:  # random spatial no temporal
             base = torch.rand(1, 1, self.dimensions[1], self.dimensions[2], device=self.device)
             base = self.median_filter(base)
             # Corrected expansion along the second dimension
