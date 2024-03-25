@@ -117,23 +117,27 @@ class FiLMCNN(nn.Module):
         self.avgpool3d = nn.AvgPool3d((1, 2, 2))
         self.conv3d = nn.Conv3d(in_channels=1, out_channels=self.conv3d_out_channels,
                                 kernel_size=(input_depth, 1, 1), stride=1, padding=0)
-        self.bn3d = AdaptiveBatchNorm(num_features=self.conv2_out_channels,
-                                      embedding_size=self.dataset_embedding_length,
-                                      momentum=self.momentum)  # Batch normalization for 3D conv
+        self.bn3d = nn.BatchNorm2d(num_features=self.conv2_out_channels)
+        # self.bn3d = AdaptiveBatchNorm(num_features=self.conv2_out_channels,
+        #                              embedding_size=self.dataset_embedding_length,
+        #                              momentum=self.momentum)  # Batch normalization for 3D conv
 
         # 2D Convolutional layers
         self.conv1 = nn.Conv2d(in_channels=self.conv3d_out_channels, out_channels=self.conv2_out_channels,
                                kernel_size=self.conv2_1st_layer_kernel, stride=1)
-        self.bn1 = AdaptiveBatchNorm(num_features=self.conv2_out_channels, embedding_size=self.dataset_embedding_length,
-                                     momentum=self.momentum)  # Batch normalization for 2D conv1
+        self.bn1 = nn.BatchNorm2d(num_features=self.conv2_out_channels)
+        # self.bn1 = AdaptiveBatchNorm(num_features=self.conv2_out_channels, embedding_size=self.dataset_embedding_length,
+        #                              momentum=self.momentum)  # Batch normalization for 2D conv1
         self.conv2 = nn.Conv2d(in_channels=self.conv2_out_channels, out_channels=self.conv2_out_channels,
                                kernel_size=self.conv2_2nd_layer_kernel, stride=1)
-        self.bn2 = AdaptiveBatchNorm(num_features=self.conv2_out_channels, embedding_size=self.dataset_embedding_length,
-                                     momentum=self.momentum)
+        self.bn2 = nn.BatchNorm2d(num_features=self.conv2_out_channels)
+        # self.bn2 = AdaptiveBatchNorm(num_features=self.conv2_out_channels, embedding_size=self.dataset_embedding_length,
+        #                              momentum=self.momentum)
         self.conv3 = nn.Conv2d(in_channels=self.conv2_out_channels, out_channels=self.conv2_out_channels,
                                kernel_size=self.conv2_2nd_layer_kernel, stride=1)
-        self.bn3 = AdaptiveBatchNorm(num_features=self.conv2_out_channels, embedding_size=self.dataset_embedding_length,
-                                     momentum=self.momentum)
+        self.bn3 = nn.BatchNorm2d(num_features=self.conv2_out_channels)
+        # self.bn3 = AdaptiveBatchNorm(num_features=self.conv2_out_channels, embedding_size=self.dataset_embedding_length,
+        #                              momentum=self.momentum)
 
         # Calculate the size of the flattened output after the last pooling layer
         self._to_proj_h, self._to_proj_w = self._get_conv_output(input_depth, input_height, input_width)
@@ -155,10 +159,14 @@ class FiLMCNN(nn.Module):
             dummy_input = torch.zeros(1, 1, input_depth, input_height, input_width)
             dummy_input = self.avgpool3d(dummy_input)
             dummy_input = self.conv3d(dummy_input).squeeze(2)
-            dummy_input = self.bn3d(dummy_input, dummy_dataset_embeddings)
-            dummy_input = F.softplus(self.bn1(self.conv1(dummy_input), dummy_dataset_embeddings))
-            dummy_input = F.softplus(self.bn2(self.conv2(dummy_input), dummy_dataset_embeddings))
-            dummy_input = F.softplus(self.bn3(self.conv3(dummy_input), dummy_dataset_embeddings))
+            dummy_input = self.bn3d(dummy_input)
+            dummy_input = F.softplus(self.bn1(self.conv1(dummy_input)))
+            dummy_input = F.softplus(self.bn2(self.conv2(dummy_input)))
+            dummy_input = F.softplus(self.bn3(self.conv3(dummy_input)))
+            # dummy_input = self.bn3d(dummy_input, dummy_dataset_embeddings)
+            # dummy_input = F.softplus(self.bn1(self.conv1(dummy_input), dummy_dataset_embeddings))
+            # dummy_input = F.softplus(self.bn2(self.conv2(dummy_input), dummy_dataset_embeddings))
+            # dummy_input = F.softplus(self.bn3(self.conv3(dummy_input), dummy_dataset_embeddings))
             return dummy_input.shape[-2], dummy_input.shape[-1]
 
     def forward(self, x, dataset_ids, neuron_ids):
@@ -169,12 +177,16 @@ class FiLMCNN(nn.Module):
         # 3D convolutional layer
         x = self.avgpool3d(x)
         x = self.conv3d(x).squeeze(2)
-        x = self.bn3d(x, dataset_embeddings)
+        x = self.bn3d(x)
+        # x = self.bn3d(x, dataset_embeddings)
 
         # 2D convolutional layers with pooling
-        x = F.softplus(self.bn1(self.conv1(x), dataset_embeddings))
-        x = F.softplus(self.bn2(self.conv2(x), dataset_embeddings))
-        x = F.softplus(self.bn3(self.conv3(x), dataset_embeddings))
+        x = F.softplus(self.bn1(self.conv1(x)))
+        x = F.softplus(self.bn2(self.conv2(x)))
+        x = F.softplus(self.bn3(self.conv3(x)))
+        # x = F.softplus(self.bn1(self.conv1(x), dataset_embeddings))
+        # x = F.softplus(self.bn2(self.conv2(x), dataset_embeddings))
+        # x = F.softplus(self.bn3(self.conv3(x), dataset_embeddings))
         # feature_gamma, spatial_gamma = None, None
 
 
