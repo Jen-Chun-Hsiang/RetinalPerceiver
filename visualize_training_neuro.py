@@ -30,6 +30,7 @@ def main():
     epoch_end = 160  # the number of epoch in the check_point file
     total_length = 10000
     initial_size = (10, 24, 32)
+    is_original_dataset = True  # use original training data (True) or use the white noise generator (False)
     is_encoding_query = False  # whether SeriesEncode was applied (or default embedding)
     is_weight_in_label = False  # check if the data is good
     is_full_figure_draw = True  # determine whether draw for each neuro or just get stats
@@ -88,7 +89,7 @@ def main():
     filtered_data = filter_and_merge_data(
         experiment_session_table, experiment_neuron_table,
         selected_experiment_ids=[1],
-        selected_stimulus_types=[1],
+        selected_stimulus_types=[2],
         excluded_session_table=None,
         excluded_neuron_table=None,
         included_session_table=None,
@@ -157,6 +158,7 @@ def main():
     dataiter = iter(check_loader)
     movie, labels, index = next(dataiter)
     logging.info(f'movie clip: {movie.shape} labels:{labels} index:{index} \n')
+    del movie, labels, index, dataiter, check_loader
 
     '''
     queryvec = torch.from_numpy(query_array).unsqueeze(1)
@@ -221,8 +223,11 @@ def main():
         sample_data, sample_label, sample_index = train_dataset[0]
         logging.info(f"dataset size: {sample_data.shape}")
         # if specified query array, always make sure is_weight_in_label
-        dataset_test = MultiMatrixDataset(sample_data, length=total_length, device=device, combination_set=[1],
-                                          initial_size=initial_size)
+        if is_original_dataset:
+            dataset_test = train_dataset
+        else:
+            dataset_test = MultiMatrixDataset(sample_data, length=total_length, device=device, combination_set=[1],
+                                              initial_size=initial_size)
         output_image, weights, labels = forward_model(model, dataset_test, query_array=query_array_one,
                                                       batch_size=8, use_matrix_index=False,
                                                       is_weight_in_label=is_weight_in_label)

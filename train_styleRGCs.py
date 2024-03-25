@@ -15,11 +15,12 @@ import time
 import pandas as pd
 import gc
 import psutil
+from scipy.io import savemat
 
 # from io import StringIO
 # import sys
 # from torchinfo import summary
-# from scipy.io import savemat
+
 # import torch.multiprocessing as mp
 # import torch.distributed as dist
 # from torch.nn.parallel import DistributedDataParallel
@@ -153,6 +154,7 @@ def main():
     image_root_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Stimulus/'
     link_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Link/'
     resp_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Response/'
+    savemat_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Data/'
     # Generate a timestamp
     timestr = datetime.now().strftime('%Y%m%d_%H%M%S')
 
@@ -205,15 +207,6 @@ def main():
     query_index = query_index.astype('int64')
     firing_rate_array = firing_rate_array.astype('float32')
 
-    '''
-    # Save to .mat file
-    # filtered_data_mat = {col: filtered_data[col].values for col in filtered_data.columns}
-    savemat(os.path.join(savemat_dir, 'train_neuro_list.mat'),
-            {"data_array": data_array, "query_array": query_array,
-             "query_index": query_index, "firing_rate_array": firing_rate_array})
-    raise RuntimeError("Script stopped after saving outputs.")
-    '''
-
     # construct the query array for query encoder
     query_df = pd.DataFrame(query_array, columns=['experiment_id', 'neuron_id'])
     query_array = pd.merge(query_df, experiment_info_table, on='experiment_id', how='left')
@@ -230,6 +223,14 @@ def main():
 
     logging.info(f'query_array size:{query_array.shape} \n')
     logging.info(f'query_array:{query_array} \n')
+
+
+    # Save to .mat file
+    # filtered_data_mat = {col: filtered_data[col].values for col in filtered_data.columns}
+    savemat(os.path.join(savemat_dir, 'train_neuro_list.mat'),
+            {"data_array": data_array, "query_array": query_array,
+             "query_index": query_index, "firing_rate_array": firing_rate_array})
+    raise RuntimeError("Script stopped after saving outputs.")
 
     # get data spit with chucks
     train_indices, val_indices = train_val_split(len(data_array), args.chunk_size, test_size=1-args.train_proportion)
