@@ -192,9 +192,9 @@ class FiLMCNN(nn.Module):
 
         # Flatten the output for the fully connected layer
         x, feature_gamma = self.feamap(x, neuron_embeddings)
-        x = F.softplus(x).sum(dim=1, keepdim=True)
+        x = F.relu(x).mean(dim=1, keepdim=True)
         x, spatial_gamma = self.spamap(x, neuron_embeddings)
-        x = F.softplus(x).sum(dim=(2, 3), keepdim=True)
+        x = F.relu(x).mean(dim=(2, 3), keepdim=True)
 
-        return F.softplus(x).sum(dim=(1, 2, 3)), feature_gamma, spatial_gamma
+        return x.mean(dim=(1, 2, 3)), feature_gamma, spatial_gamma
 
