@@ -394,7 +394,7 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
             # print(f'weights shape: {weights.shape}')
             if is_adding:
                 weights_list = weights.cpu().tolist()
-                within_idx_list = within_idx_list.cpu().tolist()
+                within_idx_list = within_idx.cpu().tolist()
                 batch_idx_list = [batch_idx] * len(weights_list)
                 all_within_batch_idx.extend(within_idx_list)
                 all_weights.extend(weights_list)
