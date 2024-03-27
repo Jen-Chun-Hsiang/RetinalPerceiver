@@ -438,10 +438,11 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
 
             try:
                 weighted_images = images * weights_batch
-            except ValueError as error:
+            except Exception as error:
+                print(f"An error occurred: {error}")
                 print(f'weight_batch shape{weights_batch.shape} \n')
                 print(f'images shape{images.shape} \n')
-                assert 0
+                raise
         else:
             images, _ = data
             images = images.to(next(model.parameters()).device)
