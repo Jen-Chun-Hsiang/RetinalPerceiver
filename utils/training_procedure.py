@@ -435,14 +435,11 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
             else:
                 weights_batch = normalized_weights[idx:idx + images.size(0)].to(images.device).view(-1, 1, 1, 1, 1)
 
-            try:
-                weighted_images = images * weights_batch
-            except Exception as error:
-                logger.info(f"An error occurred: {error} \n")
-                logger.info(f"Batch ID: {batch_idx} \n")
-                logger.info(f'weight_batch shape: {weights_batch.shape} \n')
-                logger.info(f'images shape: {images.shape} \n')
-                raise
+            print(f"Batch ID: {batch_idx}/{len(dataloader)}\n")
+            # print(f'weight_batch shape: {weights_batch.shape} \n')
+            # print(f'images shape: {images.shape} \n')
+            weighted_images = images * weights_batch
+
         else:
             images, _ = data
             images = images.to(next(model.parameters()).device)
