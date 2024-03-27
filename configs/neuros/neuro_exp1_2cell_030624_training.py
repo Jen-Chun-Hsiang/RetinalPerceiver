@@ -19,6 +19,16 @@ experiment_neuron_table['session_id'] = experiment_neuron_table['session_id'].as
 experiment_neuron_table['neuron_id'] = experiment_neuron_table['neuron_id'].astype('int64')
 experiment_neuron_table['quality'] = experiment_neuron_table['quality'].astype('float')
 
+filtered_data = filter_and_merge_data(
+        experiment_session_table, experiment_neuron_table,
+        selected_experiment_ids=[1],
+        selected_stimulus_types=[1, 2, 3],
+        excluded_session_table=None,
+        excluded_neuron_table=None,
+        included_session_table=None,
+        included_neuron_table=included_neuron_table
+    )
+
 query_max_values = {'Experiment': 1000, 'Species': 9, 'Sex': 3, 'Neuron': 10000000}
 query_lengths = {'Experiment': 7, 'Species': 2, 'Sex': 1, 'Neuron': 15}
 shuffle_components = ['Neuron']
