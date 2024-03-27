@@ -27,10 +27,10 @@ from models.FiLM3d import FiLMCNN
 
 def main():
     stimulus_type = 'FiLM_2024032601_GoodCell2'  # get the name from the check point folder
-    epoch_end = 140  # the number of epoch in the check_point file
+    epoch_end = 120  # the number of epoch in the check_point file
     total_length = 10000
     initial_size = (10, 24, 32)
-    is_original_dataset = False  # use original training data (True) or use the white noise generator (False)
+    is_original_dataset = True  # use original training data (True) or use the white noise generator (False)
     is_encoding_query = False  # whether SeriesEncode was applied (or default embedding)
     is_weight_in_label = False  # check if the data is good
     is_full_figure_draw = True  # determine whether draw for each neuro or just get stats
