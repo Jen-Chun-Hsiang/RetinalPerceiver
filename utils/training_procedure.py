@@ -435,7 +435,13 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
 
             else:
                 weights_batch = normalized_weights[idx:idx + images.size(0)].to(images.device).view(-1, 1, 1, 1, 1)
-            weighted_images = images * weights_batch
+
+            try:
+                weighted_images = images * weights_batch
+            except ValueError as error:
+                print(f'weight_batch shape{weights_batch.shape} \n')
+                print(f'images shape{images.shape} \n')
+                assert 0
         else:
             images, _ = data
             images = images.to(next(model.parameters()).device)
