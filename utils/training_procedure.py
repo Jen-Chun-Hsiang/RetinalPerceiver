@@ -363,6 +363,7 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
                     #input_matrices = input_matrices.to(images.device)
                     dataset_ids = query_vectors[:, 0].to(images.device)
                     neuron_ids = query_vectors[:, 3].to(images.device)
+                    matrix_indices = matrix_indices.to(images.device)
                     assert neuron_ids.size(0) == images.size(0)
                     assert neuron_ids.size(0) == batch_size
                     weights, _, _ = model(images, dataset_ids, neuron_ids)
