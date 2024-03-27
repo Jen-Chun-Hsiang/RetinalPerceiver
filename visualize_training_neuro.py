@@ -228,10 +228,11 @@ def main():
         else:
             dataset_test = MultiMatrixDataset(sample_data, length=total_length, device=device, combination_set=[1],
                                               initial_size=initial_size)
+        logging.info(f"Test dataset initiated (cell id: {presented_cell_id})")
         output_image, weights, labels = forward_model(model, dataset_test, query_array=query_array_one,
                                                       batch_size=8, use_matrix_index=False,
                                                       is_weight_in_label=is_weight_in_label)
-
+        logging.info(f"Composed response image (cell id: {presented_cell_id})")
         if is_full_figure_draw:
             output_image_np = output_image.squeeze().cpu().numpy()
             visualizer_est_rf.plot_and_save(output_image_np, plot_type='3D_matrix', num_cols=5)
