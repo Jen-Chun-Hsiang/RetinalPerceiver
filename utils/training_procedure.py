@@ -331,7 +331,7 @@ class CheckpointLoader:
 
 
 def forward_model(model, dataset, query_array=None, batch_size=16,
-                  use_matrix_index=True, is_weight_in_label=False):
+                  use_matrix_index=True, is_weight_in_label=False, logger=None):
     model.eval()  # Set the model to evaluation mode
 
     all_weights = []
@@ -342,9 +342,12 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
     query_array_tensor = torch.from_numpy(query_array).unsqueeze(1).float() if query_array is not None else None
     use_query = query_array_tensor is not None
 
+
     model_type = 'FiLMCNN'
     if model_type == 'FiLMCNN':
         query_array_tensor = torch.from_numpy(query_array)
+        if logger is not None:
+            logger.info('initiated query tensor!')
     # First pass: Compute weights for all images
     with torch.no_grad():
         for data in dataloader:
@@ -375,9 +378,14 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
             # images = images.to(next(model.parameters()).device)
             # print(f'weights type: {type(weights)}')
             # print(f'weights shape: {weights.shape}')
+            if logger is not None:
+                logger.info(f'weights type: {type(weights)}')
+                logger.info(f'weights shape: {weights.shape}')
             all_weights.extend(weights.cpu().tolist())
             all_labels.extend(labels.cpu().tolist() if torch.is_tensor(labels) else labels)
 
+    if logger:
+        logger.info('finished weights model outputs')
     # Normalize weights
     if is_weight_in_label:
         weights_tensor = torch.tensor(all_labels)
