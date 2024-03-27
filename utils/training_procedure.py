@@ -336,6 +336,7 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
 
     all_weights = []
     all_labels = []
+    all_batch_idx = []
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
 
     # Prepare query array if provided
@@ -388,7 +389,10 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
             # print(f'weights type: {type(weights)}')
             # print(f'weights shape: {weights.shape}')
             if is_adding:
-                all_weights.extend(weights.cpu().tolist())
+                weights_list = weights.cpu().tolist()
+                batch_idx_list = [batch_idx] * len(weights_list)
+                all_weights.extend(weights_list)
+                all_batch_idx.extend(batch_idx_list)
                 all_labels.extend(labels.cpu().tolist() if torch.is_tensor(labels) else labels)
 
     if logger:
@@ -411,11 +415,19 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
         raise ValueError(f'Unexpected image dimensions {sample_shape}')
 
     idx = 0  # Index to track position in normalized weights
-    for data in dataloader:
+    for batch_idx, data in enumerate(dataloader):
         if use_query:
             images, _, matrix_indices = data
-            # query_vectors = query_array_tensor[matrix_indices].to(images.device)
-            weights_batch = normalized_weights[idx:idx + images.size(0)].to(images.device).view(-1, 1, 1, 1, 1)
+            if batch_size != images.size(0):
+                continue
+            if model_type == 'FiLMCNN':
+                batch_indices_tensor = torch.tensor(all_batch_idx)
+                mask = batch_indices_tensor == batch_idx
+                weights_batch = normalized_weights[mask]
+                images = images[mask]
+
+            else:
+                weights_batch = normalized_weights[idx:idx + images.size(0)].to(images.device).view(-1, 1, 1, 1, 1)
             weighted_images = images * weights_batch
         else:
             images, _ = data
