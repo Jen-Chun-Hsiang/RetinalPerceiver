@@ -430,18 +430,18 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
                 continue
             if model_type == 'FiLMCNN':
                 mask = batch_indices_tensor == batch_idx
-                weights_batch = normalized_weights[mask]
+                weights_batch = normalized_weights[mask].to(images.device).view(-1, 1, 1, 1, 1)
                 images = images[within_batch_indices_tensor[mask]]
-
             else:
                 weights_batch = normalized_weights[idx:idx + images.size(0)].to(images.device).view(-1, 1, 1, 1, 1)
 
             try:
                 weighted_images = images * weights_batch
             except Exception as error:
-                print(f"An error occurred: {error}")
-                print(f'weight_batch shape{weights_batch.shape} \n')
-                print(f'images shape{images.shape} \n')
+                print(f"An error occurred: {error} \n")
+                print(f"Batch ID: {batch_idx} \n")
+                print(f'weight_batch shape: {weights_batch.shape} \n')
+                print(f'images shape: {images.shape} \n')
                 raise
         else:
             images, _ = data
