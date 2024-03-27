@@ -346,8 +346,6 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
     model_type = 'FiLMCNN'
     if model_type == 'FiLMCNN':
         query_array_tensor = torch.from_numpy(query_array)
-        if logger is not None:
-            logger.info('initiated query tensor!')
     # First pass: Compute weights for all images
     with torch.no_grad():
         for data in dataloader:
@@ -359,7 +357,6 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
                 if model_type == 'FiLMCNN':
                     query_vectors = query_array_tensor.repeat(batch_size, 1)
                     #input_matrices = input_matrices.to(images.device)
-                    print(query_vectors.shape)
                     dataset_ids = query_vectors[:, 0].to(images.device)
                     neuron_ids = query_vectors[:, 3].to(images.device)
                     weights, _, _ = model(images, dataset_ids, neuron_ids)
@@ -378,9 +375,6 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
             # images = images.to(next(model.parameters()).device)
             # print(f'weights type: {type(weights)}')
             # print(f'weights shape: {weights.shape}')
-            if logger is not None:
-                logger.info(f'weights type: {type(weights)}')
-                logger.info(f'weights shape: {weights.shape}')
             all_weights.extend(weights.cpu().tolist())
             all_labels.extend(labels.cpu().tolist() if torch.is_tensor(labels) else labels)
 
