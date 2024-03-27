@@ -371,8 +371,11 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
                     # assert neuron_ids.size(0) == batch_size
                     weights, _, _ = model(images, dataset_ids, neuron_ids)
                     mask = (matrix_indices == neuron_ids)
+                    within_idx = torch.arange(weights.size(0)).to(images.device)
                     weights = weights[mask]
                     labels = labels[mask]
+                    within_idx = within_idx[mask]
+
                     # if logger is not None:
                     #    logger.info(f'Finish {batch_idx}/{len(dataloader)} \n')
                 else:
@@ -391,9 +394,9 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
             # print(f'weights shape: {weights.shape}')
             if is_adding:
                 weights_list = weights.cpu().tolist()
-                mask_list = mask.cpu().tolist()
+                within_idx_list = within_idx_list.cpu().tolist()
                 batch_idx_list = [batch_idx] * len(weights_list)
-                all_within_batch_idx.extend(mask_list)
+                all_within_batch_idx.extend(within_idx_list)
                 all_weights.extend(weights_list)
                 all_batch_idx.extend(batch_idx_list)
                 all_labels.extend(labels.cpu().tolist() if torch.is_tensor(labels) else labels)
