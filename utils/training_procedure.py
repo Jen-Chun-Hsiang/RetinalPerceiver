@@ -348,7 +348,7 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
         query_array_tensor = torch.from_numpy(query_array)
     # First pass: Compute weights for all images
     with torch.no_grad():
-        for data in dataloader:
+        for batch_idx, data in enumerate(dataloader):
             if use_query:
                 images, labels, matrix_indices = data
                 if use_matrix_index:
@@ -362,7 +362,8 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
                     assert neuron_ids.size(0) == images.size(0)
                     assert neuron_ids.size(0) == batch_size
                     weights, _, _ = model(images, dataset_ids, neuron_ids)
-
+                    if logger is not None:
+                        logger(f'Finish {batch_idx}/{len(dataloader)} \n')
                 else:
                     query_vectors = query_array_tensor.repeat(batch_size, 1, 1).to(images.device)
                     # print(f'query_vector shape: {query_vectors.shape}')
