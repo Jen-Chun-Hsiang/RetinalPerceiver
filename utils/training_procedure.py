@@ -438,10 +438,10 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
             try:
                 weighted_images = images * weights_batch
             except Exception as error:
-                print(f"An error occurred: {error} \n")
-                print(f"Batch ID: {batch_idx} \n")
-                print(f'weight_batch shape: {weights_batch.shape} \n')
-                print(f'images shape: {images.shape} \n')
+                logger.info(f"An error occurred: {error} \n")
+                logger.info(f"Batch ID: {batch_idx} \n")
+                logger.info(f'weight_batch shape: {weights_batch.shape} \n')
+                logger.info(f'images shape: {images.shape} \n')
                 raise
         else:
             images, _ = data
