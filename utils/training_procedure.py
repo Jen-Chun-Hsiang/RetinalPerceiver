@@ -347,10 +347,14 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
     if model_type == 'FiLMCNN':
         query_array_tensor = torch.from_numpy(query_array)
     # First pass: Compute weights for all images
+    is_adding = True
     with torch.no_grad():
         for batch_idx, data in enumerate(dataloader):
             if use_query:
                 images, labels, matrix_indices = data
+                if batch_size != images.size(0):
+                    is_adding = False
+                    continue
                 if use_matrix_index:
                     query_vectors = query_array_tensor[matrix_indices].to(images.device)
                     weights = model(images, query_vectors).squeeze()
@@ -378,8 +382,9 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
             # images = images.to(next(model.parameters()).device)
             # print(f'weights type: {type(weights)}')
             # print(f'weights shape: {weights.shape}')
-            all_weights.extend(weights.cpu().tolist())
-            all_labels.extend(labels.cpu().tolist() if torch.is_tensor(labels) else labels)
+            if is_adding:
+                all_weights.extend(weights.cpu().tolist())
+                all_labels.extend(labels.cpu().tolist() if torch.is_tensor(labels) else labels)
 
     if logger:
         logger.info('finished weights model outputs')
