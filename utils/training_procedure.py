@@ -331,7 +331,8 @@ class CheckpointLoader:
 
 
 def forward_model(model, dataset, query_array=None, batch_size=16,
-                  use_matrix_index=True, is_weight_in_label=False, logger=None):
+                  use_matrix_index=True, is_weight_in_label=False, logger=None,
+                  model_type=None):
     model.eval()  # Set the model to evaluation mode
 
     all_weights = []
@@ -344,8 +345,6 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
     query_array_tensor = torch.from_numpy(query_array).unsqueeze(1).float() if query_array is not None else None
     use_query = query_array_tensor is not None
 
-
-    model_type = 'FiLMCNN'
     if model_type == 'FiLMCNN':
         query_array_tensor = torch.from_numpy(query_array)
     # First pass: Compute weights for all images
