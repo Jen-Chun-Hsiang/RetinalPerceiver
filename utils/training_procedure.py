@@ -438,7 +438,7 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
             else:
                 weights_batch = normalized_weights[idx:idx + images.size(0)].to(images.device).view(-1, 1, 1, 1, 1)
 
-            print(f"Batch ID: {batch_idx}/{len(dataloader)}\n")
+            # print(f"Batch ID: {batch_idx}/{len(dataloader)}\n")
             # print(f'weight_batch shape: {weights_batch.shape} \n')
             # print(f'images shape: {images.shape} \n')
             weighted_images = images * weights_batch
