@@ -340,6 +340,7 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
     all_batch_idx = []
     all_within_batch_idx = []
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
+    is_adding = False
 
     # Prepare query array if provided
     query_array_tensor = torch.from_numpy(query_array).unsqueeze(1).float() if query_array is not None else None
