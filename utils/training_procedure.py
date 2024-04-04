@@ -405,7 +405,7 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
                 within_batch_indices_tensor = torch.tensor(all_within_batch_idx)
 
             all_weights.extend(weights_list)
-            all_labels.extend(labconels.cpu().tolist() if torch.is_tensor(labels) else labels)
+            all_labels.extend(labels.cpu().tolist() if torch.is_tensor(labels) else labels)
 
     if logger:
         logger.info('finished weights model outputs')
