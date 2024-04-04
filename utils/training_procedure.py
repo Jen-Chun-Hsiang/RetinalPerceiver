@@ -394,6 +394,8 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
             # images = images.to(next(model.parameters()).device)
             # print(f'weights type: {type(weights)}')
             # print(f'weights shape: {weights.shape}')
+            weights_list = weights.cpu().tolist()
+
             if is_adding:
                 within_idx_list = within_idx.cpu().tolist()
                 batch_idx_list = [batch_idx] * len(weights_list)
@@ -402,9 +404,8 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
                 batch_indices_tensor = torch.tensor(all_batch_idx)
                 within_batch_indices_tensor = torch.tensor(all_within_batch_idx)
 
-            weights_list = weights.cpu().tolist()
             all_weights.extend(weights_list)
-            all_labels.extend(labels.cpu().tolist() if torch.is_tensor(labels) else labels)
+            all_labels.extend(labconels.cpu().tolist() if torch.is_tensor(labels) else labels)
 
     if logger:
         logger.info('finished weights model outputs')
