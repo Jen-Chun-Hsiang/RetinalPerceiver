@@ -186,10 +186,19 @@ def main():
         output_image_np_std = output_image_np_std / output_image_np_std.sum()
         rf_center = find_connected_center(output_image_np_std)
         rf_temporal = pairwise_mult_sum(output_image_np_std, output_image_np)
+        max_indices = np.where(rf_temporal == max(rf_temporal))[0]
+        # Check if max_indices is empty, if so, create a zero array of the same shape as a slice of output_image_np
+        if max_indices.size == 0:
+            rf_spatial_peak = np.zeros_like(output_image_np[0, :, :])
+        else:
+            rf_spatial_peak = np.squeeze(output_image_np[max_indices, :, :])
 
-        rf_spatial_peak = np.squeeze(output_image_np[np.where(rf_temporal == max(rf_temporal))[0], :, :])
-        print(f'rf_spatial_peak:{rf_spatial_peak}')
-        rf_spatial_trough = np.squeeze(output_image_np[np.where(rf_temporal == min(rf_temporal))[0], :, :])
+        min_indices = np.where(rf_temporal == min(rf_temporal))[0]
+        if min_indices.size == 0:
+            rf_spatial_trough = np.zeros_like(output_image_np[0, :, :])
+        else:
+            rf_spatial_trough = np.squeeze(output_image_np[min_indices, :, :])
+
         if ii == 0:
             rf_center_array = rf_center.reshape(1, -1)
             rf_temporal_array = rf_temporal.reshape(1, -1)
