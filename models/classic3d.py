@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
 class Classic3d(nn.Module):
     def __init__(self, input_depth, input_height, input_width, conv3d_out_channels=10, conv2_out_channels=64, conv2_1st_layer_kernel=3, conv2_2nd_layer_kernel=3, conv2_3rd_layer_kernel=3):
         super(Classic3d, self).__init__()

@@ -9,6 +9,7 @@ class Trainer:
     def __init__(self, model, criterion, optimizer, device, accumulation_steps=1,
                  query_array=None, is_contrastive_learning=False, is_selective_layers=False,
                  query_encoder=None, query_permutator=None, series_ids=None, is_feature_L1=False,
+                 is_retinal_dataset=True,
                  margin=0.1, temperature=0.1, lambda_l1=0.01, contrastive_factor=0.01,
                  l1_weight=0.01):
         self.model = model
@@ -16,6 +17,7 @@ class Trainer:
         self.optimizer = optimizer
         self.device = device
         self.accumulation_steps = accumulation_steps
+        self.is_retinal_dataset = is_retinal_dataset
 
         self.is_contrastive_learning = is_contrastive_learning
         if self.is_contrastive_learning:
@@ -74,7 +76,10 @@ class Trainer:
         return avg_train_loss
 
     def _process_batch(self, data):
-        input_matrices, targets = data
+        if self.is_retinal_dataset:
+            input_matrices, targets, _ = data
+        else:
+            input_matrices, targets = data
         input_matrices, targets = input_matrices.to(self.device), targets.to(self.device)
         targets = targets.unsqueeze(1)
         outputs = self.model(input_matrices)
@@ -151,12 +156,14 @@ class Evaluator(Trainer):
     def __init__(self, model, criterion, device,
                  query_array=None, is_contrastive_learning=False, is_selective_layers=False,
                  query_encoder=None, query_permutator=None, series_ids=None, is_feature_L1=False,
+                 is_retinal_dataset=True,
                  margin=0.1, temperature=0.1, lambda_l1=0.01, contrastive_factor=0.01,
                  l1_weight=0.01):
         # Initialize the parent class without an optimizer as it's not needed for evaluation
         super().__init__(model, criterion, None, device, query_array=query_array,
                          is_contrastive_learning=is_contrastive_learning, is_selective_layers=is_selective_layers,
                          query_encoder=query_encoder, series_ids=series_ids, query_permutator=query_permutator,
+                         is_retinal_dataset=is_retinal_dataset,
                          margin=margin, temperature=temperature, lambda_l1=lambda_l1, is_feature_L1=is_feature_L1,
                          contrastive_factor=contrastive_factor, l1_weight=l1_weight)
 
