@@ -459,7 +459,10 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
             weighted_images = images * weights_batch
 
         else:
-            images, _ = data
+            if is_retinal_dataset:
+                images, _, _ = data
+            else:
+                images, _ = data
             images = images.to(next(model.parameters()).device)
             weights_batch = normalized_weights[idx:idx + images.size(0)].to(images.device).view(-1, 1, 1, 1)
             weighted_images = images * weights_batch
