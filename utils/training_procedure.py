@@ -463,6 +463,7 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
                 images, _, _ = data
             else:
                 images, _ = data
+
             if batch_size != images.size(0):
                 continue
             images = images.to(next(model.parameters()).device)
@@ -470,8 +471,10 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
             weighted_images = images * weights_batch
 
         batch_sum = weighted_images.sum(dim=0)  # Sum over the batch
+        print(f'batch sum size:{batch_sum.shape()}')
 
         if weighted_sum is None:
+            print(f'weighted sum size:{weighted_sum.shape()}')
             weighted_sum = batch_sum
         else:
             weighted_sum += batch_sum
