@@ -461,20 +461,20 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
         else:
             if is_retinal_dataset:
                 images, _, _ = data
-                print(f'images size:{images.shape}')
+                #print(f'images size:{images.shape}')
             else:
                 images, _ = data
 
             if batch_size != images.size(0):
                 continue
             images = images.to(next(model.parameters()).device)
-            weights_batch = normalized_weights[idx:idx + images.size(0)].to(images.device).view(-1, 1, 1, 1)
-            print(f'weights_batch size:{weights_batch.shape}')
+            weights_batch = normalized_weights[idx:idx + images.size(0)].to(images.device).view(-1, 1, 1, 1, 1)
+            #print(f'weights_batch size:{weights_batch.shape}')
             weighted_images = images * weights_batch
 
-        print(f'weighted images size:{weighted_images.shape}')
+        #print(f'weighted images size:{weighted_images.shape}')
         batch_sum = weighted_images.sum(dim=0)  # Sum over the batch
-        print(f'batch sum size:{batch_sum.shape}')
+        #print(f'batch sum size:{batch_sum.shape}')
 
         if weighted_sum is None:
             print(f'weighted sum size:{weighted_sum.shape}')
