@@ -470,6 +470,7 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
             weights_batch = normalized_weights[idx:idx + images.size(0)].to(images.device).view(-1, 1, 1, 1)
             weighted_images = images * weights_batch
 
+        print(f'weighted images size:{weighted_images.shape}')
         batch_sum = weighted_images.sum(dim=0)  # Sum over the batch
         print(f'batch sum size:{batch_sum.shape}')
 
