@@ -400,9 +400,10 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
             else:
                 if is_retinal_dataset:
                     images, labels, _ = data
+                    weights = model(images).squeeze()
                 else:
                     images, labels = data
-                weights, _ = model(images).squeeze()
+                    weights, _ = model(images).squeeze()
 
             # images = images.to(next(model.parameters()).device)
             # print(f'weights type: {type(weights)}')
