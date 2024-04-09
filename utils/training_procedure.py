@@ -461,6 +461,7 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
         else:
             if is_retinal_dataset:
                 images, _, _ = data
+                print(f'images size:{images.shape}')
             else:
                 images, _ = data
 
