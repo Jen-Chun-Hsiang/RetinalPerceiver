@@ -348,6 +348,7 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
     all_within_batch_idx = []
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
     is_adding = False
+    is_retinal_dataset = False
 
     # Prepare query array if provided
     query_array_tensor = torch.from_numpy(query_array).unsqueeze(1).float() if query_array is not None else None
@@ -356,6 +357,8 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
     if model_type == 'FiLMCNN':
         query_array_tensor = torch.from_numpy(query_array)
         is_adding = True
+    elif model_type == 'ClassicCNN'
+        is_retinal_dataset = True
     # First pass: Compute weights for all images
 
     with torch.no_grad():
@@ -395,7 +398,10 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
                         query_vectors = query_vectors[:images.size(0), :, :]
                     weights, _ = model(images, query_vectors)
             else:
-                images, labels = data
+                if is_retinal_dataset:
+                    images, labels, _ = data
+                else:
+                    images, labels = data
                 weights, _ = model(images).squeeze()
 
             # images = images.to(next(model.parameters()).device)
