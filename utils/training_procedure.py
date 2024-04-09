@@ -357,10 +357,10 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
     if model_type == 'FiLMCNN':
         query_array_tensor = torch.from_numpy(query_array)
         is_adding = True
-    elif model_type == 'ClassicCNN'
+    elif model_type == 'ClassicCNN':
         is_retinal_dataset = True
-    # First pass: Compute weights for all images
 
+    # First pass: Compute weights for all images
     with torch.no_grad():
         for batch_idx, data in enumerate(dataloader):
             if use_query:
