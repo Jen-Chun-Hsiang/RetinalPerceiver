@@ -21,7 +21,7 @@ from models.classic3d import Classic3d
 
 
 def main():
-    stimulus_type = 'cnn_2024040801_GoodCell1'  # get the name from the check point folder
+    stimulus_type = 'cnn_2024040901_GoodCell1'  # get the name from the check point folder
     epoch_end = 200  # the number of epoch in the check_point file
     total_length = 10000
     initial_size = (10, 24, 32)
