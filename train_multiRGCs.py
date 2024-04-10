@@ -144,19 +144,8 @@ def main():
     # logging.info(f'Number of workers: {num_workers} \n')
     logging.info(f'CUDA counts: {torch.cuda.device_count} \n')
 
-    experiment_session_table = getattr(config, 'experiment_session_table', None)
-    included_neuron_table = getattr(config, 'included_neuron_table', None)
     experiment_info_table = getattr(config, 'experiment_info_table', None)
-    experiment_neuron_table = getattr(config, 'experiment_neuron_table', None)
-    filtered_data = filter_and_merge_data(
-        experiment_session_table, experiment_neuron_table,
-        selected_experiment_ids=[1],
-        selected_stimulus_types=[1, 2, 3],
-        excluded_session_table=None,
-        excluded_neuron_table=None,
-        included_session_table=None,
-        included_neuron_table=included_neuron_table
-    )
+    filtered_data = getattr(config, 'filtered_data', None)
     logging.info(f'filtered_data size:{filtered_data.shape} \n')
     logging.info(f'filtered_data:{filtered_data} \n')
 
