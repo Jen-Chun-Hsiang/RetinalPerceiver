@@ -26,8 +26,8 @@ from models.FiLM3d import FiLMCNN
 
 
 def main():
-    stimulus_type = 'FiLM_2024032702_GoodCell2'  # get the name from the check point folder
-    epoch_end = 120  # the number of epoch in the check_point file
+    stimulus_type = 'PlugIn_2024041001_GoodCell1'  # get the name from the check point folder
+    epoch_end = 200  # the number of epoch in the check_point file
     total_length = 10000
     initial_size = (10, 24, 32)
     is_original_dataset = True  # use original training data (True) or use the white noise generator (False)
@@ -44,7 +44,6 @@ def main():
     link_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Link/'
     resp_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Response/'
     mat_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Matfiles/'
-
 
     # Compile the regarding parameters
     checkpoint_filename = f'PerceiverIO_{stimulus_type}_checkpoint_epoch_{epoch_end}'
@@ -81,20 +80,8 @@ def main():
     # In the upcoming training procedure, the tables below will be saved with the training file
     # Load and make sure the table is correct
 
-    experiment_session_table = getattr(config, 'experiment_session_table', None)
-    included_neuron_table = getattr(config, 'included_neuron_table', None)
     experiment_info_table = getattr(config, 'experiment_info_table', None)
-    experiment_neuron_table = getattr(config, 'experiment_neuron_table', None)
-
-    filtered_data = filter_and_merge_data(
-        experiment_session_table, experiment_neuron_table,
-        selected_experiment_ids=[1],
-        selected_stimulus_types=[2],
-        excluded_session_table=None,
-        excluded_neuron_table=None,
-        included_session_table=None,
-        included_neuron_table=included_neuron_table
-    )
+    filtered_data = getattr(config, 'filtered_data', None)
 
     # construct the array for dataset
     data_constructor = DataConstructor(filtered_data, seq_len=args.input_depth, stride=args.data_stride,
@@ -136,13 +123,12 @@ def main():
 
     if is_encoding_query:
         # Encode series_ids into query arrays
-        max_values = {'Experiment': 1000, 'Species': 9, 'Sex': 3, 'Neuron': 10000000}
-        lengths = {'Experiment': 7, 'Species': 2, 'Sex': 1, 'Neuron': 15}
-        shuffle_components = ['Neuron']
-        query_encoder = SeriesEncoder(max_values, lengths, shuffle_components=shuffle_components)
+        query_encoder = SeriesEncoder(getattr(config, 'query_max_values', None),
+                                      getattr(config, 'query_lengths', None),
+                                      shuffle_components=getattr(config, 'query_shuffle_components', None))
         query_array = query_encoder.encode(query_array)
 
-    del experiment_session_table, included_neuron_table, experiment_info_table, experiment_neuron_table
+    del experiment_info_table
     del query_df, data_constructor, filtered_data
 
     logging.info(f'query_array size:{query_array.shape} \n')
