@@ -218,7 +218,7 @@ def main():
         output_image, weights, labels = forward_model(model, dataset_test, query_array=query_array_one,
                                                       batch_size=8, use_matrix_index=False,
                                                       is_weight_in_label=is_weight_in_label, logger=logging,
-                                                      model_type='FiLMCNN')
+                                                      model_type=args.model)
         logging.info(f"Composed response image (cell id: {presented_cell_id})")
         if is_full_figure_draw:
             output_image_np = output_image.squeeze().cpu().numpy()
