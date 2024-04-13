@@ -205,6 +205,7 @@ def main():
     queryvec = torch.from_numpy(query_array).unsqueeze(1)
     queryvec = queryvec[index]
     logging.info(f'query vector: {queryvec.shape} \n')
+    logging.info(f'query: {queryvec}\n')
     # plot and save the target_matrix figure
     plot3dmat(movie[0, 0, :, :, :].squeeze(), args.num_cols, savefig_dir, file_prefix='plot_3D_matrix')
     # Model, Loss, and Optimizer
