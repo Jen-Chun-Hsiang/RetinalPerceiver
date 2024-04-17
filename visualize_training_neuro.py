@@ -26,8 +26,8 @@ from models.FiLM3d import FiLMCNN
 
 
 def main():
-    stimulus_type = 'PlugIn_2024041501_GoodCell3'  # get the name from the check point folder
-    epoch_end = 180  # the number of epoch in the check_point file
+    stimulus_type = 'PlugIn_2024041601_GoodCell3'  # get the name from the check point folder
+    epoch_end = 150  # the number of epoch in the check_point file
     total_length = 10000
     initial_size = (10, 24, 32)
     is_original_dataset = False  # use original training data (True) or use the white noise generator (False)
