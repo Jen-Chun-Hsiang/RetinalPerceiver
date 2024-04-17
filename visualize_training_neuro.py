@@ -45,6 +45,9 @@ def main():
     resp_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Response/'
     mat_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Matfiles/'
 
+    if is_weight_in_label:
+        is_original_dataset = True
+
     # Compile the regarding parameters
     checkpoint_filename = f'PerceiverIO_{stimulus_type}_checkpoint_epoch_{epoch_end}'
     checkpoint_path = os.path.join(checkpoint_folder, f'{checkpoint_filename}.pth')
