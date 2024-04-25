@@ -336,7 +336,8 @@ class PerceiverIODecoder(nn.Module):
         #attn_output = attn_output + saved_q
         # Apply the output projection
         attn_output = F.gelu(self.out_proj1(attn_output))
-        return F.gelu(self.out_proj2(attn_output)), attn_output
+        # F.gelu(self.out_proj2(attn_output)), attn_output
+        return self.out_proj2(attn_output), attn_output
 
 
 class RetinalPerceiverIO(nn.Module):
