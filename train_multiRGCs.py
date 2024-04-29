@@ -180,8 +180,13 @@ def main():
                                   getattr(config, 'query_lengths', None),
                                   shuffle_components=getattr(config, 'query_shuffle_components', None))
     # query_encoder = SeriesEncoder(max_values, lengths, shuffle_components=shuffle_components)
+    logging.info(f'(bef) query_array size:{query_array.shape} \n')
+    logging.info(f'(bef) query_array:{query_array} \n')
     query_array = query_encoder.encode(query_array)
     logging.info(f'query_array size:{query_array.shape} \n')
+    logging.info(f'query_array:{query_array} \n')
+
+    raise RuntimeError("Check query_array")
     # get data spit with chucks
     train_indices, val_indices = train_val_split(len(data_array), args.chunk_size, test_size=1-args.train_proportion)
     # get dataset
