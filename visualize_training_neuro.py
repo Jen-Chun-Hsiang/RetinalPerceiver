@@ -34,6 +34,7 @@ def main():
     is_encoding_query = True  # whether SeriesEncode was applied (or default embedding)
     is_weight_in_label = True  # check if the data is good
     is_full_figure_draw = True  # determine whether draw for each neuro or just get stats
+    is_use_matrix_index = False
     savefig_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Figures/'
     saveprint_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Prints/'
     savedata_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Data/'
@@ -221,7 +222,7 @@ def main():
         output_image, weights, labels = forward_model(model, dataset_test, query_array=query_array_one,
                                                       batch_size=8, use_matrix_index=False,
                                                       is_weight_in_label=is_weight_in_label, logger=logging,
-                                                      model_type=args.model)
+                                                      model_type=args.model, is_retinal_dataset=is_original_dataset)
         logging.info(f"Composed response image (cell id: {presented_cell_id})")
         if is_full_figure_draw:
             output_image_np = output_image.squeeze().cpu().numpy()
