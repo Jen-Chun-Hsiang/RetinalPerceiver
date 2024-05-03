@@ -32,7 +32,7 @@ def main():
     initial_size = (10, 24, 32)
     is_original_dataset = False  # use original training data (True) or use the white noise generator (False)
     is_encoding_query = True  # whether SeriesEncode was applied (or default embedding)
-    is_weight_in_label = True  # check if the data is good
+    is_weight_in_label = False  # check if the data is good
     is_full_figure_draw = True  # determine whether draw for each neuro or just get stats
     is_use_matrix_index = False
     savefig_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Figures/'
@@ -46,8 +46,13 @@ def main():
     resp_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Response/'
     mat_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Matfiles/'
 
+    is_rescale_image = not (is_weight_in_label or is_original_dataset)
+
     if is_weight_in_label:
         is_original_dataset = True
+
+
+
 
     # Compile the regarding parameters
     checkpoint_filename = f'PerceiverIO_{stimulus_type}_checkpoint_epoch_{epoch_end}'
@@ -222,7 +227,8 @@ def main():
         output_image, weights, labels = forward_model(model, dataset_test, query_array=query_array_one,
                                                       batch_size=8, use_matrix_index=False,
                                                       is_weight_in_label=is_weight_in_label, logger=logging,
-                                                      model_type=args.model, is_retinal_dataset=is_original_dataset)
+                                                      model_type=args.model, is_retinal_dataset=is_original_dataset,
+                                                      is_rescale_image=is_rescale_image)
         logging.info(f"Composed response image (cell id: {presented_cell_id})")
         if is_full_figure_draw:
             output_image_np = output_image.squeeze().cpu().numpy()

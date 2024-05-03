@@ -339,7 +339,7 @@ class CheckpointLoader:
 
 def forward_model(model, dataset, query_array=None, batch_size=16,
                   use_matrix_index=True, is_weight_in_label=False, logger=None,
-                  model_type=None, is_retinal_dataset=False):
+                  model_type=None, is_retinal_dataset=False, is_rescale_image=False):
     model.eval()  # Set the model to evaluation mode
 
     all_weights = []
@@ -365,7 +365,7 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
                 if batch_size != images.size(0):
                     is_adding = False
                     continue
-                if is_retinal_dataset:
+                if is_rescale_image:
                     images = images*2-1
 
                 if use_matrix_index:
