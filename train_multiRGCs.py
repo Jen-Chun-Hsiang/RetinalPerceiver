@@ -186,7 +186,7 @@ def main():
     logging.info(f'query_array size:{query_array.shape} \n')
     logging.info(f'query_array:{query_array} \n')
 
-    raise RuntimeError("Check query_array")
+    # raise RuntimeError("Check query_array")
     # get data spit with chucks
     train_indices, val_indices = train_val_split(len(data_array), args.chunk_size, test_size=1-args.train_proportion)
     # get dataset
