@@ -51,9 +51,6 @@ def main():
     if is_weight_in_label:
         is_original_dataset = True
 
-
-
-
     # Compile the regarding parameters
     checkpoint_filename = f'PerceiverIO_{stimulus_type}_checkpoint_epoch_{epoch_end}'
     checkpoint_path = os.path.join(checkpoint_folder, f'{checkpoint_filename}.pth')
@@ -136,6 +133,8 @@ def main():
                                       getattr(config, 'query_lengths', None),
                                       encoding_method=args.encoding_method,
                                       shuffle_components=getattr(config, 'query_shuffle_components', None))
+        logging.info(f'(bef) query_array size:{query_array.shape} \n')
+        logging.info(f'(bef) query_array:{query_array} \n')
         query_array = query_encoder.encode(query_array)
 
     del experiment_info_table
