@@ -134,6 +134,7 @@ def main():
         # Encode series_ids into query arrays
         query_encoder = SeriesEncoder(getattr(config, 'query_max_values', None),
                                       getattr(config, 'query_lengths', None),
+                                      encoding_method=args.encoding_method,
                                       shuffle_components=getattr(config, 'query_shuffle_components', None))
         query_array = query_encoder.encode(query_array)
 

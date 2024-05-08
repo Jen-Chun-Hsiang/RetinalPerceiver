@@ -96,6 +96,8 @@ def parse_args():
                         help='Input stride as three separate integers. Default is (1, 1, 1)')
     parser.add_argument('--loss_fn', type=str, default='MSE', choices=list(loss_functions.keys()),
                         help='The name of the loss function to use (default: MSE)')
+    parser.add_argument('--encoding_method', type=str, default='max_spacing', help='Choose the SeriesEncoder method ('
+                                                                                   'max_spacing or uniform)')
 
     # System computing enhancement
     parser.add_argument('--parallel_processing', action='store_true', help='Enable parallel_processing')
@@ -178,6 +180,7 @@ def main():
     # Encode series_ids into query arrays
     query_encoder = SeriesEncoder(getattr(config, 'query_max_values', None),
                                   getattr(config, 'query_lengths', None),
+                                  encoding_method=args.encoding_method,
                                   shuffle_components=getattr(config, 'query_shuffle_components', None))
     # query_encoder = SeriesEncoder(max_values, lengths, shuffle_components=shuffle_components)
     logging.info(f'(bef) query_array size:{query_array.shape} \n')
