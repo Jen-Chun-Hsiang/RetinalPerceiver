@@ -124,7 +124,7 @@ def main():
     # savemat_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Matfiles/'
     # Generate a timestamp
     timestr = datetime.now().strftime('%Y%m%d_%H%M%S')
-
+    # Can I display with git version I am in ?
     # Construct the full path for the log file
     log_filename = os.path.join(saveprint_dir, f'{filename_fixed}_training_log_{timestr}.txt')
 
