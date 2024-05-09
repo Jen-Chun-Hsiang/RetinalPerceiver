@@ -336,10 +336,13 @@ class CheckpointLoader:
         self.validation_contra_losses = self.checkpoint.get('validation_contra_losses', [])
         return self.validation_contra_losses
 
-
+# task: needed to add the demonstration of original dataset
+# (1) just the label results
+# (2) the trained model results
 def forward_model(model, dataset, query_array=None, batch_size=16,
                   use_matrix_index=True, is_weight_in_label=False, logger=None,
-                  model_type=None, is_retinal_dataset=False, is_rescale_image=False):
+                  model_type=None, is_retinal_dataset=False, is_rescale_image=False,
+                  presented_cell_id=None):
     model.eval()  # Set the model to evaluation mode
 
     all_weights = []
@@ -390,13 +393,24 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
 
                     # if logger is not None:
                     #    logger.info(f'Finish {batch_idx}/{len(dataloader)} \n')
+                elif is_retinal_dataset:
+                    query_vectors = query_array_tensor.repeat(batch_size, 1, 1).to(images.device)
+                    weights, _ = model(images, query_vectors)
+                    matrix_indices = matrix_indices.to(images.device)
+                    mask = (matrix_indices == presented_cell_id)
+                    within_idx = torch.arange(weights.size(0)).to(images.device)
+                    weights = weights[mask]
+                    labels = labels[mask]
+                    within_idx = within_idx[mask]
+                    is_adding = True
+
                 else:
                     query_vectors = query_array_tensor.repeat(batch_size, 1, 1).to(images.device)
                     # print(f'query_vector shape: {query_vectors.shape}')
                     # print(f'images shape: {images.shape}')
                     if query_vectors.size(0) != images.size(0):
                         query_vectors = query_vectors[:images.size(0), :, :]
-                    weights, _, _ = model(images, query_vectors)
+                    weights, _ = model(images, query_vectors)
             else:
                 if is_retinal_dataset:
                     images, labels, _ = data
@@ -447,6 +461,10 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
             if batch_size != images.size(0):
                 continue
             if model_type == 'FiLMCNN':
+                mask = batch_indices_tensor == batch_idx
+                weights_batch = normalized_weights[mask].to(images.device).view(-1, 1, 1, 1, 1)
+                images = images[within_batch_indices_tensor[mask]]
+            elif is_retinal_dataset:
                 mask = batch_indices_tensor == batch_idx
                 weights_batch = normalized_weights[mask].to(images.device).view(-1, 1, 1, 1, 1)
                 images = images[within_batch_indices_tensor[mask]]

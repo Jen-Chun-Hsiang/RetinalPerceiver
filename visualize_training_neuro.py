@@ -26,15 +26,15 @@ from models.FiLM3d import FiLMCNN
 
 
 def main():
-    stimulus_type = 'PlugIn_2024042501_GoodCell3'  # get the name from the check point folder
+    stimulus_type = 'PlugIn_2024043001_GoodCell3'  # get the name from the check point folder
     epoch_end = 200  # the number of epoch in the check_point file
     total_length = 10000
     initial_size = (10, 24, 32)
-    is_original_dataset = False  # use original training data (True) or use the white noise generator (False)
+    is_original_dataset = True  # use original training data (True) or use the white noise generator (False)
     is_encoding_query = True  # whether SeriesEncode was applied (or default embedding)
     is_weight_in_label = False  # check if the data is good
     is_full_figure_draw = True  # determine whether draw for each neuro or just get stats
-    is_use_matrix_index = False
+    is_use_matrix_index = True
     savefig_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Figures/'
     saveprint_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Prints/'
     savedata_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Data/'
@@ -228,7 +228,7 @@ def main():
                                                       batch_size=8, use_matrix_index=False,
                                                       is_weight_in_label=is_weight_in_label, logger=logging,
                                                       model_type=args.model, is_retinal_dataset=is_original_dataset,
-                                                      is_rescale_image=is_rescale_image)
+                                                      is_rescale_image=is_rescale_image, presented_cell_id=presented_cell_id)
         logging.info(f"Composed response image (cell id: {presented_cell_id})")
         if is_full_figure_draw:
             output_image_np = output_image.squeeze().cpu().numpy()
