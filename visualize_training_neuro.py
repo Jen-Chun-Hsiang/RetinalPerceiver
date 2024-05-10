@@ -129,6 +129,9 @@ def main():
 
     if is_encoding_query:
         # Encode series_ids into query arrays
+        if not hasattr(args, 'encoding_method'):
+            args.encoding_method = 'max_spacing'
+
         query_encoder = SeriesEncoder(getattr(config, 'query_max_values', None),
                                       getattr(config, 'query_lengths', None),
                                       encoding_method=args.encoding_method,
