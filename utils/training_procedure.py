@@ -397,6 +397,7 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
                     query_vectors = query_array_tensor.repeat(batch_size, 1, 1).to(images.device)
                     weights, _ = model(images, query_vectors)
                     matrix_indices = matrix_indices.to(images.device)
+                    labels = labels.to(images.device)
                     mask = (matrix_indices == presented_cell_id)
                     within_idx = torch.arange(weights.size(0)).to(images.device)
                     weights = weights[mask]
