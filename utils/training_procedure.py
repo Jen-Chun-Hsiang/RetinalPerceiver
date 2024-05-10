@@ -101,7 +101,7 @@ class Trainer:
 
         loss = self._compute_loss(outputs, targets)
 
-        raise RuntimeError("Should be here")
+        # raise RuntimeError("Should be here")
         return loss
 
     def _process_batch_with_query_contrast(self, data):
