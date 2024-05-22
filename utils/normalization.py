@@ -3,9 +3,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-class BatchRenorm2d(nn.Module):
+class BatchRenorm(nn.Module):
     def __init__(self, num_features, eps=1e-5, momentum=0.9, r_d_max_inc_step=0.001):
-        super(BatchRenorm2d, self).__init__()
+        super(BatchRenorm, self).__init__()
         self.num_features = num_features
         self.eps = eps
         self.momentum = momentum
@@ -18,16 +18,22 @@ class BatchRenorm2d(nn.Module):
         self.register_buffer('r_max', torch.ones(num_features))
         self.register_buffer('d_max', torch.zeros(num_features))
 
-    def forward(self, input):
+    def _check_input_dim(self, x: torch.Tensor) -> None:
+        raise NotImplementedError()  # pragma: no cover
+
+    def forward(self, x):
+        if x.dim() > 2:
+            x = x.transpose(1, -1)
         if self.training:
-            batch_mean = input.mean(dim=[0, 2, 3])
-            batch_std = input.std(dim=[0, 2, 3], unbiased=True)
+            dims = [i for i in range(x.dim() - 1)]
+            batch_mean = x.mean(dim=dims)
+            batch_std = x.std(dim=dims, unbiased=True)
 
             r = (batch_std / self.running_std.view_as(batch_std)).clamp(1 / self.r_max, self.r_max)
             d = ((batch_mean - self.running_mean.view_as(batch_mean)) / self.running_std.view_as(batch_std)).clamp(
                 -self.d_max, self.d_max)
 
-            x = (input - batch_mean[None, :, None, None]) / batch_std[None, :, None, None] * \
+            x = (x - batch_mean[None, :, None, None]) / batch_std[None, :, None, None] * \
                 r[None, :, None, None] + d[None, :, None, None]
 
             self.running_mean = (1 - self.momentum) * self.running_mean + self.momentum * batch_mean
@@ -39,9 +45,23 @@ class BatchRenorm2d(nn.Module):
 
         else:
             with torch.no_grad():
-                x = (input - self.running_mean[None, :, None, None]) / (self.running_std[None, :, None, None] + self.eps)
+                x = (x - self.running_mean[None, :, None, None]) / (self.running_std[None, :, None, None] + self.eps)
 
+        if x.dim() > 2:
+            x = x.transpose(1, -1)
         return x
+
+
+class BatchRenorm2d(BatchRenorm):
+    def _check_input_dim(self, x: torch.Tensor) -> None:
+        if x.dim() != 4:
+            raise ValueError("expected 4D input (got {x.dim()}D input)")
+
+
+class BatchRenorm3d(BatchRenorm):
+    def _check_input_dim(self, x: torch.Tensor) -> None:
+        if x.dim() != 5:
+            raise ValueError("expected 5D input (got {x.dim()}D input)")
 
 
 # Example usage:
