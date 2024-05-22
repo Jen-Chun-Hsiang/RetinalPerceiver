@@ -20,18 +20,26 @@ class BatchRenorm2d(nn.Module):
 
     def forward(self, input):
         if self.training:
-            with torch.no_grad():
                 batch_mean = input.mean(dim=[0, 2, 3])
-                batch_std = input.std(dim=[0, 2, 3], unbiased=False)
+                batch_std = input.std(dim=[0, 2, 3], unbiased=True)
                 self.running_mean = (1 - self.momentum) * self.running_mean + self.momentum * batch_mean
                 self.running_std = (1 - self.momentum) * self.running_std + self.momentum * batch_std
                 self.num_batches_tracked += 1
 
                 if self.num_batches_tracked > 1:
-                    d_new = torch.max(torch.abs(batch_mean - self.running_mean),
-                                      torch.abs(batch_std - self.running_std))
-                    self.d_max = torch.clamp_max(self.d_max, d_new)
-                    self.r_max = torch.clamp_max(self.r_max, self.r_d_max_inc_step * self.num_batches_tracked.item())
+                    self.d_max = torch.clamp(self.d_max, min=0, max=5)
+                    self.r_max = torch.clamp(self.r_max, min=1, max=3)
+
+                r = (batch_std / self.running_std.view_as(batch_std)).clamp(1 / self.r_max, self.r_max)
+                d = ((batch_mean - self.running_mean.view_as(batch_mean)) / self.running_std.view_as(batch_std)).clamp(
+                    -self.d_max, self.d_max)
+
+                x = (input - batch_mean[None, :, None, None]) / batch_std[None, :, None, None] * \
+                    r[None, :, None, None] + d[None, :, None, None]                                                None]
+        else:
+            with torch.no_grad():
+                x = (input - self.running_mean[None, :, None, None]) / (self.running_std[None, :, None, None] + self.eps)
+
 
         # Normalize input
         normalized_input = (input - self.running_mean[None, :, None, None]) / (
