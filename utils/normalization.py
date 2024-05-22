@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 
 class BatchRenorm2d(nn.Module):
-    def __init__(self, num_features, eps=1e-5, momentum=0.1, r_d_max_inc_step=0.01):
+    def __init__(self, num_features, eps=1e-5, momentum=0.9, r_d_max_inc_step=0.001):
         super(BatchRenorm2d, self).__init__()
         self.num_features = num_features
         self.eps = eps
@@ -14,41 +14,34 @@ class BatchRenorm2d(nn.Module):
         # Initialize parameters
         self.register_buffer('running_mean', torch.zeros(num_features))
         self.register_buffer('running_std', torch.ones(num_features))
-        self.register_buffer('num_batches_tracked', torch.tensor(0, dtype=torch.long))
+        self.register_buffer('num_batches_tracked', torch.tensor(0, dtype=torch.long))  # Add this line
         self.register_buffer('r_max', torch.ones(num_features))
         self.register_buffer('d_max', torch.zeros(num_features))
 
     def forward(self, input):
         if self.training:
-                batch_mean = input.mean(dim=[0, 2, 3])
-                batch_std = input.std(dim=[0, 2, 3], unbiased=True)
-                self.running_mean = (1 - self.momentum) * self.running_mean + self.momentum * batch_mean
-                self.running_std = (1 - self.momentum) * self.running_std + self.momentum * batch_std
-                self.num_batches_tracked += 1
+            batch_mean = input.mean(dim=[0, 2, 3])
+            batch_std = input.std(dim=[0, 2, 3], unbiased=True)
 
-                if self.num_batches_tracked > 1:
-                    self.d_max = torch.clamp(self.d_max, min=0, max=5)
-                    self.r_max = torch.clamp(self.r_max, min=1, max=3)
+            r = (batch_std / self.running_std.view_as(batch_std)).clamp(1 / self.r_max, self.r_max)
+            d = ((batch_mean - self.running_mean.view_as(batch_mean)) / self.running_std.view_as(batch_std)).clamp(
+                -self.d_max, self.d_max)
 
-                r = (batch_std / self.running_std.view_as(batch_std)).clamp(1 / self.r_max, self.r_max)
-                d = ((batch_mean - self.running_mean.view_as(batch_mean)) / self.running_std.view_as(batch_std)).clamp(
-                    -self.d_max, self.d_max)
+            x = (input - batch_mean[None, :, None, None]) / batch_std[None, :, None, None] * \
+                r[None, :, None, None] + d[None, :, None, None]
 
-                x = (input - batch_mean[None, :, None, None]) / batch_std[None, :, None, None] * \
-                    r[None, :, None, None] + d[None, :, None, None]                                                None]
+            self.running_mean = (1 - self.momentum) * self.running_mean + self.momentum * batch_mean
+            self.running_std = (1 - self.momentum) * self.running_std + self.momentum * batch_std
+
+            self.r_max = (self.r_max + self.r_d_max_inc_step * self.num_batches_tracked).clamp(1.0, 3.0)
+            self.d_max = (self.d_max + 5 * self.r_d_max_inc_step * self.num_batches_tracked + 0.25).clamp(0.0, 5.0)
+            self.num_batches_tracked += 1
+
         else:
             with torch.no_grad():
                 x = (input - self.running_mean[None, :, None, None]) / (self.running_std[None, :, None, None] + self.eps)
 
-
-        # Normalize input
-        normalized_input = (input - self.running_mean[None, :, None, None]) / (
-                    self.running_std[None, :, None, None] + self.eps)
-
-        # Apply renormalization
-        normalized_input = normalized_input * self.r_max[None, :, None, None] + self.d_max[None, :, None, None]
-
-        return normalized_input
+        return x
 
 
 # Example usage:
