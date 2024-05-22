@@ -5,7 +5,7 @@ exp_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDatas
 neu_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/experiment_neuron_022724.mat'
 
 experiment_session_table = load_data_from_excel(exp_dir, 'experiment_session')
-experiment_session_table = experiment_session_table.drop('stimulus_type', axis=1)
+# experiment_session_table = experiment_session_table.drop('stimulus_type', axis=1)
 
 included_neuron_table = load_data_from_excel(exp_dir, 'nid_07')
 experiment_info_table = load_data_from_excel(exp_dir, 'experiment_info')

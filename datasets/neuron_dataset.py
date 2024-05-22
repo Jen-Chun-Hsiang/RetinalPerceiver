@@ -309,7 +309,7 @@ def filter_and_merge_data(exp_session_table, exp_neuron_table, selected_experime
     filtered_df = merged_df[merged_df['quality'] >= merged_df['quality_threshold']]
 
     # Select specific columns to return
-    result_df = filtered_df[['experiment_id', 'session_id', 'neuron_id']]
+    result_df = filtered_df[['experiment_id', 'session_id', 'neuron_id', 'stimulus_type_id']]
 
     return result_df
 
