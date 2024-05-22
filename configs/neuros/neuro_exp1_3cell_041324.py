@@ -29,6 +29,6 @@ filtered_data = filter_and_merge_data(
         included_neuron_table=included_neuron_table
     )
 
-query_max_values = {'Experiment': 1000, 'Species': 9, 'Sex': 3, 'Neuron': 10000000}
-query_lengths = {'Experiment': 7, 'Species': 2, 'Sex': 1, 'Neuron': 15}
+query_max_values = {'Experiment': 1000, 'Species': 9, 'Sex': 3, 'Neuron': 10000000, 'Stimulus': 24}
+query_lengths = {'Experiment': 7, 'Species': 2, 'Sex': 1, 'Neuron': 15, 'Stimulus': 3}
 shuffle_components = ['Neuron']

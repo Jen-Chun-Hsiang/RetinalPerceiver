@@ -379,6 +379,7 @@ class DataConstructor:
 
         for (experiment_id, session_id), group in grouped:
             neurons = group['neuron_id'].unique()
+            stimulus_type_id = group['stimulus_type_id'].unique()
             file_path = os.path.join(self.link_dir, f'experiment_{experiment_id}/session_{session_id}.mat')
             time_id = load_mat_to_numpy(file_path, 'time_id')
             video_frame_id = load_mat_to_numpy(file_path, 'video_frame_id')
@@ -394,13 +395,13 @@ class DataConstructor:
 
             firing_rate_index = constructor.construct_array(sequence_id, flip_lr=True)
             num_rows = len(session_array) * len(neurons)
-            session_data = np.empty((num_rows, 3 + self.seq_len), dtype=session_array.dtype)
+            session_data = np.empty((num_rows, 4 + self.seq_len), dtype=session_array.dtype)
             session_fr_data = np.empty((num_rows, 1))
             for i, neuron_id in enumerate(neurons):
                 start_row = i * len(session_array)
                 end_row = start_row + len(session_array)
 
-                session_data[start_row:end_row, :3] = [experiment_id, session_id, neuron_id]
+                session_data[start_row:end_row, :4] = [experiment_id, session_id, neuron_id, stimulus_type_id]
 
                 # Firing rate data as the fourth column (Get the id correct by -1)
                 firing_rate_data = firing_rate_array[firing_rate_index[:, 0], neuron_id-1]
@@ -408,7 +409,7 @@ class DataConstructor:
                 session_fr_data[start_row:end_row, 0] = firing_rate_data
 
                 # Remaining columns filled with session_array
-                session_data[start_row:end_row, 3:] = session_array
+                session_data[start_row:end_row, 4:] = session_array
 
             all_sessions_data.append(session_data)
             all_sessions_fr_data.append(session_fr_data)
@@ -418,7 +419,7 @@ class DataConstructor:
 
         assert len(frame_array) == len(firing_rate_array)
 
-        query_array, query_index = np.unique(frame_array[:, [0, 2]], axis=0, return_inverse=True)
+        query_array, query_index = np.unique(frame_array[:, [0, 2, 3]], axis=0, return_inverse=True)
 
         return frame_array, query_array, query_index, firing_rate_array
 
