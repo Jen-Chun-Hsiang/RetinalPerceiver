@@ -24,15 +24,15 @@ class RetinalCNN(nn.Module):
         # 3D convolutional layer to handle depth
         self.conv3d = nn.Conv3d(in_channels=1, out_channels=self.conv3d_out_channels,
                                 kernel_size=(input_depth, 1, 1), stride=1, padding=0)
-        self.bn3d = nn.BatchRenorm3d(self.conv3d_out_channels)  # Batch normalization for 3D conv
+        self.bn3d = BatchRenorm3d(self.conv3d_out_channels)  # Batch normalization for 3D conv
 
         # 2D Convolutional layers
         self.conv1 = nn.Conv2d(in_channels=self.conv3d_out_channels, out_channels=32,
                                kernel_size=self.conv2_1st_layer_kernel, stride=1, padding=1)
-        self.bn1 = nn.BatchRenorm2d(32)  # Batch normalization for 2D conv1
+        self.bn1 = BatchRenorm2d(32)  # Batch normalization for 2D conv1
         self.conv2 = nn.Conv2d(in_channels=32, out_channels=self.conv2_out_channels,
                                kernel_size=self.conv2_2nd_layer_kernel, stride=1, padding=1)
-        self.bn2 = nn.BatchRenorm2d(self.conv2_out_channels)  # Batch normalization for 2D conv2
+        self.bn2 = BatchRenorm2d(self.conv2_out_channels)  # Batch normalization for 2D conv2
         self.pool = nn.MaxPool2d(2, 2)
 
         # Calculate the size of the flattened output after the last pooling layer
