@@ -33,8 +33,7 @@ class BatchRenorm(nn.Module):
             d = ((batch_mean - self.running_mean.view_as(batch_mean)) / self.running_std.view_as(batch_std)).clamp(
                 -self.d_max, self.d_max)
 
-            x = (x - batch_mean[None, :, None, None]) / batch_std[None, :, None, None] * \
-                r[None, :, None, None] + d[None, :, None, None]
+            x = (x - batch_mean[...]) / batch_std[...] * r[...] + d[...]
 
             self.running_mean = (1 - self.momentum) * self.running_mean + self.momentum * batch_mean
             self.running_std = (1 - self.momentum) * self.running_std + self.momentum * batch_std
@@ -45,7 +44,7 @@ class BatchRenorm(nn.Module):
 
         else:
             with torch.no_grad():
-                x = (x - self.running_mean[None, :, None, None]) / (self.running_std[None, :, None, None] + self.eps)
+                x = (x - self.running_mean[...]) / (self.running_std[...] + self.eps)
 
         if x.dim() > 2:
             x = x.transpose(1, -1)
