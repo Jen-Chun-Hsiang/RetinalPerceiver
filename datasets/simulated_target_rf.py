@@ -300,7 +300,7 @@ class IntegratedLevel:
                 }
                 combined_param_list.append(combined_params)
                 if self.is_coordinates:
-                    series_ids.append((exp_level_id, class_params['class_level_id'], cell_params['cell_level_id'],
+                    series_ids.append((exp_level_id, class_params['class_level_id'],
                                        combined_params['sf_mean_center'][0], combined_params['sf_mean_center'][1]))
                 else:
                     series_ids.append((exp_level_id, class_params['class_level_id'], cell_params['cell_level_id']))

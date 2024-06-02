@@ -259,7 +259,7 @@ class SeriesEncoder:
         self.max_values = max_values
         self.lengths = lengths
         self.encoding_method = encoding_method
-        self.order = order if order is not None else list(max_values.keys())
+        self.order = order if order is not None else list(lengths.keys())
         self.is_skip = is_skip if is_skip is not None else {component: False for component in lengths}
         self.shuffle_components = shuffle_components if shuffle_components is not None else []
         np.random.seed(seed)
