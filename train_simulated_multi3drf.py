@@ -158,7 +158,7 @@ def main():
                                        getattr(config, 'experimental2', None),
                                        getattr(config, 'experimental3', None),
                                        getattr(config, 'experimental4', None),
-                                       getattr(config, 'experimental5', None)])
+                                       getattr(config, 'experimental5', None)], is_coordinates=True)
     # Generate param_list
     param_list, series_ids = integrated_list.generate_combined_param_list()
 

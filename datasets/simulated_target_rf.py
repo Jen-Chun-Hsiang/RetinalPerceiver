@@ -178,7 +178,8 @@ class CellLevel:
 
 
 class CellClassLevel:
-    def __init__(self, sf_cov_center, sf_cov_surround, sf_weight_surround, num_cells, xlim, ylim, class_level_id, set_rand_seed):
+    def __init__(self, sf_cov_center, sf_cov_surround, sf_weight_surround, num_cells, xlim, ylim, class_level_id,
+                 set_rand_seed):
         self.sf_cov_center = sf_cov_center
         self.sf_cov_surround = sf_cov_surround
         self.sf_weight_surround = sf_weight_surround
@@ -263,13 +264,14 @@ class ExperimentalLevel:
 
 
 class IntegratedLevel:
-    def __init__(self, experimental_levels):
+    def __init__(self, experimental_levels, is_coordinates=False):
         """
         Initialize the integrated level with a list of ExperimentalLevel instances.
 
         :param experimental_levels: A list of ExperimentalLevel objects.
         """
         self.experimental_levels = experimental_levels
+        self.is_coordinates = is_coordinates
 
     def generate_combined_param_list(self):
         """
@@ -297,6 +299,10 @@ class IntegratedLevel:
                                                          'sf_weight_surround', 'sf_mean_center', 'sf_mean_surround']}
                 }
                 combined_param_list.append(combined_params)
-                series_ids.append((exp_level_id, class_params['class_level_id'], cell_params['cell_level_id']))
+                if self.is_coordinates:
+                    series_ids.append((exp_level_id, class_params['class_level_id'], cell_params['cell_level_id'],
+                                       combined_params['sf_mean_center'][0], combined_params['sf_mean_center'][1]))
+                else:
+                    series_ids.append((exp_level_id, class_params['class_level_id'], cell_params['cell_level_id']))
 
         return combined_param_list, series_ids
