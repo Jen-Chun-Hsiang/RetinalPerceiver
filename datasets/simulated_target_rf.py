@@ -98,11 +98,15 @@ class MultiTargetMatrixGenerator(TargetMatrixGenerator):
         return torch.cat(all_matrices, dim=0)  # Concatenating along the new dimension
 
 
-def create_hexagonal_centers(xlim, ylim, target_num_centers, max_iterations=100, noise_level=0.3):
+def create_hexagonal_centers(xlim, ylim, target_num_centers, max_iterations=100, noise_level=0.3, set_rand_seed=None):
     x_min, x_max = xlim
     y_min, y_max = ylim
     x_range = x_max - x_min
     y_range = y_max - y_min
+
+    # Set the random seed if specified
+    if set_rand_seed is not None:
+        np.random.seed(set_rand_seed)
 
     # Estimate initial side length based on target number of centers
     approximate_area = x_range * y_range
@@ -174,15 +178,15 @@ class CellLevel:
 
 
 class CellClassLevel:
-    def __init__(self, sf_cov_center, sf_cov_surround, sf_weight_surround, num_cells, xlim, ylim, class_level_id):
+    def __init__(self, sf_cov_center, sf_cov_surround, sf_weight_surround, num_cells, xlim, ylim, class_level_id, set_rand_seed):
         self.sf_cov_center = sf_cov_center
         self.sf_cov_surround = sf_cov_surround
         self.sf_weight_surround = sf_weight_surround
         self.class_level_id = class_level_id  # New: Unique identifier for the cell class level
-        self.cells = self.create_cells(num_cells, xlim, ylim)
+        self.cells = self.create_cells(num_cells, xlim, ylim, set_rand_seed)
 
-    def create_cells(self, num_cells, xlim, ylim):
-        centers = create_hexagonal_centers(xlim, ylim, num_cells)
+    def create_cells(self, num_cells, xlim, ylim, set_rand_seed):
+        centers = create_hexagonal_centers(xlim, ylim, num_cells, set_rand_seed=set_rand_seed)
         cells = []
         for center in centers:
             cell = CellLevel(sf_mean_center=center, sf_mean_surround=center)
