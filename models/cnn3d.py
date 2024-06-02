@@ -45,26 +45,24 @@ class RetinalCNN(nn.Module):
         with torch.no_grad():
             dummy_input = torch.zeros(1, 1, input_depth, input_height, input_width)
             dummy_input = self.conv3d(dummy_input)
-            dummy_input = self.bn3d(dummy_input)
             new_height, new_width = dummy_input.size(3), dummy_input.size(4)
             dummy_input = dummy_input.view(1, self.conv3d_out_channels, new_height, new_width)
-            dummy_input = F.softplus(self.bn1(self.conv1(dummy_input)))
+            dummy_input = F.softplus(self.conv1(dummy_input))
             dummy_input = self.pool(dummy_input)
-            dummy_input = F.softplus(self.bn2(self.conv2(dummy_input)))
+            dummy_input = F.softplus(self.conv2(dummy_input))
             dummy_input = self.pool(dummy_input)
             return int(np.prod(dummy_input.size()[1:]))
 
     def forward(self, x):
         # 3D convolutional layer
         x = self.conv3d(x)
-        x = self.bn3d(x)
         new_height, new_width = x.size(3), x.size(4)
         x = x.view(-1, self.conv3d_out_channels, new_height, new_width)
 
         # 2D convolutional layers with pooling
-        x = F.softplus(self.bn1(self.conv1(x)))
+        x = F.softplus(self.conv1(x))
         x = self.pool(x)
-        x = F.softplus(self.bn2(self.conv2(x)))
+        x = F.softplus(self.conv2(x))
         x = self.pool(x)
 
         # Flatten the output for the fully connected layer
