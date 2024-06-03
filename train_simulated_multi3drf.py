@@ -172,10 +172,6 @@ def main():
     query_array = query_encoder.encode(series_ids)
     logging.info(f'query_array size:{query_array.shape} \n')
 
-    query_input_struct = tuple(lengths.keys())
-    query_perm_set = get_unique_sets(series_ids, query_input_struct)
-    query_perm_list = [(1, 1, 0), (0, 1, 0), (0, 0, 1)]
-    query_permutator = QueryPermutator(query_perm_set, query_input_struct, query_perm_list)
     '''
     # Save to .mat file
     savemat(os.path.join(savemat_dir, 'sim_multi_list.mat'),
@@ -259,7 +255,7 @@ def main():
     # Initialize the Trainer
     trainer = Trainer(model, criterion, optimizer, device, args.accumulation_steps,
                       query_array=query_array, is_contrastive_learning=args.is_contrastive_learning,
-                      series_ids=series_ids, query_permutator=query_permutator, query_encoder=query_encoder,
+                      series_ids=series_ids, query_encoder=query_encoder,
                       margin=args.margin, temperature=args.temperature, contrastive_factor=args.contrastive_factor)
     # Initialize the Evaluator
     evaluator_contra = Evaluator(model, criterion, device, query_array=query_array,
