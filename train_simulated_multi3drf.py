@@ -167,7 +167,7 @@ def main():
     skip_encoding = {'Experiment': False, 'Type': False, 'Coord_x': True, 'Coord_y': True}
     lengths = {'Experiment': 6, 'Type': 6, 'Coord_x': 1, 'Coord_y': 1}
     shuffle_components = None
-    query_encoder = SeriesEncoder(max_values, lengths, encoding_method=args.encoding_method,
+    query_encoder = SeriesEncoder(max_values, lengths, encoding_method=args.encoding_method, is_skip=skip_encoding,
                                   shuffle_components=shuffle_components)
     query_array = query_encoder.encode(series_ids)
     logging.info(f'query_array size:{query_array.shape} \n')
