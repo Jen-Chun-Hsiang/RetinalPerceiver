@@ -25,9 +25,9 @@ def weightedsum_image_plot(output_image_np):
     plt.ylabel("Height")
 
 def main():
-    stimulus_type = 'SIMPlugIn04302401'
+    stimulus_type = 'SIMPlugIn06022401'
     epoch_end = 200
-    is_cross_level = True
+    is_cross_level = False
     is_full_figure_draw = True
     checkpoint_filename = f'PerceiverIO_{stimulus_type}_checkpoint_epoch_{epoch_end}'
 
@@ -76,8 +76,7 @@ def main():
     visualizer_prog.plot_and_save(None, plot_type='line', line1=training_losses, line2=validation_losses,
                                   xlabel='Epochs', ylabel='Loss')
     args = checkpoint_loader.load_args()
-    config_name = getattr(args, 'config_name', 'sim_02282402')
-    config_module = f"configs.sims.{config_name}"
+    config_module = f"configs.sims.{args.config_name}"
     config = __import__(config_module, fromlist=[''])
 
     # Create integrated level with experimental levels
@@ -85,7 +84,7 @@ def main():
                                        getattr(config, 'experimental2', None),
                                        getattr(config, 'experimental3', None),
                                        getattr(config, 'experimental4', None),
-                                       getattr(config, 'experimental5', None)])
+                                       getattr(config, 'experimental5', None)], is_coordinates=True)
     # Generate param_list
     param_lists, series_ids = integrated_list.generate_combined_param_list()
 
@@ -97,12 +96,16 @@ def main():
     '''
 
     # Encode series_ids into query arrays
-    max_values = {'Experiment': 100, 'Type': 100, 'Cell': 10000}
-    lengths = {'Experiment': 6, 'Type': 6, 'Cell': 24}
-    shuffle_components = ['Cell']
-    query_encoder = SeriesEncoder(max_values, lengths, shuffle_components=shuffle_components)
+    max_values = {'Experiment': 100, 'Type': 100}
+    skip_encoding = {'Experiment': False, 'Type': False, 'Coord_x': True, 'Coord_y': True}
+    lengths = {'Experiment': 6, 'Type': 6, 'Coord_x': 1, 'Coord_y': 1}
+    shuffle_components = None
+    query_encoder = SeriesEncoder(max_values, lengths, encoding_method=args.encoding_method, is_skip=skip_encoding,
+                                  shuffle_components=shuffle_components)
     query_arrays = query_encoder.encode(series_ids)
     logging.info(f'query_arrays example 1:{query_arrays.shape} \n')
+
+    query_permutator = None
 
     # Initialize the DataVisualizer
     visualizer_est_rf = DataVisualizer(savefig_dir, file_prefix=f'{stimulus_type}_Estimate_RF')
