@@ -173,8 +173,6 @@ def main():
     logging.info(f'query_array size:{query_array.shape} \n')
     logging.info(f'query_array:{query_array[:3]} \n')
 
-    raise RuntimeError("Stop here for checking.")
-
     query_permutator = None
     '''
     # Save to .mat file
