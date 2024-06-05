@@ -309,7 +309,7 @@ class SeriesEncoder:
         input_tuples: List of tuples, each representing values for components in the order.
         """
 
-        np.random.seed(self.random_seedseed)
+        np.random.seed(self.random_seeds)
         encoded_vectors = []
 
         for input_values in input_tuples:
