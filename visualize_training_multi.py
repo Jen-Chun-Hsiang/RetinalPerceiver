@@ -142,6 +142,7 @@ def main():
         perm_cols = (0, 1)
         syn_series_ids = series_ids_permutation_uni(np.array(series_ids), perm_cols)
         syn_query_index = query_encoder.encode(syn_series_ids)
+        query_arrays = syn_query_index
         ''' Use for unique cell id
         query_partition_lengths = tuple(lengths.values())
         syn_series_ids, syn_query_index = series_ids_permutation(np.array(series_ids), permute_series_length)
