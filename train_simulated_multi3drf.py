@@ -308,7 +308,7 @@ def main():
             save_checkpoint(epoch, model, optimizer, args, training_losses, validation_losses,
                             validation_contra_losses,
                             os.path.join(savemodel_dir, checkpoint_filename))
-        raise RuntimeError("Stop here for inspection")
+
     if args.parallel_processing:
         # Clean up
         dist.destroy_process_group()
