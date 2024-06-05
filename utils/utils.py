@@ -263,7 +263,8 @@ class SeriesEncoder:
         self.order = order if order is not None else list(lengths.keys())
         self.is_skip = is_skip if is_skip is not None else {component: False for component in lengths}
         self.shuffle_components = shuffle_components if shuffle_components is not None else []
-        self.random_seed = seed
+
+        np.random.seed(seed)
         self.bases = self._calculate_bases(max_values, lengths)
         self.shuffle_indices = {component: np.random.permutation(lengths[component]) for component in self.shuffle_components}
 
@@ -278,7 +279,7 @@ class SeriesEncoder:
 
     def encode_component_uniformly(self, id, length, component):
         """ Encode a component uniformly based on the input ID. """
-        seed = int(hashlib.sha256(f"{id}-{component}".encode()).hexdigest(), 16) % (2 ** 32)
+        seed = int(hashlib.sha256(f"{round(id)}-{component}".encode()).hexdigest(), 16) % (2 ** 32)
         rng = np.random.default_rng(seed)
         encoded = rng.uniform(-1, 1, size=length)
 
@@ -309,7 +310,7 @@ class SeriesEncoder:
         input_tuples: List of tuples, each representing values for components in the order.
         """
 
-        np.random.seed(self.random_seed)
+
         encoded_vectors = []
 
         for input_values in input_tuples:
