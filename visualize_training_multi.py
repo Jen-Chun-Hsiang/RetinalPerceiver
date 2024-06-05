@@ -142,7 +142,7 @@ def main():
         perm_cols = (0, 1)
         syn_series_ids = series_ids_permutation_uni(np.array(series_ids), perm_cols)
         syn_query_index = query_encoder.encode(syn_series_ids)
-        #query_arrays = syn_query_index
+        query_arrays = syn_query_index
 
         ''' Use for unique cell id
         query_partition_lengths = tuple(lengths.values())
@@ -152,14 +152,14 @@ def main():
         '''
         cross_level_flag = 'Interpolation'
 
+        '''
         savedata_filename_mat = os.path.join(savedata_dir, f'checkin_queryarray_consistancy_02.mat')
-
         savemat(savedata_filename_mat, {
             'query_arrays': query_arrays, 'series_ids': series_ids,
             'syn_series_ids': syn_series_ids, 'syn_query_index': syn_query_index
         })
-
         raise RuntimeError("Stop here for checking.")
+        '''
     else:
         syn_series_ids = np.array([])
         syn_query_index = np.array([])
