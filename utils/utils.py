@@ -263,7 +263,7 @@ class SeriesEncoder:
         self.order = order if order is not None else list(lengths.keys())
         self.is_skip = is_skip if is_skip is not None else {component: False for component in lengths}
         self.shuffle_components = shuffle_components if shuffle_components is not None else []
-        np.random.seed(seed)
+        self.random_seed = seed
         self.bases = self._calculate_bases(max_values, lengths)
         self.shuffle_indices = {component: np.random.permutation(lengths[component]) for component in self.shuffle_components}
 
@@ -308,6 +308,8 @@ class SeriesEncoder:
         Encode multiple input tuples into a concatenated vector.
         input_tuples: List of tuples, each representing values for components in the order.
         """
+
+        np.random.seed(self.random_seedseed)
         encoded_vectors = []
 
         for input_values in input_tuples:
