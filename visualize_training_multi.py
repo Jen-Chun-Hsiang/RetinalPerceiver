@@ -152,7 +152,7 @@ def main():
         '''
         cross_level_flag = 'Interpolation'
 
-        savedata_filename_mat = os.path.join(savedata_dir, f'checkin_queryarray_consistancy_01.mat')
+        savedata_filename_mat = os.path.join(savedata_dir, f'checkin_queryarray_consistancy_02.mat')
 
         savemat(savedata_filename_mat, {
             'query_arrays': query_arrays, 'series_ids': series_ids,
