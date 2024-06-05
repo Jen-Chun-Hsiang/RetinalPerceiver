@@ -4,6 +4,7 @@ import numpy as np
 from datetime import datetime
 import matplotlib.pyplot as plt
 import hashlib
+from itertools import product
 
 
 # Function to evaluate the model on validation data
@@ -508,7 +509,45 @@ def series_ids_permutation(Ds, length):
             if len(cids) > 0:
                 syn_query[i, j] = cids[0]  # Python's 0-based indexing is maintained
 
+
     return Df, syn_query
+
+
+def series_ids_permutation_uni(Ds, perm_cols):
+    nrows, ncols = Ds.shape
+    np.random.seed()  # Ensures a different shuffle each time
+
+    include_columns = [i for i in range(ncols) if i not in perm_cols]
+
+    np_arr = np.array(Ds)
+    unique_rows = np.unique(np_arr[:, include_columns], axis=0)
+    # Find missing combinations for specified columns
+    all_possible_combinations = set(tuple(row) for row in
+                                    np.array(np.meshgrid(*[np.unique(Ds[:, col]) for col in perm_cols])).T.reshape(-1,
+                                    len(perm_cols)))
+    present_combinations = set(tuple(row) for row in Ds[:, perm_cols])
+    missing_combinations = list(all_possible_combinations - present_combinations)
+
+    result = []
+    for pair, mod in product(missing_combinations, unique_rows):
+        # Concatenate each tuple with a row from the modifications matrix
+        combined = pair + tuple(mod)
+        result.append(combined)
+
+    unique_col1 = np.unique(np_arr[:, include_columns[0]])
+    unique_col2 = np.unique(np_arr[:, include_columns[1]])
+
+    combinations = list(product(unique_col1, unique_col2))
+
+    indices = np.random.choice(nrows, size=len(combinations), replace=True)
+
+    sampled_data = [tuple(row) for row in np_arr[indices, :][:, perm_cols]]
+
+    combined_list = [(a + b) for a, b in zip(sampled_data, combinations)]
+
+    result = result + combined_list
+
+    return result
 
 
 def array_to_list_of_tuples(arr):

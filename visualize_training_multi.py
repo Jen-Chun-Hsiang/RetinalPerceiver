@@ -13,6 +13,7 @@ from models.perceiver3d import RetinalPerceiverIO
 from models.cnn3d import RetinalPerceiverIOWithCNN
 from utils.training_procedure import CheckpointLoader, forward_model
 from utils.utils import DataVisualizer, SeriesEncoder, rearrange_array, calculate_correlation, series_ids_permutation
+from utils.utils import series_ids_permutation_uni
 from utils.utils import array_to_list_of_tuples
 from utils.utils import plot_and_save_3d_matrix_with_timestamp as plot3dmat
 from utils.result_analysis import find_connected_center, pairwise_mult_sum
@@ -27,7 +28,7 @@ def weightedsum_image_plot(output_image_np):
 def main():
     stimulus_type = 'SIMPlugIn_06022401'
     epoch_end = 200
-    is_cross_level = False
+    is_cross_level = True
     is_full_figure_draw = True
     checkpoint_filename = f'PerceiverIO_{stimulus_type}_checkpoint_epoch_{epoch_end}'
 
@@ -138,10 +139,15 @@ def main():
     model, optimizer = checkpoint_loader.load_checkpoint(model, optimizer)
 
     if is_cross_level:
+        perm_cols = (0, 1)
+        syn_series_ids = series_ids_permutation_uni(np.array(series_ids), perm_cols)
+        syn_query_index = query_encoder.encode(syn_series_ids)
+        ''' Use for unique cell id
         query_partition_lengths = tuple(lengths.values())
         syn_series_ids, syn_query_index = series_ids_permutation(np.array(series_ids), permute_series_length)
         examine_list = array_to_list_of_tuples(syn_query_index)  # List of tuples for row selection
         query_arrays = rearrange_array(query_arrays, query_partition_lengths, examine_list)
+        '''
         cross_level_flag = 'Interpolation'
     else:
         syn_series_ids = np.array([])
