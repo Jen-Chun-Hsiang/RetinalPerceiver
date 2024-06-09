@@ -146,7 +146,7 @@ class Trainer:
         return self.criterion(outputs.squeeze(), targets.squeeze())
 
     def _update_parameters(self, loss):
-        loss.backward()  # Compute the backward pass only
+        loss.backward(retain_graph=True)  # Compute the backward pass only
 
     def _l1_regularization(self, weight, lambda_l1):
         return lambda_l1 * torch.abs(weight).sum()
