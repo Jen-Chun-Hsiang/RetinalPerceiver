@@ -26,7 +26,7 @@ from models.FiLM3d import FiLMCNN
 
 
 def main():
-    stimulus_type = 'PlugIn_2024052202-v0.8.2_GoodCell3'  # get the name from the check point folder
+    stimulus_type = 'PlugIn_2024060901-v0.8.2_GoodCell3'  # get the name from the check point folder
     epoch_end = 200  # the number of epoch in the check_point file
     total_length = 10000
     initial_size = (10, 24, 32)
@@ -34,7 +34,7 @@ def main():
     is_encoding_query = True  # whether SeriesEncode was applied (or default embedding)
     is_weight_in_label = False  # check if the data is good
     is_full_figure_draw = True  # determine whether draw for each neuro or just get stats
-    is_test_dataset = False
+    is_test_dataset = True
     test_config_name = 'neuro_exp1_3cell_041324'
     is_use_matrix_index = True
     savefig_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Figures/'
