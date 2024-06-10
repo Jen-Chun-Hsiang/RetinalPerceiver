@@ -50,8 +50,10 @@ def main():
 
     if is_test_dataset:
         is_original_dataset = True
+        image_root_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TestSet/Stimulus/'
         link_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TestSet/Link/'
         resp_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TestSet/Response/'
+
 
     is_rescale_image = not (is_weight_in_label or is_original_dataset)
 
