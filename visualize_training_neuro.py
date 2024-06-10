@@ -35,6 +35,7 @@ def main():
     is_weight_in_label = False  # check if the data is good
     is_full_figure_draw = True  # determine whether draw for each neuro or just get stats
     is_test_dataset = True
+    test_config_name = 'neuro_exp1_3cell_041324'
     is_use_matrix_index = True
     savefig_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Figures/'
     saveprint_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Prints/'
@@ -86,7 +87,11 @@ def main():
     visualizer_prog.plot_and_save(None, plot_type='line', line1=training_losses, line2=validation_losses,
                                   xlabel='Epochs', ylabel='Loss')
     args = checkpoint_loader.load_args()
-    config_module = f"configs.neuros.{args.config_name}"
+    if is_test_dataset:
+        config_name = test_config_name
+    else:
+        config_name = args.config_name
+    config_module = f"configs.neuros.{config_name}"
     config = __import__(config_module, fromlist=[''])
 
     # In the upcoming training procedure, the tables below will be saved with the training file
@@ -154,8 +159,10 @@ def main():
 
     # Get how many unique cells are there
     if is_test_dataset:
-        args.train_proportion = 0.999
-    train_indices, val_indices = train_val_split(len(data_array), args.chunk_size, test_size=1 - args.train_proportion)
+        train_proportion = 0.999
+    else:
+        train_proportion = args.train_proportion
+    train_indices, val_indices = train_val_split(len(data_array), args.chunk_size, test_size=1 - train_proportion)
     train_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir, train_indices,
                                    args.chunk_size, device=device, cache_size=args.cache_size,
                                    image_loading_method=args.image_loading_method)
