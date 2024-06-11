@@ -4,8 +4,7 @@ from datasets.preprocessing import process_experiment_folders
 run_task_id = 1
 scale_factor = 1 / 2.5
 padding_size = 5
-set_name = 'TestSet'
-
+set_name = 'TrainingSet'
 
 def convert_png_to_ph_overwrite():
     # (1) Convert png to ph
