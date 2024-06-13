@@ -309,6 +309,6 @@ class QueryEmbeddingCNN(nn.Module):
         print(f'embeddings size: {embeddings.shape}') # torch.Size([32, 256, 64])
         raise RuntimeError("Script stopped after saving outputs.")
         '''
-        return predictions.mean(dim=1), embeddings
+        return F.softplus(predictions.mean(dim=1)), embeddings
 
 
