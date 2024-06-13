@@ -100,6 +100,11 @@ class Trainer:
             print(f'targets shape: {targets.shape}')
 
         loss = self._compute_loss(outputs, targets)
+        if torch.isnan(loss).any():
+            print(f"loss: {loss} \n")
+            print(f"outputs: {outputs} \n")
+            print(f"targets: {targets} \n")
+        raise RuntimeError("Output value contain nan")
 
         return loss
 
