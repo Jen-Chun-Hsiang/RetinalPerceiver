@@ -104,7 +104,7 @@ class Trainer:
             print(f"loss: {loss} \n")
             print(f"outputs: {outputs} \n")
             print(f"targets: {targets} \n")
-        raise RuntimeError("Output value contain nan")
+            raise RuntimeError("Output value contain nan")
 
         return loss
 
