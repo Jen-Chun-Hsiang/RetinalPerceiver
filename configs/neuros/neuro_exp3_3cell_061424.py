@@ -2,7 +2,7 @@ from datasets.neuron_dataset import load_mat_to_dataframe, load_data_from_excel
 from datasets.neuron_dataset import filter_and_merge_data
 
 exp_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/ExperimentSheets.xlsx'
-neu_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/experiment_neuron_022724.mat'
+neu_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/experiment_neuron_061424.mat'
 
 experiment_session_table = load_data_from_excel(exp_dir, 'experiment_session')
 experiment_session_table = experiment_session_table.drop('stimulus_type', axis=1)
