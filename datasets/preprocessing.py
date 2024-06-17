@@ -91,7 +91,7 @@ class PNGToTensorConverter:
             tensor = rescaled_tensor.squeeze()
 
         # Save the tensor
-        torch.save(tensor.clone(), tensor_file_path)
+        torch.save(tensor, tensor_file_path)
         print(f"Saved tensor to {tensor_file_path}")
 
     def start_conversion(self):
