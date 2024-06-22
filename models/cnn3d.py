@@ -217,11 +217,11 @@ class RetinalPerceiverIOWithCNN(nn.Module):
         # Decode stage
 
         predictions, embeddings = self.decoder(latents_projected, query_array)
-        '''
+
         print(f'predictions size: {predictions.shape}') #  torch.Size([32, 256, 1])
         print(f'embeddings size: {embeddings.shape}') # torch.Size([32, 256, 64])
         raise RuntimeError("Script stopped after saving outputs.")
-        '''
+
         return F.relu(predictions.mean(dim=1)), embeddings
 
 
