@@ -184,7 +184,7 @@ class RetinalPerceiverIOWithCNN(nn.Module):
         # Initialize latent array
         self.latents = nn.Parameter(torch.randn(self.num_latents, self.latent_dim))
         # cheap linear decoder
-        self.fc = nn.Linear(latent_dim, output_dim)
+        self.fc = nn.Linear(num_latents, output_dim)
 
     def forward(self, input_array, query_array):
         # Pass input through the Front End CNN
