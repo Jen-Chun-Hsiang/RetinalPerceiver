@@ -338,7 +338,7 @@ class PerceiverIODecoder(nn.Module):
         attn_output = F.gelu(self.out_proj1(attn_output))
         # F.gelu(self.out_proj2(attn_output)), attn_output
 
-        print(f'attn_output size: {attn_output.shape}')  # torch.Size([32, 256, 1])
+        # print(f'attn_output size: {attn_output.shape}')  # torch.Size([32, 256, 1])
 
         return self.out_proj2(attn_output), attn_output
 
