@@ -113,13 +113,14 @@ class FrontEndRetinalCNN(RetinalCNN):
     def forward(self, x):
         # 3D convolutional layer
         x = self.conv3d(x)
+        x = self.bn3d(x)
         new_height, new_width = x.size(3), x.size(4)
         x = x.view(-1, self.conv3d_out_channels, new_height, new_width)
 
         # 2D convolutional layers with pooling
-        x = F.relu(self.conv1(x))
+        x = F.relu(self.bn1(self.conv1(x)))
         x = self.pool(x)
-        x = F.relu(self.conv2(x))
+        x = F.relu(self.bn2(self.conv2(x)))
         x = self.pool(x)
 
         # Stop here to output the feature map instead of flattening and passing through fully connected layers
@@ -129,11 +130,12 @@ class FrontEndRetinalCNN(RetinalCNN):
         with torch.no_grad():
             dummy_input = torch.zeros(1, 1, input_depth, input_height, input_width)
             dummy_input = self.conv3d(dummy_input)
+            dummy_input = self.bn3d(dummy_input)
             new_height, new_width = dummy_input.size(3), dummy_input.size(4)
             dummy_input = dummy_input.view(1, self.conv3d_out_channels, new_height, new_width)
-            dummy_input = F.relu(self.conv1(dummy_input))
+            dummy_input = F.relu(self.bn1(self.conv1(dummy_input)))
             dummy_input = self.pool(dummy_input)
-            dummy_input = F.relu(self.conv2(dummy_input))
+            dummy_input = F.relu(self.bn2(self.conv2(dummy_input)))
             dummy_input = self.pool(dummy_input)
             return dummy_input.size(2), dummy_input.size(3)  # return height and width
 
