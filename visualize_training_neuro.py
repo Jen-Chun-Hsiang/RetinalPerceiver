@@ -35,7 +35,7 @@ def main():
     is_weight_in_label = False  # check if the data is good
     is_full_figure_draw = True  # determine whether draw for each neuro or just get stats
     is_test_dataset = True
-    test_config_name = None  # 'neuro_exp1_3cell_041324_test_12' None
+    test_config_name = neuro_exp3_3cell_061424_test_3  # 'neuro_exp1_3cell_041324_test_12' None
     is_use_matrix_index = True
     savefig_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Figures/'
     saveprint_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Prints/'
@@ -266,7 +266,8 @@ def main():
     np.save(savedata_filename_npy, corrcoef_vals)
 
     # Save the dictionary as a .mat file
-    savemat(savedata_filename_mat, {'corrcoef_vals': corrcoef_vals, 'query_array': query_array})
+    savemat(savedata_filename_mat, {'corrcoef_vals': corrcoef_vals, 'query_array': query_array,
+                                    'weights': weights, 'labels': labels})
 
 if __name__ == "__main__":
     main()
