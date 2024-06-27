@@ -5,7 +5,7 @@ run_task_id = 1
 scale_factor = 1 / 2.5
 padding_size = 5
 experiment_id = 3
-set_name = 'TrainingSet'
+set_name = 'TestSet'
 
 def convert_png_to_ph_overwrite():
     # (1) Convert png to ph
