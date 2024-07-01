@@ -2,12 +2,12 @@ from datasets.neuron_dataset import load_mat_to_dataframe, load_data_from_excel
 from datasets.neuron_dataset import filter_and_merge_data
 
 exp_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/ExperimentSheets.xlsx'
-neu_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/experiment_neuron_022724.mat'
+neu_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/experiment_neuron_061424.mat'
 
 experiment_session_table = load_data_from_excel(exp_dir, 'experiment_session')
 experiment_session_table = experiment_session_table.drop('stimulus_type', axis=1)
 
-included_neuron_table = load_data_from_excel(exp_dir, 'nid_07')
+included_neuron_table = load_data_from_excel(exp_dir, 'nid_3_1')
 experiment_info_table = load_data_from_excel(exp_dir, 'experiment_info')
 experiment_info_table = experiment_info_table.drop(['species', 'sex', 'day', 'folder_name'], axis=1)
 
@@ -21,8 +21,8 @@ experiment_neuron_table['quality'] = experiment_neuron_table['quality'].astype('
 
 filtered_data = filter_and_merge_data(
         experiment_session_table, experiment_neuron_table,
-        selected_experiment_ids=[1],
-        selected_stimulus_types=[1, 2, 3],  # 3
+        selected_experiment_ids=[3],
+        selected_stimulus_types=[1, 2, 3, 5],  # 3
         excluded_session_table=None,
         excluded_neuron_table=None,
         included_session_table=None,

@@ -186,7 +186,7 @@ class RetinalPerceiverIOWithCNN(nn.Module):
         # Initialize latent array
         self.latents = nn.Parameter(torch.randn(self.num_latents, self.latent_dim))
         # cheap linear decoder
-        self.fc = nn.Linear(latent_dim, output_dim)
+        self.fc = nn.Linear(num_latents, output_dim)
 
     def forward(self, input_array, query_array):
         # Pass input through the Front End CNN
@@ -224,7 +224,8 @@ class RetinalPerceiverIOWithCNN(nn.Module):
         print(f'embeddings size: {embeddings.shape}') # torch.Size([32, 256, 64])
         raise RuntimeError("Script stopped after saving outputs.")
         '''
-        return predictions.mean(dim=1), embeddings
+        return F.softplus(self.fc(predictions.flatten(start_dim=1))), embeddings
+        # return F.relu(predictions.mean(dim=1)), embeddings
 
 
 class QueryEmbeddingCNN(nn.Module):
@@ -311,6 +312,6 @@ class QueryEmbeddingCNN(nn.Module):
         print(f'embeddings size: {embeddings.shape}') # torch.Size([32, 256, 64])
         raise RuntimeError("Script stopped after saving outputs.")
         '''
-        return predictions.mean(dim=1), embeddings
+        return F.softplus(predictions.mean(dim=1)), embeddings
 
 

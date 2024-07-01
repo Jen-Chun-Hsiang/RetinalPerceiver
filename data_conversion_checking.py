@@ -4,20 +4,21 @@ from datasets.preprocessing import process_experiment_folders
 run_task_id = 1
 scale_factor = 1 / 2.5
 padding_size = 5
-
+experiment_id = 3
+set_name = 'TestSet'
 
 def convert_png_to_ph_overwrite():
     # (1) Convert png to ph
-    convert_root = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Stimulus' \
-                   '/experiment_1/'
+    convert_root = f"/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/{set_name}/Stimulus" \
+                   f"/experiment_{experiment_id}/"
     converter = PNGToTensorConverter(convert_root, overwrite=True, scale_factor=scale_factor, padding_size=padding_size)
     converter.start_conversion()
 
 
 def convert_png_to_ph_addnew():
     # (2) Skip conversion if .pt file exists:
-    convert_root = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Stimulus' \
-                   '/experiment_1/'
+    convert_root = f"/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/{set_name}/Stimulus" \
+                   f"/experiment_{experiment_id}/"
     converter = PNGToTensorConverter(convert_root, overwrite=False, scale_factor=scale_factor,
                                      padding_size=padding_size)
     converter.start_conversion()
@@ -25,8 +26,8 @@ def convert_png_to_ph_addnew():
 
 def generate_session_in_hdf5():
     # (3) Gather image into hdf5 file
-    root_folder = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Stimulus' \
-                  '/experiment_1/'
+    root_folder = f"/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/{set_name}/Stimulus" \
+                  f"/experiment_{experiment_id}/"
     process_experiment_folders(root_folder, scale_factor=scale_factor, padding_size=padding_size)
 
 

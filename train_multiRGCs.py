@@ -14,8 +14,8 @@ import time
 from io import StringIO
 import sys
 import pandas as pd
+from scipy.io import savemat
 # from torchinfo import summary
-# from scipy.io import savemat
 # import torch.multiprocessing as mp
 # import torch.distributed as dist
 # from torch.nn.parallel import DistributedDataParallel
@@ -121,7 +121,7 @@ def main():
     image_root_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Stimulus/'
     link_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Link/'
     resp_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Response/'
-    # savemat_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Matfiles/'
+    savemat_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Matfiles/'
     # Generate a timestamp
     timestr = datetime.now().strftime('%Y%m%d_%H%M%S')
 
@@ -160,14 +160,14 @@ def main():
     query_index = query_index.astype('int64')
     firing_rate_array = firing_rate_array.astype('float32')
 
-    '''
+
     # Save to .mat file
     # filtered_data_mat = {col: filtered_data[col].values for col in filtered_data.columns}
-    savemat(os.path.join(savemat_dir, 'train_neuro_list.mat'),
+    savemat_filename = f"{filename_fixed}_train_neuro_list.mat"
+    savemat(os.path.join(savemat_dir, savemat_filename),
             {"data_array": data_array, "query_array": query_array,
              "query_index": query_index, "firing_rate_array": firing_rate_array})
-    raise RuntimeError("Script stopped after saving outputs.")
-    '''
+
 
     # construct the query array for query encoder
     query_df = pd.DataFrame(query_array, columns=['experiment_id', 'neuron_id'])
