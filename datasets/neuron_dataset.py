@@ -133,9 +133,9 @@ class RetinalDataset(Dataset):
         random_idx = random.randint(start_idx, end_idx - 1)
         if self.is_in_bulk:
             experiment_id, session_id, *frame_ids = self.data_array[random_idx]
-            firing_rate = self.firing_rate_array[random_idx, :].reshape(-1)
-            query_id = np.array(self.query_series[experiment_id]).reshape(-1)
-            num_cells = firing_rate.shape[1]
+            query_id = np.array(self.query_series[(experiment_id, session_id)]).reshape(-1)
+            num_cells = len(query_id)
+            firing_rate = self.firing_rate_array[random_idx, :num_cells].reshape(-1)
         else:
             experiment_id, session_id, neuron_id, *frame_ids = self.data_array[random_idx]
             firing_rate = self.firing_rate_array[random_idx]
@@ -381,12 +381,13 @@ class TemporalArrayConstructor:
 
 
 class DataConstructor:
-    def __init__(self, input_table, seq_len, stride, link_dir, resp_dir):
+    def __init__(self, input_table, seq_len, stride, link_dir, resp_dir, max_recording_cell=50):
         self.input_table = input_table
         self.seq_len = seq_len
         self.stride = stride
         self.link_dir = link_dir
         self.resp_dir = resp_dir
+        self.max_recording_cell = max_recording_cell
 
     def construct_data(self):
         all_sessions_data = []
@@ -446,8 +447,10 @@ class DataConstructor:
         experiment_neuron_map = OrderedDict()
         for (experiment_id, session_id), group in grouped:
             neurons = group['neuron_id'].unique()
+            num_neuron = len(neurons)
             if experiment_id not in experiment_neuron_map:
-                experiment_neuron_map[experiment_id] = neurons
+                current_key = (experiment_id, session_id)
+                experiment_neuron_map[current_key] = neurons
 
             file_path = os.path.join(self.link_dir, f'experiment_{experiment_id}/session_{session_id}.mat')
             time_id = load_mat_to_numpy(file_path, 'time_id')
@@ -464,7 +467,8 @@ class DataConstructor:
             firing_rate_array = firing_rate_array[:, neurons-1]
 
             firing_rate_index = constructor.construct_array(sequence_id, flip_lr=True)
-            firing_rate_data = firing_rate_array[firing_rate_index[:, 0], :]
+            firing_rate_data = np.empty((len(session_array), self.max_recording_cell), dtype=session_array.dtype)
+            firing_rate_data[:, :num_neuron] = firing_rate_array[firing_rate_index[:, 0], :]
             all_sessions_fr_data.append(firing_rate_data)
 
             session_data = np.empty((len(session_array), 2 + self.seq_len), dtype=session_array.dtype)
@@ -486,7 +490,7 @@ class DataConstructor:
             start_index = len(query_array)
             # Create the rows for the output array B
             for neuron_id in neuron_ids:
-                query_array.append([experiment_id, neuron_id])
+                query_array.append([experiment_id[0], neuron_id])
             # Record the range of indices for the current experiment_id
             exp_query_index[experiment_id] = list(range(start_index, start_index + len(neuron_ids)))
 

@@ -77,6 +77,7 @@ def parse_args():
     # Data specificity (neuro dataset)
     parser.add_argument('--chunk_size', type=int, default=9, help='Number of continuous data point in one chunk')
     parser.add_argument('--data_stride', type=int, default=2, help='Number of step to create data (10 ms / per step)')
+    parser.add_argument('--max_recording_cell', type=int, default=50, help='Maximum number of recording neuron (for bulk)')
     parser.add_argument('--image_loading_method', type=str, default='ph', help='The loading method (ph, png, hdf5)')
     # Perceiver specificity
     parser.add_argument('--num_head', type=int, default=4, help='Number of heads in perceiver')
@@ -154,7 +155,7 @@ def main():
 
     # construct the array for dataset
     data_constructor = DataConstructor(filtered_data, seq_len=args.input_depth, stride=args.data_stride,
-                                       link_dir=link_dir, resp_dir=resp_dir)
+                                       link_dir=link_dir, resp_dir=resp_dir, max_recording_cell=args.max_recording_cell)
     if args.use_bulk:
         data_array, query_array, query_index, firing_rate_array = data_constructor.construct_data_in_bulk()
         # query_index is a list for mapping experiment to query_array_ids
