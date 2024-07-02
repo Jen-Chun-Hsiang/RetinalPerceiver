@@ -142,7 +142,6 @@ class RetinalDataset(Dataset):
             query_id = self.query_series[random_idx]
             num_cells = 1
 
-
         # Find unique frame_ids and their indices
         unique_frame_ids, inverse_indices = np.unique(frame_ids, return_inverse=True)
 
@@ -493,6 +492,9 @@ class DataConstructor:
                 query_array.append([experiment_id[0], neuron_id])
             # Record the range of indices for the current experiment_id
             exp_query_index[experiment_id] = list(range(start_index, start_index + len(neuron_ids)))
+
+        # Convert list of lists to a NumPy array
+        query_array = np.array(query_array)
 
         return frame_array, query_array, exp_query_index, firing_rate_array
 

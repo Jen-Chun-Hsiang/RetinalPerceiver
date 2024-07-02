@@ -160,7 +160,7 @@ def main():
         data_array, query_array, query_index, firing_rate_array = data_constructor.construct_data_in_bulk()
         # query_index is a list for mapping experiment to query_array_ids
     else:
-        data_array, query_array, query_index, firing_rate_array = data_constructor.construct_data_in_bulk()
+        data_array, query_array, query_index, firing_rate_array = data_constructor.construct_data()
         query_index = query_index.astype('int64')
 
     data_array = data_array.astype('int64')
