@@ -43,6 +43,16 @@ class Trainer:
         else:
             self.is_query_array = False
 
+    def generate_batches(load_dataset, batch_size_target=10):
+        data_loader = DataLoader(load_dataset, batch_size=1, shuffle=True)
+        batch_accumulator = []
+
+        for data in data_loader:
+            batch_accumulator.extend(data[0])
+            while len(batch_accumulator) >= batch_size_target:
+                yield torch.stack(batch_accumulator[:batch_size_target])
+                batch_accumulator = batch_accumulator[batch_size_target:]
+
     def train_one_epoch(self, train_loader):
         self.model.train()  # Set the model to training mode
         total_train_loss = 0

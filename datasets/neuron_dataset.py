@@ -1,5 +1,5 @@
 import torch
-from torch.utils.data import Dataset, Sampler
+from torch.utils.data import Dataset, Sampler, DataLoader
 import numpy as np
 from PIL import Image
 import os
@@ -87,7 +87,11 @@ class RetinalDataset(Dataset):
         self.image_tensor_cache = OrderedDict()
         self.cache_lock = threading.Lock()  # Create a lock for the cache
 
-        assert len(data_array) == len(query_series), "data_array and query_series must be the same length"
+        if isinstance(self.query_series, dict):
+            self.is_in_bulk = True
+        else:
+            self.is_in_bulk = False
+            assert len(data_array) == len(query_series), "data_array and query_series must be the same length"
 
         if image_loading_method == 'hdf5':
             example_session_path = self.get_hdf5_path(*self.data_array[0][:2])
@@ -97,8 +101,12 @@ class RetinalDataset(Dataset):
                 self.image_shape = sample_image_tensor.shape
         else:
             # Dummy load to get image size for 'png' or 'pt' formats
-            experiment_id, session_id, neuron_id = self.data_array[0][:3]
-            frame_id = self.data_array[0][3]
+            if self.is_in_bulk:
+                experiment_id, session_id, neuron_id = self.data_array[0][:2]
+                frame_id = self.data_array[0][2]
+            else:
+                experiment_id, session_id, neuron_id = self.data_array[0][:3]
+                frame_id = self.data_array[0][3]
             sample_image_tensor = self.load_image(experiment_id, session_id, frame_id)
             self.image_shape = sample_image_tensor.shape
 
@@ -123,9 +131,17 @@ class RetinalDataset(Dataset):
 
         # Randomly select a data point within the chunk
         random_idx = random.randint(start_idx, end_idx - 1)
-        experiment_id, session_id, neuron_id, *frame_ids = self.data_array[random_idx]
-        firing_rate = self.firing_rate_array[random_idx]
-        query_id = self.query_series[random_idx]
+        if self.is_in_bulk:
+            experiment_id, session_id, *frame_ids = self.data_array[random_idx]
+            firing_rate = self.firing_rate_array[random_idx, :].reshape(-1)
+            query_id = np.array(self.query_series[experiment_id]).reshape(-1)
+            num_cells = firing_rate.shape[1]
+        else:
+            experiment_id, session_id, neuron_id, *frame_ids = self.data_array[random_idx]
+            firing_rate = self.firing_rate_array[random_idx]
+            query_id = self.query_series[random_idx]
+            num_cells = 1
+
 
         # Find unique frame_ids and their indices
         unique_frame_ids, inverse_indices = np.unique(frame_ids, return_inverse=True)
@@ -157,7 +173,7 @@ class RetinalDataset(Dataset):
                     images_3d[i] = image
             '''
 
-        images_3d = images_3d.unsqueeze(0).to(self.device)  # Adding an extra dimension to simulate batch size
+        images_3d = images_3d.unsqueeze(0).repeat(num_cells, 1, 1, 1).to(self.device)  # Adding an extra dimension to simulate batch size
 
         return images_3d, firing_rate, query_id
 
@@ -421,6 +437,109 @@ class DataConstructor:
         query_array, query_index = np.unique(frame_array[:, [0, 2]], axis=0, return_inverse=True)
 
         return frame_array, query_array, query_index, firing_rate_array
+
+    def construct_data_in_bulk(self):
+        all_sessions_data = []
+        all_sessions_fr_data = []
+        grouped = self.input_table.groupby(['experiment_id', 'session_id'])
+
+        experiment_neuron_map = OrderedDict()
+        for (experiment_id, session_id), group in grouped:
+            neurons = group['neuron_id'].unique()
+            if experiment_id not in experiment_neuron_map:
+                experiment_neuron_map[experiment_id] = neurons
+
+            file_path = os.path.join(self.link_dir, f'experiment_{experiment_id}/session_{session_id}.mat')
+            time_id = load_mat_to_numpy(file_path, 'time_id')
+            video_frame_id = load_mat_to_numpy(file_path, 'video_frame_id')
+
+            sequence_id = np.arange(len(video_frame_id))
+
+            constructor = TemporalArrayConstructor(time_id=time_id, seq_len=self.seq_len, stride=self.stride)
+            session_array = constructor.construct_array(video_frame_id)
+            session_array = session_array.astype(np.int32)
+
+            file_path = os.path.join(self.resp_dir, f'experiment_{experiment_id}/session_{session_id}.mat')
+            firing_rate_array = load_mat_to_numpy(file_path, 'spike_smooth')
+
+            firing_rate_index = constructor.construct_array(sequence_id, flip_lr=True)
+            firing_rate_data = firing_rate_array[firing_rate_index[:, 0], neurons-1]
+            all_sessions_fr_data.append(firing_rate_data)
+
+            session_data = np.empty((len(session_array), 2 + self.seq_len), dtype=session_array.dtype)
+            session_data[:, :2] = [experiment_id, session_id]
+            session_data[:, 2:] = session_array
+            all_sessions_data.append(session_data)
+
+        frame_array = np.vstack(all_sessions_data)
+        firing_rate_array = np.vstack(all_sessions_fr_data)
+
+        assert len(frame_array) == len(firing_rate_array)
+
+        query_array = []
+        exp_query_index = OrderedDict()
+
+        # Process each experiment and corresponding neurons
+        for experiment_id, neuron_ids in experiment_neuron_map.items():
+            # Track the start index for the current experiment_id
+            start_index = len(query_array)
+            # Create the rows for the output array B
+            for neuron_id in neuron_ids:
+                query_array.append([experiment_id, neuron_id])
+            # Record the range of indices for the current experiment_id
+            exp_query_index[experiment_id] = list(range(start_index, start_index + len(neuron_ids)))
+
+        return frame_array, query_array, exp_query_index, firing_rate_array
+
+
+class BatchGenerator:
+    def __init__(self, dataset, batch_size_target=10, is_shuffle=True):
+        self.dataset = dataset
+        self.batch_size_target = batch_size_target
+        self.data_loader = DataLoader(dataset, batch_size=1, shuffle=is_shuffle)
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        batch_images = []
+        batch_firing_rates = []
+        batch_query_ids = []
+        current_batch_size = 0
+
+        for (images_3d, firing_rate, query_id) in self.data_loader:
+            images_3d = images_3d.squeeze(0)  # Remove batch dim
+            firing_rate = firing_rate.squeeze(0)  # Remove batch dim
+            query_id = query_id.squeeze(0)  # Remove batch dim
+
+            batch_images.append(images_3d)
+            batch_firing_rates.append(firing_rate)
+            batch_query_ids.append(query_id)
+
+            current_batch_size += images_3d.size(0)
+
+            if current_batch_size >= self.batch_size_target:
+                concat_images = torch.cat(batch_images, dim=0)
+                concat_firing_rates = np.concatenate(batch_firing_rates, axis=0)
+                concat_query_ids = np.concatenate(batch_query_ids, axis=0)
+
+                final_images = concat_images[:self.batch_size_target]
+                final_firing_rates = concat_firing_rates[:self.batch_size_target]
+                final_query_ids = concat_query_ids[:self.batch_size_target]
+
+                if current_batch_size > self.batch_size_target:
+                    batch_images = [concat_images[self.batch_size_target:]]
+                    batch_firing_rates = [concat_firing_rates[self.batch_size_target:]]
+                    batch_query_ids = [concat_query_ids[self.batch_size_target:]]
+                else:
+                    batch_images = []
+                    batch_firing_rates = []
+                    batch_query_ids = []
+
+                current_batch_size = current_batch_size - self.batch_size_target
+                return final_images, torch.from_numpy(final_firing_rates), torch.from_numpy(final_query_ids)
+
+        raise StopIteration
 
 
 class GroupedSampler(Sampler):

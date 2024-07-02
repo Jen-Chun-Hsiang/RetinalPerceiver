@@ -20,7 +20,7 @@ from scipy.io import savemat
 # import torch.distributed as dist
 # from torch.nn.parallel import DistributedDataParallel
 
-from datasets.neuron_dataset import RetinalDataset, DataConstructor
+from datasets.neuron_dataset import RetinalDataset, DataConstructor, BatchGenerator
 from datasets.neuron_dataset import train_val_split, load_data_from_excel, filter_and_merge_data
 from utils.utils import plot_and_save_3d_matrix_with_timestamp as plot3dmat
 from utils.utils import SeriesEncoder
@@ -83,6 +83,7 @@ def parse_args():
     parser.add_argument('--num_iter', type=int, default=1, help='Number of input reiteration')
     parser.add_argument('--num_latent', type=int, default=16, help='Number of latent length (encoding)')
     parser.add_argument('--num_band', type=int, default=10, help='Number of bands in positional encoding')
+    parser.add_argument('--use_bulk', action='store_true', help='Enable whole recording processing')
     parser.add_argument('--use_layer_norm', action='store_true', help='Enable layer normalization')
     parser.add_argument('--concatenate_positional_encoding', action='store_true',
                         help='Enable concatenation for positional encoding')
@@ -154,10 +155,15 @@ def main():
     # construct the array for dataset
     data_constructor = DataConstructor(filtered_data, seq_len=args.input_depth, stride=args.data_stride,
                                        link_dir=link_dir, resp_dir=resp_dir)
-    data_array, query_array, query_index, firing_rate_array = data_constructor.construct_data()
+    if args.use_bulk:
+        data_array, query_array, query_index, firing_rate_array = data_constructor.construct_data_in_bulk()
+        # query_index is a list for mapping experiment to query_array_ids
+    else:
+        data_array, query_array, query_index, firing_rate_array = data_constructor.construct_data_in_bulk()
+        query_index = query_index.astype('int64')
+
     data_array = data_array.astype('int64')
     query_array = query_array.astype('int64')
-    query_index = query_index.astype('int64')
     firing_rate_array = firing_rate_array.astype('float32')
 
 
@@ -196,16 +202,13 @@ def main():
     train_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir, train_indices,
                                    args.chunk_size, device=device, cache_size=args.cache_size,
                                    image_loading_method=args.image_loading_method)
-    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
-    # train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=num_workers,
-    #                          pin_memory=True)
+    train_loader = BatchGenerator(train_dataset, batch_size_target=args.batch_size, is_shuffle=True)
     val_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir, val_indices,
                                  args.chunk_size, device=device, cache_size=args.cache_size,
                                  image_loading_method=args.image_loading_method)
-    val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
-    # val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=num_workers,
-    #                        pin_memory=True)
+    val_loader = BatchGenerator(val_dataset, batch_size_target=args.batch_size, is_shuffle=False)
 
+    ''' (debug) maynot work with use_bulk '''
     check_loader = DataLoader(train_dataset, batch_size=2, shuffle=True)
     dataiter = iter(check_loader)
     movie, labels, index = next(dataiter)
