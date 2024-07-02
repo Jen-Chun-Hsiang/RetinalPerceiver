@@ -98,6 +98,9 @@ class Trainer:
 
     def _process_batch_with_query(self, data):
         input_matrices, targets, matrix_indices = data
+        print(f'input_matrices shape: {input_matrices.shape}')
+        print(f'targets shape: {targets.shape}')
+        print(f'matrix_indices shape: {matrix_indices.shape}')
         query_vectors = self.query_array[matrix_indices]
         query_vectors = query_vectors.float().to(self.device)
         input_matrices, targets = input_matrices.to(self.device), targets.to(self.device)
