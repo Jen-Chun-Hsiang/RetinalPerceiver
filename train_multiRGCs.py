@@ -157,7 +157,7 @@ def main():
     data_constructor = DataConstructor(filtered_data, seq_len=args.input_depth, stride=args.data_stride,
                                        link_dir=link_dir, resp_dir=resp_dir, max_recording_cell=args.max_recording_cell)
     if args.use_bulk:
-        data_array, query_array, query_index, firing_rate_array = data_constructor.construct_data_in_bulk()
+        data_array, query_array, query_index, firing_rate_array, data_length = data_constructor.construct_data_in_bulk()
         # query_index is a list for mapping experiment to query_array_ids
     else:
         data_array, query_array, query_index, firing_rate_array = data_constructor.construct_data()
@@ -203,11 +203,11 @@ def main():
     train_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir, train_indices,
                                    args.chunk_size, device=device, cache_size=args.cache_size,
                                    image_loading_method=args.image_loading_method)
-    train_loader = BatchGenerator(train_dataset, batch_size_target=args.batch_size, is_shuffle=True)
+    train_loader = BatchGenerator(train_dataset, batch_size_target=args.batch_size, is_shuffle=True, data_length=data_length)
     val_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir, val_indices,
                                  args.chunk_size, device=device, cache_size=args.cache_size,
                                  image_loading_method=args.image_loading_method)
-    val_loader = BatchGenerator(val_dataset, batch_size_target=args.batch_size, is_shuffle=False)
+    val_loader = BatchGenerator(val_dataset, batch_size_target=args.batch_size, is_shuffle=False, data_length=data_length)
 
     ''' (debug) maynot work with use_bulk '''
     check_loader = DataLoader(train_dataset, batch_size=2, shuffle=True)

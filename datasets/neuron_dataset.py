@@ -9,6 +9,7 @@ from scipy.io import loadmat
 from collections import OrderedDict
 import threading
 import h5py
+from math import ceil
 
 # from functools import lru_cache
 # from torchvision.io import read_image
@@ -444,6 +445,7 @@ class DataConstructor:
         grouped = self.input_table.groupby(['experiment_id', 'session_id'])
 
         experiment_neuron_map = OrderedDict()
+        data_length = 0
         for (experiment_id, session_id), group in grouped:
             neurons = group['neuron_id'].unique()
             num_neuron = len(neurons)
@@ -460,6 +462,8 @@ class DataConstructor:
             constructor = TemporalArrayConstructor(time_id=time_id, seq_len=self.seq_len, stride=self.stride)
             session_array = constructor.construct_array(video_frame_id)
             session_array = session_array.astype(np.int32)
+            session_length = len(session_array)
+            data_length += num_neuron * session_length
 
             file_path = os.path.join(self.resp_dir, f'experiment_{experiment_id}/session_{session_id}.mat')
             firing_rate_array = load_mat_to_numpy(file_path, 'spike_smooth')
@@ -496,14 +500,18 @@ class DataConstructor:
         # Convert list of lists to a NumPy array
         query_array = np.array(query_array)
 
-        return frame_array, query_array, exp_query_index, firing_rate_array
+        return frame_array, query_array, exp_query_index, firing_rate_array, data_length
 
 
 class BatchGenerator:
-    def __init__(self, dataset, batch_size_target=10, is_shuffle=True):
+    def __init__(self, dataset, batch_size_target=10, is_shuffle=True, data_length=None):
         self.dataset = dataset
         self.batch_size_target = batch_size_target
         self.data_loader = DataLoader(dataset, batch_size=1, shuffle=is_shuffle)
+        if data_length is None:
+            raise ValueError("data_length is required because the dataset does not have a known length.")
+        else:
+            self.data_length = data_length
 
     def __iter__(self):
         return self
@@ -547,6 +555,9 @@ class BatchGenerator:
                 return final_images, torch.from_numpy(final_firing_rates), torch.from_numpy(final_query_ids)
 
         raise StopIteration
+
+    def __len__(self):
+        return ceil(self.data_length / self.batch_size_target)
 
 
 class GroupedSampler(Sampler):
