@@ -172,10 +172,14 @@ class RetinalDataset(Dataset):
                 for i in indices:
                     images_3d[i] = image
             '''
-        try:
-            images_3d = images_3d.unsqueeze(0).repeat(num_cells, 1, 1, 1).to(self.device)  # Adding an extra dimension to simulate batch size
-        except MemoryError:
-            print(f'number of cell: {num_cells}')
+        if self.is_in_bulk:
+            try:
+                print(f'images_3d size: {images_3d.shape()}')
+                images_3d = images_3d.unsqueeze(0).repeat(num_cells, 1, 1, 1).to(self.device)  # Adding an extra dimension to simulate batch size
+            except MemoryError:
+                print(f'number of cell: {num_cells}')
+        else:
+            images_3d = images_3d.unsqueeze(0).to(self.device)
 
         return images_3d, firing_rate, query_id
 
