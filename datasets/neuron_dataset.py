@@ -102,7 +102,7 @@ class RetinalDataset(Dataset):
         else:
             # Dummy load to get image size for 'png' or 'pt' formats
             if self.is_in_bulk:
-                experiment_id, session_id, neuron_id = self.data_array[0][:2]
+                experiment_id, session_id = self.data_array[0][:2]
                 frame_id = self.data_array[0][2]
             else:
                 experiment_id, session_id, neuron_id = self.data_array[0][:3]
