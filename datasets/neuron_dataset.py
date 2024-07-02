@@ -461,9 +461,10 @@ class DataConstructor:
 
             file_path = os.path.join(self.resp_dir, f'experiment_{experiment_id}/session_{session_id}.mat')
             firing_rate_array = load_mat_to_numpy(file_path, 'spike_smooth')
+            firing_rate_array = firing_rate_array[:, neurons-1]
 
             firing_rate_index = constructor.construct_array(sequence_id, flip_lr=True)
-            firing_rate_data = firing_rate_array[firing_rate_index[:, 0], neurons-1]
+            firing_rate_data = firing_rate_array[firing_rate_index[:, 0], :]
             all_sessions_fr_data.append(firing_rate_data)
 
             session_data = np.empty((len(session_array), 2 + self.seq_len), dtype=session_array.dtype)
