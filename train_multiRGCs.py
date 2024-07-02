@@ -203,14 +203,19 @@ def main():
     train_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir, train_indices,
                                    args.chunk_size, device=device, cache_size=args.cache_size,
                                    image_loading_method=args.image_loading_method)
-    train_loader = BatchGenerator(train_dataset, batch_size_target=args.batch_size, is_shuffle=True, data_length=data_length)
+    train_loader = BatchGenerator(train_dataset, batch_size_target=args.batch_size, is_shuffle=True,
+                                  data_length=data_length)
     val_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir, val_indices,
                                  args.chunk_size, device=device, cache_size=args.cache_size,
                                  image_loading_method=args.image_loading_method)
-    val_loader = BatchGenerator(val_dataset, batch_size_target=args.batch_size, is_shuffle=False, data_length=data_length)
+    val_loader = BatchGenerator(val_dataset, batch_size_target=args.batch_size, is_shuffle=False,
+                                data_length=data_length)
 
-    ''' (debug) maynot work with use_bulk '''
-    check_loader = DataLoader(train_dataset, batch_size=2, shuffle=True)
+    if args.use_bulk:
+        check_loader = BatchGenerator(train_dataset, batch_size_target=2, is_shuffle=True,
+                                      data_length=data_length)
+    else:
+        check_loader = DataLoader(train_dataset, batch_size=2, shuffle=True)
     dataiter = iter(check_loader)
     movie, labels, index = next(dataiter)
     logging.info(f'movie clip: {movie.shape} labels:{labels} index:{index} \n')

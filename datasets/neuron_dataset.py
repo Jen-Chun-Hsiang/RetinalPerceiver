@@ -174,7 +174,7 @@ class RetinalDataset(Dataset):
             '''
         if self.is_in_bulk:
             try:
-                print(f'images_3d size: {images_3d.shape()}')
+                print(f'images_3d size: {images_3d.shape}')
                 images_3d = images_3d.unsqueeze(0).repeat(num_cells, 1, 1, 1).to(self.device)  # Adding an extra dimension to simulate batch size
             except MemoryError:
                 print(f'number of cell: {num_cells}')
