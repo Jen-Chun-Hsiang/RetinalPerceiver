@@ -15,6 +15,7 @@ from io import StringIO
 import sys
 import pandas as pd
 from scipy.io import savemat
+from torch.profiler import profile, ProfilerActivity, tensorboard_trace_handler
 # from torchinfo import summary
 # import torch.multiprocessing as mp
 # import torch.distributed as dist
@@ -111,7 +112,7 @@ def parse_args():
     return parser.parse_args()
 
 
-def main():
+def train_loop():
     # for running a new set of neurons, remember to change the neu_dir and
     args = parse_args()
     config_module = f"configs.neuros.{args.config_name}"
@@ -316,6 +317,30 @@ def main():
 
             save_checkpoint(epoch, model, optimizer, args, training_losses, validation_losses,
                             file_path=os.path.join(savemodel_dir, checkpoint_filename))
+
+
+def main():
+    log_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Logs/'
+    try:
+        # Setting up the profiler
+        with profile(
+            activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
+            schedule=torch.profiler.schedule(wait=1, warmup=1, active=3),
+            on_trace_ready=tensorboard_trace_handler(log_dir),
+            record_shapes=True,
+            profile_memory=True,
+            with_stack=True
+        ) as prof:
+            for _ in range(5):  # Adjust range as needed for your epochs or batches
+                train_loop()
+                prof.step()  # Notify profiler that a step has completed
+
+    except KeyboardInterrupt:
+        # This catches Ctrl+C or other interruption signals
+        print("Training interrupted. Finalizing profiling data...")
+        # Ensure proper cleanup and data saving
+        prof.__exit__(None, None, None)
+        print("Profiler data saved.")
 
 
 if __name__ == '__main__':
