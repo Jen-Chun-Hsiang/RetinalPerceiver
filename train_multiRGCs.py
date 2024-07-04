@@ -112,7 +112,7 @@ def parse_args():
     return parser.parse_args()
 
 
-def train_loop():
+def train_loop(prof):
     # for running a new set of neurons, remember to change the neu_dir and
     args = parse_args()
     config_module = f"configs.neuros.{args.config_name}"
@@ -289,6 +289,8 @@ def train_loop():
         validation_losses = []
         start_time = time.time()  # Capture the start time
 
+    prof.step()  # Notify profiler
+
     for epoch in range(start_epoch, args.epochs):
         avg_train_loss = trainer.train_one_epoch(train_loader)
         training_losses.append(avg_train_loss)
@@ -296,6 +298,8 @@ def train_loop():
         # torch.cuda.empty_cache()
         avg_val_loss = evaluator.evaluate(val_loader)
         validation_losses.append(avg_val_loss)
+
+        prof.step()
 
         # Print training status
         if (epoch + 1) % 5 == 0:
@@ -331,13 +335,12 @@ def main():
             profile_memory=True,
             with_stack=True
         ) as prof:
-            for _ in range(5):  # Adjust range as needed for your epochs or batches
-                train_loop()
-                prof.step()  # Notify profiler that a step has completed
+            train_loop(prof)
 
     except KeyboardInterrupt:
         # This catches Ctrl+C or other interruption signals
         print("Training interrupted. Finalizing profiling data...")
+    finally:
         # Ensure proper cleanup and data saving
         prof.__exit__(None, None, None)
         print("Profiler data saved.")
