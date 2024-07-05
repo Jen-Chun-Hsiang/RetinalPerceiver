@@ -510,7 +510,7 @@ class DataConstructor:
 
 
 class BatchGenerator:
-    def __init__(self, dataset, batch_size_target=10, is_shuffle=True, data_length=None):
+    def __init__(self, dataset, batch_size_target=10, is_shuffle=True, data_length=None, chunk_size=9):
         self.dataset = dataset
         self.batch_size_target = batch_size_target
         self.data_loader = DataLoader(dataset, batch_size=1, shuffle=is_shuffle)
@@ -518,6 +518,7 @@ class BatchGenerator:
             raise ValueError("data_length is required because the dataset does not have a known length.")
         else:
             self.data_length = data_length
+        self.chunk_size = chunk_size
 
     def __iter__(self):
         return self
@@ -563,7 +564,7 @@ class BatchGenerator:
         raise StopIteration
 
     def __len__(self):
-        return ceil(self.data_length / self.batch_size_target)
+        return ceil(self.data_length / (self.batch_size_target * self.chunk_size))
 
 
 class GroupedSampler(Sampler):

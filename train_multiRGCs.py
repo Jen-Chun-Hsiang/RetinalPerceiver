@@ -205,12 +205,12 @@ def train_loop(prof):
                                    args.chunk_size, device=device, cache_size=args.cache_size,
                                    image_loading_method=args.image_loading_method)
     train_loader = BatchGenerator(train_dataset, batch_size_target=args.batch_size, is_shuffle=True,
-                                  data_length=data_length)
+                                  data_length=data_length, chunk_size=args.chunk_size)
     val_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir, val_indices,
                                  args.chunk_size, device=device, cache_size=args.cache_size,
                                  image_loading_method=args.image_loading_method)
     val_loader = BatchGenerator(val_dataset, batch_size_target=args.batch_size, is_shuffle=False,
-                                data_length=data_length)
+                                data_length=data_length, chunk_size=args.chunk_size)
 
     if args.use_bulk:
         check_loader = BatchGenerator(train_dataset, batch_size_target=2, is_shuffle=True,
