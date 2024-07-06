@@ -15,7 +15,7 @@ from io import StringIO
 import sys
 import pandas as pd
 from scipy.io import savemat
-from torch.profiler import profile, ProfilerActivity, tensorboard_trace_handler
+# from torch.profiler import profile, ProfilerActivity, tensorboard_trace_handler
 # from torchinfo import summary
 # import torch.multiprocessing as mp
 # import torch.distributed as dist
@@ -112,7 +112,7 @@ def parse_args():
     return parser.parse_args()
 
 
-def train_loop(prof):
+def train_loop():
     # for running a new set of neurons, remember to change the neu_dir and
     args = parse_args()
     config_module = f"configs.neuros.{args.config_name}"
@@ -289,7 +289,7 @@ def train_loop(prof):
         validation_losses = []
         start_time = time.time()  # Capture the start time
 
-    prof.step()  # Notify profiler
+    # prof.step()  # Notify profiler
 
     for epoch in range(start_epoch, args.epochs):
         avg_train_loss = trainer.train_one_epoch(train_loader)
@@ -299,7 +299,7 @@ def train_loop(prof):
         avg_val_loss = evaluator.evaluate(val_loader)
         validation_losses.append(avg_val_loss)
 
-        prof.step()
+        #prof.step()
 
         # Print training status
         if (epoch + 1) % 5 == 0:
@@ -324,6 +324,8 @@ def train_loop(prof):
 
 
 def main():
+    train_loop()
+    '''
     log_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Logs/'
     try:
         # Setting up the profiler
@@ -344,7 +346,7 @@ def main():
         # Ensure proper cleanup and data saving
         prof.__exit__(None, None, None)
         print("Profiler data saved.")
-
+    '''
 
 if __name__ == '__main__':
     main()
