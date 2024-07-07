@@ -26,14 +26,16 @@ from models.FiLM3d import FiLMCNN
 
 
 def main():
-    stimulus_type = 'PlugIn_2024050901-v0.8.1_GoodCell3'  # get the name from the check point folder
-    epoch_end = 200  # the number of epoch in the check_point file
+    stimulus_type = 'PlugIn_2024062801-v0.8.7_GoodCell3'  # get the name from the check point folder
+    epoch_end = 160  # the number of epoch in the check_point file
     total_length = 10000
     initial_size = (10, 24, 32)
-    is_original_dataset = True  # use original training data (True) or use the white noise generator (False)
+    is_original_dataset = False  # use original training data (True) or use the white noise generator (False)
     is_encoding_query = True  # whether SeriesEncode was applied (or default embedding)
     is_weight_in_label = False  # check if the data is good
     is_full_figure_draw = True  # determine whether draw for each neuro or just get stats
+    is_test_dataset = False
+    test_config_name = None  # 'neuro_exp1_3cell_041324_test_12' None
     is_use_matrix_index = True
     savefig_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Figures/'
     saveprint_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Prints/'
@@ -45,6 +47,13 @@ def main():
     link_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Link/'
     resp_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Response/'
     mat_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Matfiles/'
+
+    if is_test_dataset:
+        is_original_dataset = True
+        image_root_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TestSet/Stimulus/'
+        link_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TestSet/Link/'
+        resp_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TestSet/Response/'
+
 
     is_rescale_image = not (is_weight_in_label or is_original_dataset)
 
@@ -80,7 +89,11 @@ def main():
     visualizer_prog.plot_and_save(None, plot_type='line', line1=training_losses, line2=validation_losses,
                                   xlabel='Epochs', ylabel='Loss')
     args = checkpoint_loader.load_args()
-    config_module = f"configs.neuros.{args.config_name}"
+    if test_config_name is not None:
+        config_name = test_config_name
+    else:
+        config_name = args.config_name
+    config_module = f"configs.neuros.{config_name}"
     config = __import__(config_module, fromlist=[''])
 
     # In the upcoming training procedure, the tables below will be saved with the training file
@@ -147,7 +160,11 @@ def main():
     logging.info(f'query_array:{query_array} \n')
 
     # Get how many unique cells are there
-    train_indices, val_indices = train_val_split(len(data_array), args.chunk_size, test_size=1 - args.train_proportion)
+    if is_test_dataset:
+        train_proportion = 0.999
+    else:
+        train_proportion = args.train_proportion
+    train_indices, val_indices = train_val_split(len(data_array), args.chunk_size, test_size=1 - train_proportion)
     train_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir, train_indices,
                                    args.chunk_size, device=device, cache_size=args.cache_size,
                                    image_loading_method=args.image_loading_method)
@@ -249,7 +266,8 @@ def main():
     np.save(savedata_filename_npy, corrcoef_vals)
 
     # Save the dictionary as a .mat file
-    savemat(savedata_filename_mat, {'corrcoef_vals': corrcoef_vals})
+    savemat(savedata_filename_mat, {'corrcoef_vals': corrcoef_vals, 'query_array': query_array,
+                                    'weights': weights, 'labels': labels})
 
 if __name__ == "__main__":
     main()
