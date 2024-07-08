@@ -6,12 +6,14 @@ scale_factor = 1 / 2.5
 padding_size = 5
 experiment_id = 3
 set_name = 'TestSet'
+save_type = 'npz'  # 'pt' or 'npz'
 
 def convert_png_to_ph_overwrite():
     # (1) Convert png to ph
     convert_root = f"/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/{set_name}/Stimulus" \
                    f"/experiment_{experiment_id}/"
-    converter = PNGToTensorConverter(convert_root, overwrite=True, scale_factor=scale_factor, padding_size=padding_size)
+    converter = PNGToTensorConverter(convert_root, overwrite=True, scale_factor=scale_factor, padding_size=padding_size,
+                                     save_type=save_type)
     converter.start_conversion()
 
 
@@ -20,7 +22,7 @@ def convert_png_to_ph_addnew():
     convert_root = f"/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/{set_name}/Stimulus" \
                    f"/experiment_{experiment_id}/"
     converter = PNGToTensorConverter(convert_root, overwrite=False, scale_factor=scale_factor,
-                                     padding_size=padding_size)
+                                     padding_size=padding_size, save_type=save_type)
     converter.start_conversion()
 
 

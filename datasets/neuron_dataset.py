@@ -204,6 +204,10 @@ class RetinalDataset(Dataset):
         elif self.image_loading_method == 'pt':
             image_path = self.get_image_path(experiment_id, session_id, frame_id, '.pt')
             image_tensor = torch.load(image_path, map_location=self.device)
+        elif self.image_loading_method == 'npz':
+            image_path = self.get_image_path(experiment_id, session_id, frame_id, '.npz')
+            image_data = np.load(image_path)['tensor']  # 'tensor' is the key used when saving the npz file
+            image_tensor = torch.from_numpy(image_data).to(self.device)
 
         # Synchronized cache update
         with self.cache_lock:

@@ -60,8 +60,15 @@ class PNGToTensorConverter:
             elif path.endswith('.png'):
                 self.convert_png_to_tensor(path)
 
-    def convert_png_to_tensor(self, file_path):
-        tensor_file_path = file_path.replace('.png', '.pt')
+    def convert_png_to_tensor(self, file_path, save_type='pt'):
+        if save_type not in ['pt', 'npz']:
+            raise ValueError("save_type must be 'pt' or 'npz'")
+
+        # Adjust the file path extension based on the save_type
+        if save_type == 'pt':
+            tensor_file_path = file_path.replace('.png', '.pt')
+        else:  # save_type == 'npz'
+            tensor_file_path = file_path.replace('.png', '.npz')
 
         # Check if tensor file already exists and overwrite flag
         if not self.overwrite and os.path.exists(tensor_file_path):
@@ -90,8 +97,13 @@ class PNGToTensorConverter:
 
             tensor = rescaled_tensor.squeeze()
 
-        # Save the tensor
-        torch.save(tensor, tensor_file_path)
+
+        # Save the tensor in the appropriate format
+        if save_type == 'pt':
+            torch.save(tensor, tensor_file_path)
+        else:  # save_type == 'npz'
+            np.savez(tensor_file_path, tensor=tensor.numpy())
+
         print(f"Saved tensor to {tensor_file_path}")
 
     def start_conversion(self):
