@@ -426,6 +426,100 @@ class DataConstructor:
 
         return frame_array, query_array, query_index, firing_rate_array
 
+    def construct_data_saved(self, constructed_name=None):  # make each data
+        if constructed_name is None:
+            raise ValueError("Constructed_name not set")
+
+        grouped = self.input_table.groupby(['experiment_id', 'session_id'])
+
+        for (experiment_id, session_id), group in grouped:
+            neurons = group['neuron_id'].unique()
+            file_path = os.path.join(self.link_dir, f'experiment_{experiment_id}', f'session_{session_id}.mat')
+            time_id = load_mat_to_numpy(file_path, 'time_id')
+            video_frame_id = load_mat_to_numpy(file_path, 'video_frame_id')
+
+            constructor = TemporalArrayConstructor(time_id=time_id, seq_len=self.seq_len, stride=self.stride)
+            session_array = constructor.construct_array(video_frame_id).astype(np.int32)
+
+            firing_rate_path = os.path.join(self.resp_dir, f'experiment_{experiment_id}', f'session_{session_id}.mat')
+            firing_rate_array = load_mat_to_numpy(firing_rate_path, 'spike_smooth')
+            firing_rate_index = constructor.construct_array(np.arange(len(video_frame_id)), flip_lr=True)
+
+            session_data_path = os.path.join(self.link_dir, f'experiment_{experiment_id}', f'session_{session_id}_data.npy')
+            session_fr_path = os.path.join(self.resp_dir, f'experiment_{experiment_id}', f'session_{session_id}_fr.npy')
+
+            session_data = np.empty((len(session_array) * len(neurons), 3 + self.seq_len), dtype=np.int32)
+            session_fr_data = np.empty((len(session_array) * len(neurons), 1), dtype=np.float32)
+
+            for i, neuron_id in enumerate(neurons):
+                idx_range = slice(i * len(session_array), (i + 1) * len(session_array))
+                session_data[idx_range, :3] = [experiment_id, session_id, neuron_id]
+                session_data[idx_range, 3:] = session_array
+
+                session_fr_data[idx_range, 0] = firing_rate_array[firing_rate_index[:, 0], neuron_id - 1]
+
+            np.save(session_data_path, session_data)
+            np.save(session_fr_path, session_fr_data)
+
+        print("Data construction and saving completed.")
+        return session_data, query_array, query_index, firing_rate_array  # just for data checking not a full data
+
+
+class DatasetSampler:
+    def __init__(self, base_dir, n_bins):
+        self.base_dir = base_dir
+        self.file_paths = []
+        self.offsets = [0]  # Start offsets for each file
+        self.load_metadata()
+        self.n_bins = n_bins
+        self.indices = np.random.permutation(self.offsets[-1])  # Shuffle indices globally
+        self.bin_sizes = (len(self.indices) // n_bins) * np.ones(n_bins, dtype=int)
+        # Adjust the last bin to take the remainder
+        self.bin_sizes[-1] += len(self.indices) % n_bins
+        self.bin_limits = np.cumsum(self.bin_sizes)
+        self.current_bin = 0  # Track the current bin for sampling
+
+    def load_metadata(self):
+        experiments = os.listdir(self.base_dir)
+        for experiment in experiments:
+            experiment_dir = os.path.join(self.base_dir, experiment)
+            sessions = os.listdir(experiment_dir)
+            for session in sessions:
+                session_file = os.path.join(experiment_dir, session)
+                data = np.load(session_file, mmap_mode='r')
+                self.file_paths.append(session_file)
+                self.offsets.append(self.offsets[-1] + data.shape[0])
+
+    def __getitem__(self, global_index):
+        index = self.indices[global_index]  # Map shuffled index to actual data index
+        file_index = next(i-1 for i in range(1, len(self.offsets)) if index < self.offsets[i])
+        local_index = index - self.offsets[file_index]
+        data = np.load(self.file_paths[file_index], mmap_mode='r')
+        return data[local_index]
+
+    def get_bin_data(self):
+        if self.current_bin >= self.n_bins:
+            raise ValueError("All bins have been retrieved")
+        start_index = 0 if self.current_bin == 0 else self.bin_limits[self.current_bin - 1]
+        end_index = self.bin_limits[self.current_bin]
+        data = np.array([self[i] for i in range(start_index, end_index)])
+        self.current_bin += 1  # Move to the next bin
+        return data
+
+'''
+# Example usage
+base_dir = 'path_to_your_data_directory'
+n_bins = 10  # Define the number of bins
+virtual_dataset = DatasetSampler(base_dir, n_bins)
+
+# Retrieve each bin's data in sequence
+try:
+    while True:
+        bin_data = virtual_dataset.get_bin_data()
+        print("Retrieved data shape from bin:", bin_data.shape)
+except ValueError:
+    print("All bins have been retrieved.")
+'''
 
 class GroupedSampler(Sampler):
     def __init__(self, data_source, neuron_links, batch_size):
