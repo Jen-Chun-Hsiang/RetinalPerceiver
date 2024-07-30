@@ -212,16 +212,16 @@ def main():
     # val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=num_workers,
     #                        pin_memory=True)
 
-    check_loader = DataLoader(train_dataset, batch_size=2, shuffle=True)
-    dataiter = iter(check_loader)
-    movie, labels, index = next(dataiter)
-    logging.info(f'movie clip: {movie.shape} labels:{labels} index:{index} \n')
+    # check_loader = DataLoader(train_dataset, batch_size=2, shuffle=True)
+    # dataiter = iter(check_loader)
+    # movie, labels, index = next(dataiter)
+    # logging.info(f'movie clip: {movie.shape} labels:{labels} index:{index} \n')
     queryvec = torch.from_numpy(query_array).unsqueeze(1)
     queryvec = queryvec[index]
     logging.info(f'query vector: {queryvec.shape} \n')
     logging.info(f'query: {queryvec}\n')
     # plot and save the target_matrix figure
-    plot3dmat(movie[0, 0, :, :, :].squeeze(), args.num_cols, savefig_dir, file_prefix='plot_3D_matrix')
+    # plot3dmat(movie[0, 0, :, :, :].squeeze(), args.num_cols, savefig_dir, file_prefix='plot_3D_matrix')
     # Model, Loss, and Optimizer
     if args.model == 'RetinalPerceiver':
         model = RetinalPerceiverIO(input_dim=args.input_channels, latent_dim=args.hidden_size,

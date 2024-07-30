@@ -1,5 +1,6 @@
 import torch
 from torch.utils.data import Dataset, Sampler
+from utils.array_funcs import update_unique_array, find_matching_indices_in_arrays
 import numpy as np
 from PIL import Image
 import os
@@ -369,12 +370,13 @@ class TemporalArrayConstructor:
 
 
 class DataConstructor:
-    def __init__(self, input_table, seq_len, stride, link_dir, resp_dir):
+    def __init__(self, input_table, seq_len, stride, link_dir, resp_dir, query_index_dir):
         self.input_table = input_table
         self.seq_len = seq_len
         self.stride = stride
         self.link_dir = link_dir
         self.resp_dir = resp_dir
+        self.query_index_dir = query_index_dir
 
     def construct_data(self):
         all_sessions_data = []
@@ -431,6 +433,7 @@ class DataConstructor:
             raise ValueError("Constructed_name not set")
 
         grouped = self.input_table.groupby(['experiment_id', 'session_id'])
+        query_array = np.empty((0, 2), dtype=self.input_table.dtype)
 
         for (experiment_id, session_id), group in grouped:
             neurons = group['neuron_id'].unique()
@@ -447,6 +450,7 @@ class DataConstructor:
 
             session_data_path = os.path.join(self.link_dir, f'experiment_{experiment_id}', f'session_{session_id}_data.npy')
             session_fr_path = os.path.join(self.resp_dir, f'experiment_{experiment_id}', f'session_{session_id}_fr.npy')
+            session_query_index_path = os.path.join(self.query_index_dir, f'experiment_{experiment_id}', f'session_{session_id}_query_index.npy')
 
             session_data = np.empty((len(session_array) * len(neurons), 3 + self.seq_len), dtype=np.int32)
             session_fr_data = np.empty((len(session_array) * len(neurons), 1), dtype=np.float32)
@@ -458,11 +462,17 @@ class DataConstructor:
 
                 session_fr_data[idx_range, 0] = firing_rate_array[firing_rate_index[:, 0], neuron_id - 1]
 
+            session_query_array = np.unique(session_data[:, [0, 2]], axis=0)
+            query_array = update_unique_array(query_array, session_query_array)
+            session_query_index = find_matching_indices_in_arrays(session_data[:, [0, 2]], query_array)
+
             np.save(session_data_path, session_data)
             np.save(session_fr_path, session_fr_data)
+            np.save(session_query_index_path, session_query_index)
 
-        print("Data construction and saving completed.")
-        return session_data, query_array, query_index, firing_rate_array  # just for data checking not a full data
+        # print("Data construction and saving completed.")
+        # return only the unique query_array
+        return query_array
 
 
 class DatasetSampler:
