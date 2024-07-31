@@ -227,11 +227,26 @@ class RetinalDataset(Dataset):
 
 
 def train_val_split(data_length, chunk_size, test_size=0.2):
-    total_chunks = (data_length - 1) // chunk_size + 1
-    indices = np.arange(0, chunk_size * total_chunks, chunk_size)[:total_chunks]
+    # Random shift within the chunk size
+    shift = np.random.randint(0, chunk_size)
+
+    # Adjust the start and end points to avoid out-of-bounds issues
+    start_index = shift
+    end_index = data_length - ((data_length - shift) % chunk_size) + shift
+
+    # Create an array of indices from the adjusted start to the end, stepping by chunk size
+    indices = np.arange(start_index, end_index, chunk_size)
+
+    # Calculate the number of validation chunks
+    total_chunks = len(indices)
     val_size = int(total_chunks * test_size)
+
+    # Randomly choose validation indices without replacement
     val_indices = np.random.choice(indices, size=val_size, replace=False)
+
+    # Find the indices that are not in validation to form the training set
     train_indices = np.setdiff1d(indices, val_indices)
+
     return train_indices, val_indices
 
 
