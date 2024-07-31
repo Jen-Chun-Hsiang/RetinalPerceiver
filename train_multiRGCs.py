@@ -122,6 +122,7 @@ def main():
     image_root_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Stimulus/'
     link_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Link/'
     resp_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Response/'
+    arr_bank_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/ArrayBanks/'
     savemat_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Matfiles/'
     # Generate a timestamp
     timestr = datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -154,7 +155,7 @@ def main():
 
     # construct the array for dataset
     data_constructor = DataConstructor(filtered_data, seq_len=args.input_depth, stride=args.data_stride,
-                                       link_dir=link_dir, resp_dir=resp_dir)
+                                       link_dir=link_dir, resp_dir=resp_dir, arr_bank_dir=arr_bank_dir)
     if args.use_dataset_split:
         construct_folder_name = args.config_name
         query_array = data_constructor.construct_data_saved(construct_folder_name)
@@ -196,22 +197,6 @@ def main():
     logging.info(f'query_array size:{query_array.shape} \n')
     logging.info(f'query_array:{query_array} \n')
 
-    # raise RuntimeError("Check query_array")
-    # get data spit with chucks
-    train_indices, val_indices = train_val_split(len(data_array), args.chunk_size, test_size=1-args.train_proportion)
-    # get dataset
-    train_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir, train_indices,
-                                   args.chunk_size, device=device, cache_size=args.cache_size,
-                                   image_loading_method=args.image_loading_method)
-    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
-    # train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=num_workers,
-    #                          pin_memory=True)
-    val_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir, val_indices,
-                                 args.chunk_size, device=device, cache_size=args.cache_size,
-                                 image_loading_method=args.image_loading_method)
-    val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
-    # val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=num_workers,
-    #                        pin_memory=True)
 
     # check_loader = DataLoader(train_dataset, batch_size=2, shuffle=True)
     # dataiter = iter(check_loader)
@@ -287,6 +272,26 @@ def main():
         start_time = time.time()  # Capture the start time
 
     for epoch in range(start_epoch, args.epochs):
+
+        all_train_indices, all_val_indices = train_val_split(len(data_array), args.chunk_size,
+                                                     test_size=1 - args.train_proportion)
+
+        train_indices_sets = split_array(all_train_indices, num_sets)
+        val_indices_sets = split_array(all_val_indices, num_sets)
+
+        for train_indices, val_indices in zip(train_indices_sets, val_indices_sets):
+
+            train_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir, train_indices,
+                                           args.chunk_size, device=device, cache_size=args.cache_size,
+                                           image_loading_method=args.image_loading_method)
+            train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
+
+            val_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir, val_indices,
+                                         args.chunk_size, device=device, cache_size=args.cache_size,
+                                         image_loading_method=args.image_loading_method)
+            val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
+
+
         avg_train_loss = trainer.train_one_epoch(train_loader)
         training_losses.append(avg_train_loss)
 

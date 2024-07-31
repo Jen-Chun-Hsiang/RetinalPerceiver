@@ -385,13 +385,13 @@ class TemporalArrayConstructor:
 
 
 class DataConstructor:
-    def __init__(self, input_table, seq_len, stride, link_dir, resp_dir, query_index_dir):
+    def __init__(self, input_table, seq_len, stride, link_dir, resp_dir, arr_bank_dir):
         self.input_table = input_table
         self.seq_len = seq_len
         self.stride = stride
         self.link_dir = link_dir
         self.resp_dir = resp_dir
-        self.query_index_dir = query_index_dir
+        self.arr_bank_dir = arr_bank_dir
 
     def construct_data(self):
         all_sessions_data = []
@@ -450,7 +450,7 @@ class DataConstructor:
         grouped = self.input_table.groupby(['experiment_id', 'session_id'])
         query_array = np.empty((0, 2), dtype=self.input_table.dtype)
 
-        for (experiment_id, session_id), group in grouped:
+        for session_index, ((experiment_id, session_id), group) in enumerate(grouped):
             neurons = group['neuron_id'].unique()
             file_path = os.path.join(self.link_dir, f'experiment_{experiment_id}', f'session_{session_id}.mat')
             time_id = load_mat_to_numpy(file_path, 'time_id')
@@ -463,9 +463,10 @@ class DataConstructor:
             firing_rate_array = load_mat_to_numpy(firing_rate_path, 'spike_smooth')
             firing_rate_index = constructor.construct_array(np.arange(len(video_frame_id)), flip_lr=True)
 
-            session_data_path = os.path.join(self.link_dir, f'experiment_{experiment_id}', f'session_{session_id}_data.npy')
-            session_fr_path = os.path.join(self.resp_dir, f'experiment_{experiment_id}', f'session_{session_id}_fr.npy')
-            session_query_index_path = os.path.join(self.query_index_dir, f'experiment_{experiment_id}', f'session_{session_id}_query_index.npy')
+            # change here to get the series id instead of folder wise files
+            session_data_path = os.path.join(self.arr_bank_dir, constructed_name, f'session_data_{session_index}.npy')
+            session_fr_path = os.path.join(self.arr_bank_dir, experiment_id, f'session_fr_{session_index}.npy')
+            session_query_index_path = os.path.join(self.arr_bank_dir, constructed_name, f'session_query_index_{session_index}.npy')
 
             session_data = np.empty((len(session_array) * len(neurons), 3 + self.seq_len), dtype=np.int32)
             session_fr_data = np.empty((len(session_array) * len(neurons), 1), dtype=np.float32)
@@ -474,7 +475,6 @@ class DataConstructor:
                 idx_range = slice(i * len(session_array), (i + 1) * len(session_array))
                 session_data[idx_range, :3] = [experiment_id, session_id, neuron_id]
                 session_data[idx_range, 3:] = session_array
-
                 session_fr_data[idx_range, 0] = firing_rate_array[firing_rate_index[:, 0], neuron_id - 1]
 
             session_query_array = np.unique(session_data[:, [0, 2]], axis=0)
