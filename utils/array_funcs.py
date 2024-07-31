@@ -56,3 +56,16 @@ def find_matching_indices_in_arrays(A, B):
             raise ValueError(f"No matching row in B for row {row} in A")
 
     return np.array(C)
+
+
+def split_array(arr, num_sets):
+    # Calculate the size of each set
+    set_size = len(arr) // num_sets
+
+    # Shuffle the array indices to ensure randomness
+    shuffled_indices = np.random.permutation(len(arr))
+
+    # Create the sets using the shuffled indices
+    equal_sets = [arr[shuffled_indices[i * set_size:(i + 1) * set_size]] for i in range(num_sets)]
+
+    return equal_sets

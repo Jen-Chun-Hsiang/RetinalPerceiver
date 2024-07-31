@@ -157,22 +157,23 @@ def main():
                                        link_dir=link_dir, resp_dir=resp_dir)
     if args.use_dataset_split:
         construct_folder_name = args.config_name
-        data_array, query_array, query_index, firing_rate_array = data_constructor.construct_data_saved(construct_folder_name)
+        query_array = data_constructor.construct_data_saved(construct_folder_name)
     else:
         data_array, query_array, query_index, firing_rate_array = data_constructor.construct_data()
+        data_array = data_array.astype('int64')
+        query_index = query_index.astype('int64')
+        firing_rate_array = firing_rate_array.astype('float32')
 
-    data_array = data_array.astype('int64')
     query_array = query_array.astype('int64')
-    query_index = query_index.astype('int64')
-    firing_rate_array = firing_rate_array.astype('float32')
+
 
 
     # Save to .mat file
     # filtered_data_mat = {col: filtered_data[col].values for col in filtered_data.columns}
-    savemat_filename = f"{filename_fixed}_train_neuro_list.mat"
-    savemat(os.path.join(savemat_dir, savemat_filename),
-            {"data_array": data_array, "query_array": query_array,
-             "query_index": query_index, "firing_rate_array": firing_rate_array})
+    # savemat_filename = f"{filename_fixed}_train_neuro_list.mat"
+    # savemat(os.path.join(savemat_dir, savemat_filename),
+    #         {"data_array": data_array, "query_array": query_array,
+    #          "query_index": query_index, "firing_rate_array": firing_rate_array})
 
 
     # construct the query array for query encoder
