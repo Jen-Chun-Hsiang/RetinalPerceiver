@@ -30,6 +30,7 @@ from utils.training_procedure import Trainer, Evaluator, save_checkpoint, Checkp
 from utils.loss_function import loss_functions
 from utils.array_funcs import split_array, load_keyword_based_arrays, VirtualArraySampler, calculate_num_sets
 
+
 def parse_covariance(string):
     try:
         # Split the string into list of strings
@@ -49,7 +50,8 @@ def parse_covariance(string):
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Script for Model Training to get 3D RF in simulation")
-    parser.add_argument('--config_name', type=str, default='neuro_exp1_2cell_030624', help='Config file name for data generation')
+    parser.add_argument('--config_name', type=str, default='neuro_exp1_2cell_030624',
+                        help='Config file name for data generation')
     parser.add_argument('--experiment_name', type=str, default='new_experiment', help='Experiment name')
     parser.add_argument('--model', type=str, choices=['RetinalPerceiver', 'RetinalCNN'], required=True,
                         help='Model to train')
@@ -80,7 +82,8 @@ def parse_args():
     parser.add_argument('--data_stride', type=int, default=2, help='Number of step to create data (10 ms / per step)')
     parser.add_argument('--image_loading_method', type=str, default='ph', help='The loading method (ph, png, hdf5)')
     parser.add_argument('--use_dataset_split', action='store_true', help='Reduce load on getting entire dataset')
-    parser.add_argument('--max_array_bank_capacity', type=int, default=1e9, help='Maximum size for the running data array')
+    parser.add_argument('--max_array_bank_capacity', type=int, default=1e9,
+                        help='Maximum size for the running data array')
     # Perceiver specificity
     parser.add_argument('--num_head', type=int, default=4, help='Number of heads in perceiver')
     parser.add_argument('--num_iter', type=int, default=1, help='Number of input reiteration')
@@ -169,15 +172,12 @@ def main():
 
     query_array = query_array.astype('int64')
 
-
-
     # Save to .mat file
     # filtered_data_mat = {col: filtered_data[col].values for col in filtered_data.columns}
     # savemat_filename = f"{filename_fixed}_train_neuro_list.mat"
     # savemat(os.path.join(savemat_dir, savemat_filename),
     #         {"data_array": data_array, "query_array": query_array,
     #          "query_index": query_index, "firing_rate_array": firing_rate_array})
-
 
     # construct the query array for query encoder
     query_df = pd.DataFrame(query_array, columns=['experiment_id', 'neuron_id'])
@@ -199,13 +199,12 @@ def main():
     logging.info(f'query_array size:{query_array.shape} \n')
     logging.info(f'query_array:{query_array} \n')
 
-
     # check_loader = DataLoader(train_dataset, batch_size=2, shuffle=True)
     # dataiter = iter(check_loader)
     # movie, labels, index = next(dataiter)
     # logging.info(f'movie clip: {movie.shape} labels:{labels} index:{index} \n')
     queryvec = torch.from_numpy(query_array).unsqueeze(1)
-    queryvec = queryvec[index]
+    queryvec = queryvec[0]
     logging.info(f'query vector: {queryvec.shape} \n')
     logging.info(f'query: {queryvec}\n')
     # plot and save the target_matrix figure
@@ -221,7 +220,8 @@ def main():
                                    kernel_size=args.kernel_size,
                                    stride=args.stride,
                                    concatenate_positional_encoding=args.concatenate_positional_encoding,
-                                   use_phase_shift=args.use_phase_shift, use_dense_frequency=args.use_dense_frequency).to(device)
+                                   use_phase_shift=args.use_phase_shift,
+                                   use_dense_frequency=args.use_dense_frequency).to(device)
     elif args.model == 'RetinalCNN':
         model = RetinalPerceiverIOWithCNN(input_depth=args.input_depth, input_height=args.input_height,
                                           input_width=args.input_width, output_dim=args.output_size,
@@ -295,7 +295,6 @@ def main():
         train_indices_sets = split_array(all_train_indices, num_sets)
         val_indices_sets = split_array(all_val_indices, num_sets)
 
-
         for train_indices, val_indices in zip(train_indices_sets, val_indices_sets):
             data_array = data_array_sampler.sample(train_indices)
             query_index = query_index_sampler.sample(train_indices)
@@ -311,14 +310,13 @@ def main():
             data_array = data_array_sampler.sample(val_indices)
             query_index = query_index_sampler.sample(val_indices)
             firing_rate_array = firing_rate_array_sampler(val_indices)
-            val_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir, val_indices,
-                                         args.chunk_size, device=device, cache_size=args.cache_size,
+            val_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir,
+                                         device=device, cache_size=args.cache_size,
                                          image_loading_method=args.image_loading_method)
             val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
 
             avg_val_loss = evaluator.evaluate(val_loader)
             validation_losses.append(avg_val_loss)
-
 
         # Print training status
         if (epoch + 1) % 5 == 0:
