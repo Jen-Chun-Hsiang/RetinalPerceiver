@@ -69,3 +69,27 @@ def split_array(arr, num_sets):
     equal_sets = [arr[shuffled_indices[i * set_size:(i + 1) * set_size]] for i in range(num_sets)]
 
     return equal_sets
+
+
+def load_keyword_based_arrays(file_folder, keyword, dtype=np.int32):
+    # Create an empty list to store the memory-mapped arrays
+    arrays = []
+
+    # Initialize the index to find files sequentially starting from 0
+    i = 0
+    while True:
+        # Construct the file name based on the keyword and index
+        file_name = f'{keyword}_{i}.npy'
+        file_path = os.path.join(file_folder, file_name)
+
+        # Check if the file exists
+        if os.path.isfile(file_path):
+            # Load the file as a memory-mapped array
+            # Use the provided dtype for the data type of the numpy array
+            array = np.memmap(file_path, dtype=dtype, mode='r', shape=(np.load(file_path, mmap_mode='r').shape))
+            arrays.append(array)
+            i += 1  # Move to the next file index
+        else:
+            break  # Exit the loop if the file does not exist
+
+    return arrays

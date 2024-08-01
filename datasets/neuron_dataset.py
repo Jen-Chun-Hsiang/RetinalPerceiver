@@ -465,7 +465,7 @@ class DataConstructor:
 
             # change here to get the series id instead of folder wise files
             session_data_path = os.path.join(self.arr_bank_dir, constructed_name, f'session_data_{session_index}.npy')
-            session_fr_path = os.path.join(self.arr_bank_dir, experiment_id, f'session_fr_{session_index}.npy')
+            session_fr_path = os.path.join(self.arr_bank_dir, constructed_name, f'session_fr_{session_index}.npy')
             session_query_index_path = os.path.join(self.arr_bank_dir, constructed_name, f'session_query_index_{session_index}.npy')
 
             session_data = np.empty((len(session_array) * len(neurons), 3 + self.seq_len), dtype=np.int32)

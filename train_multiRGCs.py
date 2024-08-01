@@ -28,6 +28,7 @@ from models.perceiver3d import RetinalPerceiverIO
 from models.cnn3d import RetinalPerceiverIOWithCNN
 from utils.training_procedure import Trainer, Evaluator, save_checkpoint, CheckpointLoader
 from utils.loss_function import loss_functions
+from utils.array_funcs import split_array, load_keyword_based_arrays
 
 def parse_covariance(string):
     try:
@@ -278,6 +279,13 @@ def main():
 
         train_indices_sets = split_array(all_train_indices, num_sets)
         val_indices_sets = split_array(all_val_indices, num_sets)
+
+        all_data_array = load_keyword_based_arrays(os.path.join(arr_bank_dir, construct_folder_name), 'session_data',
+                                                   dtype=np.int32)
+        all_query_index = load_keyword_based_arrays(os.path.join(arr_bank_dir, construct_folder_name), 'session_query_index',
+                                                   dtype=np.int32)
+        all_firing_rate_array = load_keyword_based_arrays(os.path.join(arr_bank_dir, construct_folder_name), 'session_fr',
+                                                   dtype=np.float32)
 
         for train_indices, val_indices in zip(train_indices_sets, val_indices_sets):
 
