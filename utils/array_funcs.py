@@ -1,4 +1,5 @@
 import numpy as np
+import os
 
 
 def update_unique_array(B, D):
@@ -93,3 +94,68 @@ def load_keyword_based_arrays(file_folder, keyword, dtype=np.int32):
             break  # Exit the loop if the file does not exist
 
     return arrays
+
+
+class VirtualArraySampler:
+    def __init__(self, arrays):
+        self.arrays = arrays
+        # Ensure all arrays have the same number of columns
+        if not all(a.shape[1] == arrays[0].shape[1] for a in arrays):
+            raise ValueError("All arrays must have the same number of columns.")
+        self.shapes = [a.shape[0] for a in arrays]
+        self.start_indices = np.cumsum([0] + self.shapes[:-1])
+        self.end_indices = np.cumsum(self.shapes) - 1
+        self.total_length = sum(self.shapes)
+        self.num_columns = arrays[0].shape[1]
+
+    def total_rows(self):
+        return self.total_length
+
+    def total_columns(self):
+        return self.num_columns
+
+    def sample(self, indices):
+        # Ensure indices are within bounds
+        if np.any(indices >= self.total_length) or np.any(indices < 0):
+            raise ValueError("Indices are out of bounds.")
+
+        # Find out which array each index belongs to
+        array_indices = np.searchsorted(self.start_indices, indices, side='right') - 1
+
+        # Prepare to gather results
+        results = np.empty((len(indices), self.arrays[0].shape[1]), dtype=self.arrays[0].dtype)
+
+        # Retrieve all necessary rows from each array in one operation
+        for array_idx in range(len(self.arrays)):
+            # Find indices belonging to the current array
+            idx_in_array = indices[array_indices == array_idx] - self.start_indices[array_idx]
+            if len(idx_in_array) > 0:
+                results[array_indices == array_idx] = self.arrays[array_idx][idx_in_array]
+
+        return results
+
+
+def calculate_num_sets(num_rows, num_columns, dtype, max_array_bank_capacity=1e9):
+    """
+    Calculate the number of sets needed to split a large 2D numpy array into smaller ones,
+    each with a size not exceeding max_array_bank_capacity bytes.
+
+    Parameters:
+    - num_rows: int, number of rows in the original 2D array
+    - num_columns: int, number of columns in the original 2D array
+    - dtype: data type of the numpy array (e.g., np.int32, np.float64)
+    - max_array_bank_capacity: float, maximum capacity of each array bank in bytes (default is 1GB)
+
+    Returns:
+    - num_sets: int, the number of sets required
+    """
+    # Determine the size of one element based on the dtype
+    element_size = np.dtype(dtype).itemsize
+
+    # Calculate the size of the full 2D array
+    total_array_size = num_rows * num_columns * element_size
+
+    # Calculate the number of sets required
+    num_sets = np.ceil(total_array_size / max_array_bank_capacity)
+
+    return int(num_sets)

@@ -61,7 +61,7 @@ def precompute_image_paths(data_array, root_dir):
 
 
 class RetinalDataset(Dataset):
-    def __init__(self, data_array, query_series, firing_rate_array, root_dir, chunk_indices, chunk_size,
+    def __init__(self, data_array, query_series, firing_rate_array, root_dir, chunk_indices=None, chunk_size=None,
                  device='cuda', cache_size=100, image_loading_method='hdf5'):
         """
         Initializes the RetinalDataset.
@@ -104,7 +104,10 @@ class RetinalDataset(Dataset):
             self.image_shape = sample_image_tensor.shape
 
     def __len__(self):
-        return len(self.chunk_indices)
+        if self.chunk_indices is not None:
+            return len(self.chunk_indices)
+        else:
+            return len(self.data_array)
 
     def __getitem__(self, idx):
         """
@@ -118,12 +121,15 @@ class RetinalDataset(Dataset):
          - firing_rate: The firing rate associated with the selected data point.
          - query_id: The query ID associated with the selected data point.
          """
-        # Determine the range of the chunk
-        start_idx = self.chunk_indices[idx]
-        end_idx = min(start_idx + self.chunk_size, len(self.data_array))
+        if self.chunk_indices is not None:
+            # Determine the range of the chunk
+            start_idx = self.chunk_indices[idx]
+            end_idx = min(start_idx + self.chunk_size, len(self.data_array))
 
-        # Randomly select a data point within the chunk
-        random_idx = random.randint(start_idx, end_idx - 1)
+            # Randomly select a data point within the chunk
+            random_idx = random.randint(start_idx, end_idx - 1)
+        else:
+            random_idx = idx
         experiment_id, session_id, neuron_id, *frame_ids = self.data_array[random_idx]
         firing_rate = self.firing_rate_array[random_idx]
         query_id = self.query_series[random_idx]

@@ -28,7 +28,7 @@ from models.perceiver3d import RetinalPerceiverIO
 from models.cnn3d import RetinalPerceiverIOWithCNN
 from utils.training_procedure import Trainer, Evaluator, save_checkpoint, CheckpointLoader
 from utils.loss_function import loss_functions
-from utils.array_funcs import split_array, load_keyword_based_arrays
+from utils.array_funcs import split_array, load_keyword_based_arrays, VirtualArraySampler, calculate_num_sets
 
 def parse_covariance(string):
     try:
@@ -80,6 +80,7 @@ def parse_args():
     parser.add_argument('--data_stride', type=int, default=2, help='Number of step to create data (10 ms / per step)')
     parser.add_argument('--image_loading_method', type=str, default='ph', help='The loading method (ph, png, hdf5)')
     parser.add_argument('--use_dataset_split', action='store_true', help='Reduce load on getting entire dataset')
+    parser.add_argument('--max_array_bank_capacity', type=int, default=1e9, help='Maximum size for the running data array')
     # Perceiver specificity
     parser.add_argument('--num_head', type=int, default=4, help='Number of heads in perceiver')
     parser.add_argument('--num_iter', type=int, default=1, help='Number of input reiteration')
@@ -272,40 +273,52 @@ def main():
         validation_losses = []
         start_time = time.time()  # Capture the start time
 
+    all_data_array = load_keyword_based_arrays(os.path.join(arr_bank_dir, construct_folder_name), 'session_data',
+                                               dtype=np.int32)
+    all_query_index = load_keyword_based_arrays(os.path.join(arr_bank_dir, construct_folder_name),
+                                                'session_query_index',
+                                                dtype=np.int32)
+    all_firing_rate_array = load_keyword_based_arrays(os.path.join(arr_bank_dir, construct_folder_name), 'session_fr',
+                                                      dtype=np.float32)
+
+    data_array_sampler = VirtualArraySampler(all_data_array)
+    query_index_sampler = VirtualArraySampler(all_query_index)
+    firing_rate_array_sampler = VirtualArraySampler(all_firing_rate_array)
+
+    num_sets = calculate_num_sets(data_array_sampler.total_rows(), data_array_sampler.total_columns(), np.int32,
+                                  max_array_bank_capacity=args.max_array_bank_capacity)
+
     for epoch in range(start_epoch, args.epochs):
 
-        all_train_indices, all_val_indices = train_val_split(len(data_array), args.chunk_size,
-                                                     test_size=1 - args.train_proportion)
-
+        all_train_indices, all_val_indices = train_val_split(data_array_sampler.total_length, args.chunk_size,
+                                                             test_size=1 - args.train_proportion)
         train_indices_sets = split_array(all_train_indices, num_sets)
         val_indices_sets = split_array(all_val_indices, num_sets)
 
-        all_data_array = load_keyword_based_arrays(os.path.join(arr_bank_dir, construct_folder_name), 'session_data',
-                                                   dtype=np.int32)
-        all_query_index = load_keyword_based_arrays(os.path.join(arr_bank_dir, construct_folder_name), 'session_query_index',
-                                                   dtype=np.int32)
-        all_firing_rate_array = load_keyword_based_arrays(os.path.join(arr_bank_dir, construct_folder_name), 'session_fr',
-                                                   dtype=np.float32)
 
         for train_indices, val_indices in zip(train_indices_sets, val_indices_sets):
-
-            train_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir, train_indices,
-                                           args.chunk_size, device=device, cache_size=args.cache_size,
+            data_array = data_array_sampler.sample(train_indices)
+            query_index = query_index_sampler.sample(train_indices)
+            firing_rate_array = firing_rate_array_sampler(train_indices)
+            train_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir,
+                                           device=device, cache_size=args.cache_size,
                                            image_loading_method=args.image_loading_method)
             train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
 
+            avg_train_loss = trainer.train_one_epoch(train_loader)
+            training_losses.append(avg_train_loss)
+
+            data_array = data_array_sampler.sample(val_indices)
+            query_index = query_index_sampler.sample(val_indices)
+            firing_rate_array = firing_rate_array_sampler(val_indices)
             val_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir, val_indices,
                                          args.chunk_size, device=device, cache_size=args.cache_size,
                                          image_loading_method=args.image_loading_method)
             val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
 
+            avg_val_loss = evaluator.evaluate(val_loader)
+            validation_losses.append(avg_val_loss)
 
-        avg_train_loss = trainer.train_one_epoch(train_loader)
-        training_losses.append(avg_train_loss)
-
-        # torch.cuda.empty_cache()
-        avg_val_loss = evaluator.evaluate(val_loader)
-        validation_losses.append(avg_val_loss)
 
         # Print training status
         if (epoch + 1) % 5 == 0:
