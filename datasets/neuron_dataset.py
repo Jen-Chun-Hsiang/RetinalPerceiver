@@ -284,11 +284,12 @@ def load_mat_to_dataframe(mat_file_path, data_variable_name, column_names_variab
     return pd.DataFrame(array_data, columns=column_names)
 
 
-def load_data_from_excel(file_path, sheet_name):
-    # Load each table from a separate sheet in the Excel file
-    table = pd.read_excel(file_path, sheet_name=sheet_name)
-    # Create a DataFrame
-    df = pd.DataFrame(table)
+def load_data_from_excel(file_path, sheet_name, usecols=None):
+    # Load only the first two columns from the specified sheet in the Excel file
+    if usecols is not None:
+        df = pd.read_excel(file_path, sheet_name=sheet_name, usecols=usecols)
+    else:
+        df = pd.read_excel(file_path, sheet_name=sheet_name)
 
     return df
 
