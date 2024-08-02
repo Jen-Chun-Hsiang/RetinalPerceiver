@@ -6,7 +6,7 @@ scale_factor = 1 / 2.5
 padding_size = 5
 experiment_id = [4, 5, 6, 8, 9]
 set_name = 'TestSet'
-save_type = 'npz'  # 'pt' or 'npz'
+save_type = 'pt'  # 'pt' or 'npz'
 
 def convert_png_to_ph_overwrite():
     # (1) Convert png to ph
