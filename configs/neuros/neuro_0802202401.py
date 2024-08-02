@@ -7,7 +7,7 @@ neu_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDatas
 experiment_session_table = load_data_from_excel(exp_dir, 'experiment_session')
 experiment_session_table = experiment_session_table.drop('stimulus_type', axis=1)
 
-included_neuron_table = load_data_from_excel(exp_dir, 'nid_3_1', usecols=[0, 1])  # get the first two columns (others are notes)
+included_neuron_table = load_data_from_excel(exp_dir, 'nid_8', usecols=[0, 1])  # get the first two columns (others are notes)
 experiment_info_table = load_data_from_excel(exp_dir, 'experiment_info')
 experiment_info_table = experiment_info_table.drop(['species', 'sex', 'day', 'folder_name'], axis=1)
 

@@ -4,7 +4,7 @@ from datasets.preprocessing import process_experiment_folders
 run_task_id = 1
 scale_factor = 1 / 2.5
 padding_size = 5
-experiment_id = 3
+experiment_id = [4, 5, 6, 8, 9]
 set_name = 'TestSet'
 save_type = 'npz'  # 'pt' or 'npz'
 
@@ -42,7 +42,8 @@ def execute_task(task_id):
     func = task_functions.get(task_id)
     if func is None:
         raise ValueError("No task found for argument: {}".format(task_id))
-    func()
+    for experiment_id in experiment_ids:
+        func(experiment_id)
 
 
 execute_task(run_task_id)
