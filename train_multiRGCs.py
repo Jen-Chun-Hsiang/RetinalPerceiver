@@ -298,7 +298,7 @@ def main():
         for train_indices, val_indices in zip(train_indices_sets, val_indices_sets):
             data_array = data_array_sampler.sample(train_indices)
             query_index = query_index_sampler.sample(train_indices)
-            firing_rate_array = firing_rate_array_sampler(train_indices)
+            firing_rate_array = firing_rate_array_sampler.sample(train_indices)
             train_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir,
                                            device=device, cache_size=args.cache_size,
                                            image_loading_method=args.image_loading_method)
