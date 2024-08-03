@@ -455,7 +455,7 @@ class DataConstructor:
             raise ValueError("Constructed_name not set")
 
         grouped = self.input_table.groupby(['experiment_id', 'session_id'])
-        query_array = np.empty((0, 2), dtype=self.input_table.dtype)
+        query_array = np.empty((0, 2), dtype=np.int32)
 
         for session_index, ((experiment_id, session_id), group) in enumerate(grouped):
             neurons = group['neuron_id'].unique()
