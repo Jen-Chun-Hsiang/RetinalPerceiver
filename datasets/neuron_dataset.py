@@ -100,10 +100,10 @@ class RetinalDataset(Dataset):
             # Dummy load to get image size for 'png' or 'pt' formats
             experiment_id, session_id, neuron_id, *frame_ids = self.data_array[0]
             frame_id = frame_ids[0]
-            print(f'experiment_id: {experiment_id}')
+            print(f'(2) experiment_id: {experiment_id}')
             print(f'session_id: {session_id}')
             print(f'neuron_id: {neuron_id}')
-            print(f'frame_ids: {frame_ids}')
+            print(f'frame_ids: {frame_id}')
             raise ValueError(f"value is not correct (check!)")
             sample_image_tensor = self.load_image(experiment_id, session_id, frame_id)
             self.image_shape = sample_image_tensor.shape

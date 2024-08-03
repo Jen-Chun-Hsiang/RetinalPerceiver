@@ -300,6 +300,13 @@ def main():
             query_index = query_index_sampler.sample(train_indices)
             firing_rate_array = firing_rate_array_sampler.sample(train_indices)
 
+            experiment_id, session_id, neuron_id, *frame_ids = data_array[0]
+            frame_id = frame_ids[0]
+            print(f'(1) experiment_id: {experiment_id}')
+            print(f'session_id: {session_id}')
+            print(f'neuron_id: {neuron_id}')
+            print(f'frame_ids: {frame_id}')
+
             train_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir,
                                            device=device, cache_size=args.cache_size,
                                            image_loading_method=args.image_loading_method)
