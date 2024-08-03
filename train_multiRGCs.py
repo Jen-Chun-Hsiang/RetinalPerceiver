@@ -82,7 +82,7 @@ def parse_args():
     parser.add_argument('--data_stride', type=int, default=2, help='Number of step to create data (10 ms / per step)')
     parser.add_argument('--image_loading_method', type=str, default='ph', help='The loading method (ph, png, hdf5)')
     parser.add_argument('--use_dataset_split', action='store_true', help='Reduce load on getting entire dataset')
-    parser.add_argument('--max_array_bank_capacity', type=int, default=1e9,
+    parser.add_argument('--max_array_bank_capacity', type=float, default=1e9,
                         help='Maximum size for the running data array')
     # Perceiver specificity
     parser.add_argument('--num_head', type=int, default=4, help='Number of heads in perceiver')
