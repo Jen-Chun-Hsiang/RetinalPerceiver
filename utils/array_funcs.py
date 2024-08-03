@@ -102,14 +102,14 @@ class VirtualArraySampler:
         self.arrays = [np.atleast_2d(a) for a in arrays]
 
         # Ensure all arrays have the same number of columns
-        if not all(a.shape[1] == arrays[0].shape[1] for a in arrays):
+        if not all(a.shape[1] == self.arrays[0].shape[1] for a in self.arrays):
             raise ValueError("All arrays must have the same number of columns.")
 
-        self.shapes = [a.shape[0] for a in arrays]
+        self.shapes = [a.shape[0] for a in self.arrays]
         self.start_indices = np.cumsum([0] + self.shapes[:-1])
         self.end_indices = np.cumsum(self.shapes) - 1
         self.total_length = sum(self.shapes)
-        self.num_columns = arrays[0].shape[1]
+        self.num_columns = self.arrays[0].shape[1]
 
     def total_rows(self):
         return self.total_length
