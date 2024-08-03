@@ -98,8 +98,8 @@ def load_keyword_based_arrays(file_folder, keyword, dtype=np.int32):
 
 class VirtualArraySampler:
     def __init__(self, arrays):
-        # Convert all arrays to at least 2D (handles 1D vectors)
-        self.arrays = [np.atleast_2d(a) for a in arrays]
+        # Convert 1D arrays to 2D arrays with one column each
+        self.arrays = [a[:, np.newaxis] if a.ndim == 1 else a for a in arrays]
 
         # Assuming `arrays` is a list of numpy arrays or similar array-like structures
         for i, a_check in enumerate(self.arrays):
