@@ -44,12 +44,13 @@ def process_experiment_folders(root_folder):
 
 
 class PNGToTensorConverter:
-    def __init__(self, root_dir, overwrite=False, scale_factor=1 / 2.5, padding_size=5):
+    def __init__(self, root_dir, overwrite=False, scale_factor=1 / 2.5, padding_size=5, save_type='pt'):
         self.root_dir = root_dir
         self.overwrite = overwrite
         self.scale_factor = scale_factor
         self.padding_size = padding_size
         self.to_tensor = ToTensor()
+        self.save_type = save_type
 
     def convert_directory(self, directory):
         for item in os.listdir(directory):
@@ -60,12 +61,12 @@ class PNGToTensorConverter:
             elif path.endswith('.png'):
                 self.convert_png_to_tensor(path)
 
-    def convert_png_to_tensor(self, file_path, save_type='pt'):
-        if save_type not in ['pt', 'npz']:
+    def convert_png_to_tensor(self, file_path):
+        if self.save_type not in ['pt', 'npz']:
             raise ValueError("save_type must be 'pt' or 'npz'")
 
         # Adjust the file path extension based on the save_type
-        if save_type == 'pt':
+        if self.save_type == 'pt':
             tensor_file_path = file_path.replace('.png', '.pt')
         else:  # save_type == 'npz'
             tensor_file_path = file_path.replace('.png', '.npz')
@@ -99,7 +100,7 @@ class PNGToTensorConverter:
 
 
         # Save the tensor in the appropriate format
-        if save_type == 'pt':
+        if self.save_type == 'pt':
             torch.save(tensor, tensor_file_path)
         else:  # save_type == 'npz'
             np.savez(tensor_file_path, tensor=tensor.numpy())
