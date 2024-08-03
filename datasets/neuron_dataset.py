@@ -475,6 +475,15 @@ class DataConstructor:
             session_fr_path = os.path.join(self.arr_bank_dir, constructed_name, f'session_fr_{session_index}.npy')
             session_query_index_path = os.path.join(self.arr_bank_dir, constructed_name, f'session_query_index_{session_index}.npy')
 
+            # List of all paths to ensure directories are created
+            paths = [session_data_path, session_fr_path, session_query_index_path]
+
+            # Check and create directories if they do not exist
+            for path in paths:
+                directory = os.path.dirname(path)
+                if not os.path.exists(directory):
+                    os.makedirs(directory)
+
             session_data = np.empty((len(session_array) * len(neurons), 3 + self.seq_len), dtype=np.int32)
             session_fr_data = np.empty((len(session_array) * len(neurons), 1), dtype=np.float32)
 
