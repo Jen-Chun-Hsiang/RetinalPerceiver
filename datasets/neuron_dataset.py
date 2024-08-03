@@ -131,6 +131,11 @@ class RetinalDataset(Dataset):
         else:
             random_idx = idx
         experiment_id, session_id, neuron_id, *frame_ids = self.data_array[random_idx]
+        print(f'experiment_id: {experiment_id}')
+        print(f'session_id: {session_id}')
+        print(f'neuron_id: {neuron_id}')
+        print(f'frame_ids: {frame_ids}')
+        raise ValueError(f"value is not correct (check!)")
         firing_rate = self.firing_rate_array[random_idx]
         query_id = self.query_series[random_idx]
 
