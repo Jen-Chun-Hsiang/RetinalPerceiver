@@ -282,6 +282,22 @@ def main():
                                                       dtype=np.float32)
 
     data_array_sampler = VirtualArraySampler(all_data_array)
+
+    # Assuming `arrays` is a list of numpy arrays or similar array-like structures
+    for i, a in enumerate(all_query_index):
+        print(f"Array {i}:")
+        try:
+            shape = a.shape
+            print(f"Shape: {shape}")
+            # Check if the array is empty by verifying if any dimension is zero
+            if a.size == 0:
+                print("Status: Empty array")
+            else:
+                print("Status: Non-empty array")
+        except AttributeError:
+            print("This item does not have a shape or size attribute. It might not be an array.")
+        print("\n")  # Adds a newline for better readability between arrays
+
     query_index_sampler = VirtualArraySampler(all_query_index)
     firing_rate_array_sampler = VirtualArraySampler(all_firing_rate_array)
 
