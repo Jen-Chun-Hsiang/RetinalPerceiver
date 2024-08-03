@@ -101,6 +101,7 @@ class VirtualArraySampler:
         # Convert 1D arrays to 2D arrays with one column each
         self.arrays = [a[:, np.newaxis] if a.ndim == 1 else a for a in arrays]
 
+        '''
         # Assuming `arrays` is a list of numpy arrays or similar array-like structures
         for i, a_check in enumerate(self.arrays):
             print(f"Array {i}:")
@@ -115,6 +116,7 @@ class VirtualArraySampler:
             except AttributeError:
                 print("This item does not have a shape or size attribute. It might not be an array.")
             print("\n")  # Adds a newline for better readability between arrays
+        '''
 
         # Ensure all arrays have the same number of columns
         if not all(a.shape[1] == self.arrays[0].shape[1] for a in self.arrays):
