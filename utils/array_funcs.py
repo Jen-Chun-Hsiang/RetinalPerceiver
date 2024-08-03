@@ -98,10 +98,13 @@ def load_keyword_based_arrays(file_folder, keyword, dtype=np.int32):
 
 class VirtualArraySampler:
     def __init__(self, arrays):
-        self.arrays = arrays
+        # Convert all arrays to at least 2D (handles 1D vectors)
+        self.arrays = [np.atleast_2d(a) for a in arrays]
+
         # Ensure all arrays have the same number of columns
         if not all(a.shape[1] == arrays[0].shape[1] for a in arrays):
             raise ValueError("All arrays must have the same number of columns.")
+
         self.shapes = [a.shape[0] for a in arrays]
         self.start_indices = np.cumsum([0] + self.shapes[:-1])
         self.end_indices = np.cumsum(self.shapes) - 1
