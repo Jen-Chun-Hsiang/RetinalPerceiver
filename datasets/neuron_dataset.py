@@ -512,7 +512,7 @@ class DataConstructor:
 
             # Print the first 10 rows and first 5 columns
             print("First 10 rows and first 5 columns of the array:")
-            print(array[:10, :5])
+            print(session_data[:10, :5])
 
             np.save(session_data_path, session_data)
             np.save(session_fr_path, session_fr_data)
