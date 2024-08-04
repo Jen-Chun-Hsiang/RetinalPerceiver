@@ -88,11 +88,21 @@ def load_keyword_based_arrays(file_folder, keyword, dtype=np.int32):
             # Load the file as a memory-mapped array
             # Use the provided dtype for the data type of the numpy array
             array = np.memmap(file_path, dtype=dtype, mode='r', shape=(np.load(file_path, mmap_mode='r').shape))
+
+            # Display the shape of the memmap array
+            print("Shape of the memmap array:", array.shape)
+
+            # Print the first 10 rows and first 5 columns
+            print("First 10 rows and first 5 columns of the array:")
+            print(array[:10, :5])
+
             arrays.append(array)
+
             i += 1  # Move to the next file index
         else:
             break  # Exit the loop if the file does not exist
 
+    raise ValueError(f"value is not correct (check!)")
     return arrays
 
 
