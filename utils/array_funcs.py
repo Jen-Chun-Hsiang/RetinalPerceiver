@@ -87,7 +87,9 @@ def load_keyword_based_arrays(file_folder, keyword, dtype=np.int32):
         if os.path.isfile(file_path):
             # Load the file as a memory-mapped array
             # Use the provided dtype for the data type of the numpy array
-            array = np.memmap(file_path, dtype=dtype, mode='r', shape=(np.load(file_path, mmap_mode='r').shape))
+            # Load the shape using np.load to determine the shape for memmap
+            with np.load(file_path, mmap_mode='r') as data:
+                array = np.memmap(file_path, dtype=dtype, mode='r', shape=data.shape)
 
             # Display the shape of the memmap array
             print("Shape of the memmap array:", array.shape)
