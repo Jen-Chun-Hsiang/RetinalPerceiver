@@ -507,12 +507,13 @@ class DataConstructor:
                 firing_rate_data = firing_rate_array[firing_rate_index[:, 0], neuron_id - 1]
                 session_fr_data[start_row:end_row, 0] = firing_rate_data
 
+            np.save(session_data_path, session_data)
+            np.save(session_fr_path, session_fr_data)
+
             session_query_array = np.unique(session_data[:, [0, 2]], axis=0)
             query_array = update_unique_array(query_array, session_query_array)
             session_query_index = find_matching_indices_in_arrays(session_data[:, [0, 2]], query_array)
 
-            np.save(session_data_path, session_data)
-            np.save(session_fr_path, session_fr_data)
             np.save(session_query_index_path, session_query_index)
 
         # print("Data construction and saving completed.")
