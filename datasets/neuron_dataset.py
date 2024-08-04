@@ -498,10 +498,14 @@ class DataConstructor:
             session_fr_data = np.empty((len(session_array) * len(neurons), 1), dtype=np.float32)
 
             for i, neuron_id in enumerate(neurons):
-                idx_range = slice(i * len(session_array), (i + 1) * len(session_array))
-                session_data[idx_range, :3] = [experiment_id, session_id, neuron_id]
-                session_data[idx_range, 3:] = session_array
-                session_fr_data[idx_range, 0] = firing_rate_array[firing_rate_index[:, 0], neuron_id - 1]
+                start_row = i * len(session_array)
+                end_row = start_row + len(session_array)
+                session_data[start_row:end_row, :3] = [experiment_id, session_id, neuron_id]
+                session_data[start_row:end_row, 3:] = session_array
+
+                # Firing rate data as the fourth column (Get the id correct by -1)
+                firing_rate_data = firing_rate_array[firing_rate_index[:, 0], neuron_id - 1]
+                session_fr_data[start_row:end_row, 0] = firing_rate_data
 
             session_query_array = np.unique(session_data[:, [0, 2]], axis=0)
             query_array = update_unique_array(query_array, session_query_array)
