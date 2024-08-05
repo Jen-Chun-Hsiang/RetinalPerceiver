@@ -524,7 +524,8 @@ class DataConstructor:
             gc.collect()
             time.sleep(1)  # Wait a second to ensure the OS has time to flush buffers to disk
 
-            array = np.memmap(session_data_path, dtype=np.int32, mode='r', shape=np.load(session_data_path, mmap_mode='r').shape)
+            data = np.load(session_data_path, mmap_mode='r')
+            array = np.memmap(session_data_path, dtype=np.int32, mode='r', shape=data.shape)
 
             # Display the shape of the memmap array
             print("Shape of the array:", array.shape)
