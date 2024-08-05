@@ -517,7 +517,7 @@ class DataConstructor:
             np.save(session_data_path, session_data)
             np.save(session_fr_path, session_fr_data)
 
-            array = np.memmap(session_data_path, dtype=np.int32, mode='r', shape=np.load(session_data_path, mmap_mode='r').shape)
+            array = np.memmap(session_data_path, dtype=np.int32, mode='r', shape=np.load(session_data_path, mmap_mode='r').shape, order='C')
 
             # Display the shape of the memmap array
             print("Shape of the array:", array.shape)
