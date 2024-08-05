@@ -14,6 +14,7 @@ import time
 import gc
 from mmap_ninja import numpy as np_ninja
 import zarr
+import numcodecs
 
 # from functools import lru_cache
 # from torchvision.io import read_image
@@ -521,8 +522,9 @@ class DataConstructor:
 
             # np.save(session_data_path, session_data)
             # np_ninja.from_ndarray(session_data_path, session_data)
-            z = zarr.save(session_data_path, mode='w', shape=session_data.shape, dtype=session_data.dtype)
-            z[:] = session_data
+            z_saved = zarr.save(session_data_path, mode='w', shape=session_data.shape, dtype=object,
+              object_codec=numcodecs.Pickle())
+            z_saved[:] = session_data
 
             np.save(session_fr_path, session_fr_data)
 
@@ -531,8 +533,8 @@ class DataConstructor:
             time.sleep(1)  # Wait a second to ensure the OS has time to flush buffers to disk
 
             #array = np_ninja.open_existing(session_data_path)
-            z = zarr.open(session_data_path, mode='r')
-            array = z[:]
+            z_opened = zarr.open(session_data_path, mode='r', object_codec=numcodecs.Pickle())
+            array = z_opened[:]
             #array = np.load(session_data_path)
             #data = np.load(session_data_path, mmap_mode='r')
             #array = np.memmap(session_data_path, dtype=np.int32, mode='r', shape=session_data.shape)
