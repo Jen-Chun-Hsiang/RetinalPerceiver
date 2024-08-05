@@ -522,7 +522,7 @@ class DataConstructor:
             # np.save(session_data_path, session_data)
             # np_ninja.from_ndarray(session_data_path, session_data)
             z = zarr.save(session_data_path, mode='w', shape=session_data.shape, dtype='i4')
-            z[:] = session_data
+            z[:, :] = session_data
 
             np.save(session_fr_path, session_fr_data)
 
