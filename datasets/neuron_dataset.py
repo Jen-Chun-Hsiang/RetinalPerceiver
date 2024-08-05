@@ -509,6 +509,7 @@ class DataConstructor:
                 firing_rate_data = firing_rate_array[firing_rate_index[:, 0], neuron_id - 1]
                 session_fr_data[start_row:end_row, 0] = firing_rate_data
 
+            session_data = session_data.astype(np.int32)
             # Display the shape of the memmap array
             print("Shape of the session_data:", session_data.shape)
 
