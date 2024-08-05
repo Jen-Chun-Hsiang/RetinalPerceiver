@@ -12,6 +12,7 @@ import threading
 import h5py
 import time
 import gc
+from mmap_ninja import numpy as np_ninja
 
 # from functools import lru_cache
 # from torchvision.io import read_image
@@ -517,16 +518,18 @@ class DataConstructor:
             print("First 10 rows and first 5 columns of the array:")
             print(session_data[:10, :5])
 
-            np.save(session_data_path, session_data)
+            # np.save(session_data_path, session_data)
+            np_ninja.from_ndarray(session_data_path, session_data)
             np.save(session_fr_path, session_fr_data)
 
             # Attempt to ensure everything is written to disk
             gc.collect()
             time.sleep(1)  # Wait a second to ensure the OS has time to flush buffers to disk
 
+            array = np_ninja.open_existing(session_data_path)
             #array = np.load(session_data_path)
             #data = np.load(session_data_path, mmap_mode='r')
-            array = np.memmap(session_data_path, dtype=np.int32, mode='r', shape=session_data.shape)
+            #array = np.memmap(session_data_path, dtype=np.int32, mode='r', shape=session_data.shape)
 
             # Display the shape of the memmap array
             print("Shape of the array:", array.shape)
