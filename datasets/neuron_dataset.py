@@ -10,6 +10,8 @@ from scipy.io import loadmat
 from collections import OrderedDict
 import threading
 import h5py
+import time
+import gc
 
 # from functools import lru_cache
 # from torchvision.io import read_image
@@ -517,7 +519,11 @@ class DataConstructor:
             np.save(session_data_path, session_data)
             np.save(session_fr_path, session_fr_data)
 
-            array = np.memmap(session_data_path, dtype=np.int32, mode='r', shape=np.load(session_data_path, mmap_mode='r').shape, order='F')
+            # Attempt to ensure everything is written to disk
+            gc.collect()
+            time.sleep(1)  # Wait a second to ensure the OS has time to flush buffers to disk
+
+            array = np.memmap(session_data_path, dtype=np.int32, mode='r', shape=np.load(session_data_path, mmap_mode='r').shape)
 
             # Display the shape of the memmap array
             print("Shape of the array:", array.shape)
