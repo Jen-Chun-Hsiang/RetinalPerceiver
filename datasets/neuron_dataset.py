@@ -531,7 +531,8 @@ class DataConstructor:
             time.sleep(1)  # Wait a second to ensure the OS has time to flush buffers to disk
 
             #array = np_ninja.open_existing(session_data_path)
-            array = zarr.open(session_data_path, mode='r')
+            z = zarr.open(session_data_path, mode='r')
+            array = z[:, :]
             #array = np.load(session_data_path)
             #data = np.load(session_data_path, mmap_mode='r')
             #array = np.memmap(session_data_path, dtype=np.int32, mode='r', shape=session_data.shape)
