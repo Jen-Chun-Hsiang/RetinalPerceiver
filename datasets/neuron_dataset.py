@@ -13,6 +13,7 @@ import h5py
 import time
 import gc
 from mmap_ninja import numpy as np_ninja
+import zarr
 
 # from functools import lru_cache
 # from torchvision.io import read_image
@@ -484,7 +485,7 @@ class DataConstructor:
             firing_rate_index = constructor.construct_array(np.arange(len(video_frame_id)), flip_lr=True)
 
             # change here to get the series id instead of folder wise files
-            session_data_path = os.path.join(self.arr_bank_dir, constructed_name, f'session_data_{session_index}.npy')
+            session_data_path = os.path.join(self.arr_bank_dir, constructed_name, f'session_data_{session_index}.zarr')
             session_fr_path = os.path.join(self.arr_bank_dir, constructed_name, f'session_fr_{session_index}.npy')
             session_query_index_path = os.path.join(self.arr_bank_dir, constructed_name, f'session_query_index_{session_index}.npy')
 
@@ -519,14 +520,17 @@ class DataConstructor:
             print(session_data[:10, :5])
 
             # np.save(session_data_path, session_data)
-            np_ninja.from_ndarray(session_data_path, session_data)
+            # np_ninja.from_ndarray(session_data_path, session_data)
+            zarr.open(session_data_path, mode='w', shape=session_data.shape, dtype=np.int32)
+
             np.save(session_fr_path, session_fr_data)
 
             # Attempt to ensure everything is written to disk
             gc.collect()
             time.sleep(1)  # Wait a second to ensure the OS has time to flush buffers to disk
 
-            array = np_ninja.open_existing(session_data_path)
+            #array = np_ninja.open_existing(session_data_path)
+            array = zarr.open(session_data_path, mode='r')
             #array = np.load(session_data_path)
             #data = np.load(session_data_path, mmap_mode='r')
             #array = np.memmap(session_data_path, dtype=np.int32, mode='r', shape=session_data.shape)
