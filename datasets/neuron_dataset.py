@@ -473,6 +473,17 @@ class DataConstructor:
         query_array = np.empty((0, 2), dtype=np.int32)
 
         session_data_path = os.path.join(self.arr_bank_dir, constructed_name, 'session_data.zarr')
+        session_fr_path = os.path.join(self.arr_bank_dir, constructed_name, 'session_fr.zarr')
+        session_query_index_path = os.path.join(self.arr_bank_dir, constructed_name,'session_query_index.zarr')
+
+        # List of all paths to ensure directories are created
+        paths = [session_data_path, session_fr_path, session_query_index_path]
+        # Check and create directories if they do not exist
+        for path in paths:
+            directory = os.path.dirname(path)
+            if not os.path.exists(directory):
+                os.makedirs(directory)
+
         for session_index, ((experiment_id, session_id), group) in enumerate(grouped):
             neurons = group['neuron_id'].unique()
             file_path = os.path.join(self.link_dir, f'experiment_{experiment_id}', f'session_{session_id}.mat')
@@ -485,20 +496,6 @@ class DataConstructor:
             firing_rate_path = os.path.join(self.resp_dir, f'experiment_{experiment_id}', f'session_{session_id}.mat')
             firing_rate_array = load_mat_to_numpy(firing_rate_path, 'spike_smooth')
             firing_rate_index = constructor.construct_array(np.arange(len(video_frame_id)), flip_lr=True)
-
-            # change here to get the series id instead of folder wise files
-
-            session_fr_path = os.path.join(self.arr_bank_dir, constructed_name, f'session_fr_{session_index}.npy')
-            session_query_index_path = os.path.join(self.arr_bank_dir, constructed_name, f'session_query_index_{session_index}.npy')
-
-            # List of all paths to ensure directories are created
-            paths = [session_data_path, session_fr_path, session_query_index_path]
-
-            # Check and create directories if they do not exist
-            for path in paths:
-                directory = os.path.dirname(path)
-                if not os.path.exists(directory):
-                    os.makedirs(directory)
 
             session_data = np.empty((len(session_array) * len(neurons), 3 + self.seq_len), dtype=np.int32)
             session_fr_data = np.empty((len(session_array) * len(neurons), 1), dtype=np.float32)
@@ -514,21 +511,26 @@ class DataConstructor:
                 session_fr_data[start_row:end_row, 0] = firing_rate_data
 
             session_data = session_data.astype(np.int32)
+            session_fr_data = session_fr_data.astype(np.float32)
             # Display the shape of the memmap array
-            print("Shape of the session_data:", session_data.shape)
+            print("Shape of the session_fr_data:", session_fr_data.shape)
 
             # Print the first 10 rows and first 5 columns
             print("First 10 rows and first 5 columns of the array:")
-            print(session_data[:10, :5])
+            print(session_fr_data[:10, :])
 
             if session_index == 0:
-                z_saved = zarr.open(session_data_path, mode='w', shape=session_data.shape, dtype='int32',
+                z_session_data_saved = zarr.open(session_data_path, mode='w', shape=session_data.shape, dtype='int32',
                                     chunks=(50000, session_data.shape[1]))
-                z_saved[:] = session_data
+                z_session_data_saved[:] = session_data
+                z_session_fr_data_saved = zarr.open(session_fr_path, mode='w', shape=session_fr_data.shape, dtype='float32',
+                                                 chunks=(50000, session_fr_data.shape[1]))
+                z_session_fr_data_saved[:] = session_fr_data
             else:
-                z_saved.append(session_data, axis=0)
-            print(f'z saved shape: {z_saved.shape}')
-            np.save(session_fr_path, session_fr_data)
+                z_session_data_saved.append(session_data, axis=0)
+                z_session_fr_data_saved.append(session_fr_data, axis=0)
+
+            print(f'z fr saved shape: {z_session_fr_data_saved.shape}')
 
             # Attempt to ensure everything is written to disk
             # gc.collect()
