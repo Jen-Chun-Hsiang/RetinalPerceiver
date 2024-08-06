@@ -107,7 +107,6 @@ def load_keyword_based_arrays(file_folder, keyword, dtype=np.int32):
         else:
             break  # Exit the loop if the file does not exist
 
-    raise ValueError(f"value is not correct (check!)")
     return arrays
 
 
@@ -178,6 +177,20 @@ class ZarrSampler:
         self.num_columns = self.zarr_array.shape[1] if len(self.zarr_array.shape) > 1 else 1
         self.start_indices = np.arange(0, self.total_length, self.chunk_size)
 
+        # Automatically print the first few rows upon initialization
+        self.print_first_check()
+
+    def print_first_check(self, n_rows=10, n_cols=5):
+        """Prints the first n rows of the zarr array."""
+        # Check if the array has enough rows
+        if self.total_length < n_rows:
+            n_rows = self.total_length  # Adjust if total_length is less than requested rows
+        if self.num_columns < n_cols:
+            n_cols = self.num_columns  # Adjust if total_length is less than requested rows
+        first_rows = self.zarr_array[:n_rows, :n_cols]  # Slice the first n rows
+        print("First few rows of the Zarr array:")
+        print(first_rows)
+
     def sample(self, indices):
         # Ensure indices are within bounds
         if np.any(indices >= self.total_length) or np.any(indices < 0):
@@ -196,6 +209,7 @@ class ZarrSampler:
             if idx_in_array.size > 0:
                 results[array_indices == array_idx] = self.zarr_array[array_idx * self.chunk_size:(array_idx + 1) * self.chunk_size][idx_in_array]
 
+        raise ValueError(f"value is not correct (check!)")
         return results
 
     def total_rows(self):

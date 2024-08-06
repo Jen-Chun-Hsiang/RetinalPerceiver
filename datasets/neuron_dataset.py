@@ -472,6 +472,7 @@ class DataConstructor:
         grouped = self.input_table.groupby(['experiment_id', 'session_id'])
         query_array = np.empty((0, 2), dtype=np.int32)
 
+        session_data_path = os.path.join(self.arr_bank_dir, constructed_name, f'session_data.zarr')
         for session_index, ((experiment_id, session_id), group) in enumerate(grouped):
             neurons = group['neuron_id'].unique()
             file_path = os.path.join(self.link_dir, f'experiment_{experiment_id}', f'session_{session_id}.mat')
@@ -486,7 +487,7 @@ class DataConstructor:
             firing_rate_index = constructor.construct_array(np.arange(len(video_frame_id)), flip_lr=True)
 
             # change here to get the series id instead of folder wise files
-            session_data_path = os.path.join(self.arr_bank_dir, constructed_name, f'session_data_{session_index}.zarr')
+
             session_fr_path = os.path.join(self.arr_bank_dir, constructed_name, f'session_fr_{session_index}.npy')
             session_query_index_path = os.path.join(self.arr_bank_dir, constructed_name, f'session_query_index_{session_index}.npy')
 
@@ -520,31 +521,30 @@ class DataConstructor:
             print("First 10 rows and first 5 columns of the array:")
             print(session_data[:10, :5])
 
-            # np.save(session_data_path, session_data)
-            # np_ninja.from_ndarray(session_data_path, session_data)
-
-            # z_saved = zarr.open(session_data_path, mode='w', shape=session_data.shape, dtype=object,
-            #                    object_codec=numcodecs.Pickle())
-            z_saved = zarr.open(session_data_path, mode='w', shape=session_data.shape, dtype='int32', chunks=(50000, session_data.shape[1]))
-            z_saved[:] = session_data
+            if session_index == 0:
+                z_saved = zarr.open(session_data_path, mode='w', shape=session_data.shape, dtype='int32',
+                                    chunks=(50000, session_data.shape[1]))
+                z_saved[:] = session_data
+            else:
+                z_saved.append(session_data, axis=0)
 
             np.save(session_fr_path, session_fr_data)
 
             # Attempt to ensure everything is written to disk
-            gc.collect()
-            time.sleep(1)  # Wait a second to ensure the OS has time to flush buffers to disk
+            # gc.collect()
+            # time.sleep(1)  # Wait a second to ensure the OS has time to flush buffers to disk
 
             # z_opened = zarr.open(session_data_path, mode='r', object_codec=numcodecs.Pickle())
-            z_opened = zarr.open(session_data_path, mode='r')
-            array = z_opened[:]
+            # z_opened = zarr.open(session_data_path, mode='r')
+            # array = z_opened[:]
             #array = np.memmap(session_data_path, dtype=np.int32, mode='r', shape=session_data.shape)
 
             # Display the shape of the memmap array
-            print("Shape of the array:", array.shape)
+            # print("Shape of the array:", array.shape)
 
             # Print the first 10 rows and first 5 columns
-            print("First 10 rows and first 5 columns of the array:")
-            print(array[:10, :5])
+            # print("First 10 rows and first 5 columns of the array:")
+            # print(array[:10, :5])
 
             session_query_array = np.unique(session_data[:, [0, 2]], axis=0)
             query_array = update_unique_array(query_array, session_query_array)

@@ -28,7 +28,7 @@ from models.perceiver3d import RetinalPerceiverIO
 from models.cnn3d import RetinalPerceiverIOWithCNN
 from utils.training_procedure import Trainer, Evaluator, save_checkpoint, CheckpointLoader
 from utils.loss_function import loss_functions
-from utils.array_funcs import split_array, load_keyword_based_arrays, VirtualArraySampler, calculate_num_sets
+from utils.array_funcs import split_array, load_keyword_based_arrays, VirtualArraySampler, calculate_num_sets, ZarrSampler
 
 
 def parse_covariance(string):
@@ -273,15 +273,16 @@ def main():
         validation_losses = []
         start_time = time.time()  # Capture the start time
 
-    all_data_array = load_keyword_based_arrays(os.path.join(arr_bank_dir, construct_folder_name), 'session_data',
-                                               dtype=np.int32)
+    # all_data_array = load_keyword_based_arrays(os.path.join(arr_bank_dir, construct_folder_name), 'session_data',
+    #                                           dtype=np.int32)
     all_query_index = load_keyword_based_arrays(os.path.join(arr_bank_dir, construct_folder_name),
                                                 'session_query_index',
                                                 dtype=np.int32)
     all_firing_rate_array = load_keyword_based_arrays(os.path.join(arr_bank_dir, construct_folder_name), 'session_fr',
                                                       dtype=np.float32)
 
-    data_array_sampler = VirtualArraySampler(all_data_array)
+    session_data_path = os.path.join(arr_bank_dir, construct_folder_name, 'session_data.zarr')
+    data_array_sampler = ZarrSampler(session_data_path, 50000)
     query_index_sampler = VirtualArraySampler(all_query_index)
     firing_rate_array_sampler = VirtualArraySampler(all_firing_rate_array)
 
