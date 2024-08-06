@@ -91,9 +91,9 @@ def load_keyword_based_arrays(file_folder, keyword, dtype=np.int32):
             # Use the provided dtype for the data type of the numpy array
             # Load the shape using np.load to determine the shape for memmap
             array = np.memmap(file_path, dtype=dtype, mode='r', shape=np.load(file_path, mmap_mode='r').shape)
-            z_saved = zarr.open(session_data_path, mode='w', shape=session_data.shape, dtype=object,
-                                object_codec=numcodecs.Pickle())
-            z_saved[:] = session_data
+            #z_saved = zarr.open(session_data_path, mode='w', shape=session_data.shape, dtype=object,
+            #                    object_codec=numcodecs.Pickle())
+            #z_saved[:] = session_data
             # Display the shape of the memmap array
             print("Shape of the memmap array:", array.shape)
 
