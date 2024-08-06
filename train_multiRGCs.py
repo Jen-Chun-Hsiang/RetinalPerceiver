@@ -324,7 +324,7 @@ def main():
             validation_losses.append(avg_val_loss)
 
         # Print training status
-        if (epoch + 1) % 5 == 0:
+        if (epoch + 1) % 1 == 0:
             elapsed_time = time.time() - start_time
             # Log the epoch and elapsed time, and on a new indented line, log the losses
             logging.info(
