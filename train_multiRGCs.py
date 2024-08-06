@@ -291,8 +291,6 @@ def main():
 
     print(query_index_sampler.sample(np.arange(273564, 273574)))
     raise ValueError(f"value is not correct (check!)")
-    #query_index_sampler = VirtualArraySampler(all_query_index)
-    #firing_rate_array_sampler = VirtualArraySampler(all_firing_rate_array)
 
     num_sets = calculate_num_sets(data_array_sampler.total_rows(), data_array_sampler.total_columns(), np.int32,
                                   max_array_bank_capacity=args.max_array_bank_capacity)
