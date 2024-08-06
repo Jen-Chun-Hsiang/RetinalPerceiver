@@ -525,7 +525,7 @@ class DataConstructor:
 
             # z_saved = zarr.open(session_data_path, mode='w', shape=session_data.shape, dtype=object,
             #                    object_codec=numcodecs.Pickle())
-            z_saved = zarr.open('data.zarr', mode='w', shape=session_data.shape, dtype='int32', chunks=(50000, session_data.shape[1]))
+            z_saved = zarr.open(session_data_path, mode='w', shape=session_data.shape, dtype='int32', chunks=(50000, session_data.shape[1]))
             z_saved[:] = session_data
 
             np.save(session_fr_path, session_fr_data)
