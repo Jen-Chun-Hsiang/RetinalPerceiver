@@ -407,13 +407,14 @@ class TemporalArrayConstructor:
 
 
 class DataConstructor:
-    def __init__(self, input_table, seq_len, stride, link_dir, resp_dir, arr_bank_dir):
+    def __init__(self, input_table, seq_len, stride, link_dir, resp_dir, arr_bank_dir, chunk_size=50000):
         self.input_table = input_table
         self.seq_len = seq_len
         self.stride = stride
         self.link_dir = link_dir
         self.resp_dir = resp_dir
         self.arr_bank_dir = arr_bank_dir
+        self.chunk_size = chunk_size
 
     def construct_data(self):
         all_sessions_data = []
@@ -512,25 +513,25 @@ class DataConstructor:
 
             session_data = session_data.astype(np.int32)
             session_fr_data = session_fr_data.astype(np.float32)
-            # Display the shape of the memmap array
-            print("Shape of the session_fr_data:", session_fr_data.shape)
 
-            # Print the first 10 rows and first 5 columns
-            print("First 10 rows and first 5 columns of the array:")
-            print(session_fr_data[:10, :])
+            session_query_array = np.unique(session_data[:, [0, 2]], axis=0)
+            query_array = update_unique_array(query_array, session_query_array)
+            session_query_index = find_matching_indices_in_arrays(session_data[:, [0, 2]], query_array).astype(np.int32)
 
             if session_index == 0:
                 z_session_data_saved = zarr.open(session_data_path, mode='w', shape=session_data.shape, dtype='int32',
-                                    chunks=(50000, session_data.shape[1]))
+                                    chunks=(self.chunk_size, session_data.shape[1]))
                 z_session_data_saved[:] = session_data
                 z_session_fr_data_saved = zarr.open(session_fr_path, mode='w', shape=session_fr_data.shape, dtype='float32',
-                                                 chunks=(50000, session_fr_data.shape[1]))
+                                                 chunks=(self.chunk_size, session_fr_data.shape[1]))
                 z_session_fr_data_saved[:] = session_fr_data
+                z_session_query_index_saved = zarr.open(session_query_index_path, mode='w', shape=session_query_index.shape,
+                                                        dtype='int32', chunks=(self.chunk_size, session_query_index.shape[1]))
+                z_session_query_index_saved[:] = session_query_index
             else:
                 z_session_data_saved.append(session_data, axis=0)
                 z_session_fr_data_saved.append(session_fr_data, axis=0)
-
-            print(f'z fr saved shape: {z_session_fr_data_saved.shape}')
+                z_session_query_index_saved.append(session_query_index, axis=0)
 
             # Attempt to ensure everything is written to disk
             # gc.collect()
@@ -548,11 +549,15 @@ class DataConstructor:
             # print("First 10 rows and first 5 columns of the array:")
             # print(array[:10, :5])
 
-            session_query_array = np.unique(session_data[:, [0, 2]], axis=0)
-            query_array = update_unique_array(query_array, session_query_array)
-            session_query_index = find_matching_indices_in_arrays(session_data[:, [0, 2]], query_array)
 
-            np.save(session_query_index_path, session_query_index)
+
+            # Display the shape of the memmap array
+            print("Shape of the session_fr_data:", session_fr_data.shape)
+
+            # Print the first 10 rows and first 5 columns
+            print("First 10 rows and first 5 columns of the array:")
+            print(session_fr_data[:10, :])
+            print(f'z fr saved shape: {z_session_fr_data_saved.shape}')
 
         # print("Data construction and saving completed.")
         # return only the unique query_array
