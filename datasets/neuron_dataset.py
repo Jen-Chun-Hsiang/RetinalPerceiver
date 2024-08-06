@@ -105,11 +105,11 @@ class RetinalDataset(Dataset):
             # Dummy load to get image size for 'png' or 'pt' formats
             experiment_id, session_id, neuron_id, *frame_ids = self.data_array[0]
             frame_id = frame_ids[0]
-            print(f'(2) experiment_id: {experiment_id}')
-            print(f'session_id: {session_id}')
-            print(f'neuron_id: {neuron_id}')
-            print(f'frame_ids: {frame_id}')
-            raise ValueError(f"value is not correct (check!)")
+            # print(f'(2) experiment_id: {experiment_id}')
+            # print(f'session_id: {session_id}')
+            # print(f'neuron_id: {neuron_id}')
+            # print(f'frame_ids: {frame_id}')
+            # raise ValueError(f"value is not correct (check!)")
             sample_image_tensor = self.load_image(experiment_id, session_id, frame_id)
             self.image_shape = sample_image_tensor.shape
 
@@ -553,12 +553,12 @@ class DataConstructor:
 
 
             # Display the shape of the memmap array
-            print("Shape of the session_fr_data:", session_query_index.shape)
+            # print("Shape of the session_fr_data:", session_query_index.shape)
 
             # Print the first 10 rows and first 5 columns
-            print("First 10 rows and first 5 columns of the array:")
-            print(session_query_index[:10, :])
-            print(f'z fr saved shape: {z_session_query_index_saved.shape}')
+            # print("First 10 rows and first 5 columns of the array:")
+            # print(session_query_index[:10, :])
+            # print(f'z fr saved shape: {z_session_query_index_saved.shape}')
 
         # print("Data construction and saving completed.")
         # return only the unique query_array

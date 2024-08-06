@@ -197,7 +197,7 @@ def main():
     logging.info(f'(bef) query_array:{query_array} \n')
     query_array = query_encoder.encode(query_array)
     logging.info(f'query_array size:{query_array.shape} \n')
-    logging.info(f'query_array:{query_array} \n')
+    # logging.info(f'query_array:{query_array} \n')
 
     # check_loader = DataLoader(train_dataset, batch_size=2, shuffle=True)
     # dataiter = iter(check_loader)
@@ -273,14 +273,6 @@ def main():
         validation_losses = []
         start_time = time.time()  # Capture the start time
 
-    # all_data_array = load_keyword_based_arrays(os.path.join(arr_bank_dir, construct_folder_name), 'session_data',
-    #                                           dtype=np.int32)
-    # all_query_index = load_keyword_based_arrays(os.path.join(arr_bank_dir, construct_folder_name),
-    #                                            'session_query_index',
-    #                                            dtype=np.int32)
-    # all_firing_rate_array = load_keyword_based_arrays(os.path.join(arr_bank_dir, construct_folder_name), 'session_fr',
-    #                                                  dtype=np.float32)
-
     session_data_path = os.path.join(arr_bank_dir, construct_folder_name, 'session_data.zarr')
     session_fr_data_path = os.path.join(arr_bank_dir, construct_folder_name, 'session_fr.zarr')
     query_index_data_path = os.path.join(arr_bank_dir, construct_folder_name, 'session_query_index.zarr')
@@ -289,8 +281,8 @@ def main():
     firing_rate_array_sampler = ZarrSampler(session_fr_data_path, 50000)
     query_index_sampler = ZarrSampler(query_index_data_path, 50000)
 
-    print(query_index_sampler.sample(np.arange(273564, 273574)))
-    raise ValueError(f"value is not correct (check!)")
+    # print(query_index_sampler.sample(np.arange(273564, 273574)))
+    # raise ValueError(f"value is not correct (check!)")
 
     num_sets = calculate_num_sets(data_array_sampler.total_rows(), data_array_sampler.total_columns(), np.int32,
                                   max_array_bank_capacity=args.max_array_bank_capacity)
@@ -307,10 +299,10 @@ def main():
             query_index = query_index_sampler.sample(train_indices)
             firing_rate_array = firing_rate_array_sampler.sample(train_indices)
 
-            experiment_id, session_id, neuron_id, *frame_ids = data_array[0]
-            frame_id = frame_ids[0]
-            print(f'(1) experiment_id: {experiment_id}')
-            print(f'data_array: {data_array[:10, :5]}')
+            # experiment_id, session_id, neuron_id, *frame_ids = data_array[0]
+            # frame_id = frame_ids[0]
+            # print(f'(1) experiment_id: {experiment_id}')
+            # print(f'data_array: {data_array[:10, :5]}')
 
             train_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir,
                                            device=device, cache_size=args.cache_size,

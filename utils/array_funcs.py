@@ -178,7 +178,7 @@ class ZarrSampler:
         self.start_indices = np.arange(0, self.total_length, self.chunk_size)
 
         # Automatically print the first few rows upon initialization
-        self.print_first_check()
+        # self.print_first_check()
 
     def print_first_check(self, n_rows=10, n_cols=5):
         """Prints the first n rows of the zarr array."""
