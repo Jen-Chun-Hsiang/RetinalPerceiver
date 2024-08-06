@@ -517,6 +517,7 @@ class DataConstructor:
             session_query_array = np.unique(session_data[:, [0, 2]], axis=0)
             query_array = update_unique_array(query_array, session_query_array)
             session_query_index = find_matching_indices_in_arrays(session_data[:, [0, 2]], query_array).astype(np.int32)
+            session_query_index = session_query_index[:, np.newaxis]
 
             if session_index == 0:
                 z_session_data_saved = zarr.open(session_data_path, mode='w', shape=session_data.shape, dtype='int32',
