@@ -475,7 +475,7 @@ class DataConstructor:
 
         session_data_path = os.path.join(self.arr_bank_dir, constructed_name, 'session_data.zarr')
         session_fr_path = os.path.join(self.arr_bank_dir, constructed_name, 'session_fr.zarr')
-        session_query_index_path = os.path.join(self.arr_bank_dir, constructed_name,'session_query_index.zarr')
+        session_query_index_path = os.path.join(self.arr_bank_dir, constructed_name, 'session_query_index.zarr')
 
         # List of all paths to ensure directories are created
         paths = [session_data_path, session_fr_path, session_query_index_path]
@@ -553,12 +553,12 @@ class DataConstructor:
 
 
             # Display the shape of the memmap array
-            print("Shape of the session_fr_data:", session_fr_data.shape)
+            print("Shape of the session_fr_data:", session_query_index.shape)
 
             # Print the first 10 rows and first 5 columns
             print("First 10 rows and first 5 columns of the array:")
-            print(session_fr_data[:10, :])
-            print(f'z fr saved shape: {z_session_fr_data_saved.shape}')
+            print(session_query_index[:10, :])
+            print(f'z fr saved shape: {z_session_query_index_saved.shape}')
 
         # print("Data construction and saving completed.")
         # return only the unique query_array
