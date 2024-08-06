@@ -283,6 +283,8 @@ def main():
 
     session_data_path = os.path.join(arr_bank_dir, construct_folder_name, 'session_data.zarr')
     data_array_sampler = ZarrSampler(session_data_path, 50000)
+    print(data_array_sampler.sample(np.arange(10)))
+    raise ValueError(f"value is not correct (check!)")
     #query_index_sampler = VirtualArraySampler(all_query_index)
     #firing_rate_array_sampler = VirtualArraySampler(all_firing_rate_array)
 
