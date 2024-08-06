@@ -275,16 +275,16 @@ def main():
 
     # all_data_array = load_keyword_based_arrays(os.path.join(arr_bank_dir, construct_folder_name), 'session_data',
     #                                           dtype=np.int32)
-    all_query_index = load_keyword_based_arrays(os.path.join(arr_bank_dir, construct_folder_name),
-                                                'session_query_index',
-                                                dtype=np.int32)
-    all_firing_rate_array = load_keyword_based_arrays(os.path.join(arr_bank_dir, construct_folder_name), 'session_fr',
-                                                      dtype=np.float32)
+    # all_query_index = load_keyword_based_arrays(os.path.join(arr_bank_dir, construct_folder_name),
+    #                                            'session_query_index',
+    #                                            dtype=np.int32)
+    # all_firing_rate_array = load_keyword_based_arrays(os.path.join(arr_bank_dir, construct_folder_name), 'session_fr',
+    #                                                  dtype=np.float32)
 
     session_data_path = os.path.join(arr_bank_dir, construct_folder_name, 'session_data.zarr')
     data_array_sampler = ZarrSampler(session_data_path, 50000)
-    query_index_sampler = VirtualArraySampler(all_query_index)
-    firing_rate_array_sampler = VirtualArraySampler(all_firing_rate_array)
+    #query_index_sampler = VirtualArraySampler(all_query_index)
+    #firing_rate_array_sampler = VirtualArraySampler(all_firing_rate_array)
 
     num_sets = calculate_num_sets(data_array_sampler.total_rows(), data_array_sampler.total_columns(), np.int32,
                                   max_array_bank_capacity=args.max_array_bank_capacity)
