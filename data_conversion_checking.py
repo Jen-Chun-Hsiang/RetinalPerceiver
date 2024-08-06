@@ -47,6 +47,6 @@ if __name__ == "__main__":
     scale_factor = 1 / 2.5
     padding_size = 5
     experiment_ids = [4, 5, 6, 8, 9]
-    set_name = 'TestSet'
+    set_name = 'TrainingSet'
     save_type = 'pt'  # 'pt' or 'npz'
     execute_task(run_task_id, experiment_ids, scale_factor, padding_size, set_name, save_type)
