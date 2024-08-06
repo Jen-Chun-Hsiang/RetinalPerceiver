@@ -1,5 +1,7 @@
 import numpy as np
 import os
+import zarr
+import numcodecs
 
 
 def update_unique_array(B, D):
@@ -89,7 +91,9 @@ def load_keyword_based_arrays(file_folder, keyword, dtype=np.int32):
             # Use the provided dtype for the data type of the numpy array
             # Load the shape using np.load to determine the shape for memmap
             array = np.memmap(file_path, dtype=dtype, mode='r', shape=np.load(file_path, mmap_mode='r').shape)
-
+            z_saved = zarr.open(session_data_path, mode='w', shape=session_data.shape, dtype=object,
+                                object_codec=numcodecs.Pickle())
+            z_saved[:] = session_data
             # Display the shape of the memmap array
             print("Shape of the memmap array:", array.shape)
 
@@ -164,6 +168,41 @@ class VirtualArraySampler:
                 results[array_indices == array_idx] = self.arrays[array_idx][idx_in_array]
 
         return results
+
+
+class ZarrSampler:
+    def __init__(self, zarr_path, chunk_size):
+        self.zarr_array = zarr.open(zarr_path, mode='r')
+        self.chunk_size = chunk_size
+        self.total_length = self.zarr_array.shape[0]
+        self.num_columns = self.zarr_array.shape[1] if len(self.zarr_array.shape) > 1 else 1
+        self.start_indices = np.arange(0, self.total_length, self.chunk_size)
+
+    def sample(self, indices):
+        # Ensure indices are within bounds
+        if np.any(indices >= self.total_length) or np.any(indices < 0):
+            raise ValueError("Indices are out of bounds.")
+
+        # Find out which array each index belongs to
+        array_indices = np.searchsorted(self.start_indices, indices, side='right') - 1
+
+        # Prepare to gather results
+        results = np.empty((len(indices), self.num_columns), dtype=self.zarr_array.dtype)
+
+        # Retrieve all necessary rows from each array in one operation
+        for array_idx in np.unique(array_indices):
+            # Find indices belonging to the current array
+            idx_in_array = indices[array_indices == array_idx] - self.start_indices[array_idx]
+            if idx_in_array.size > 0:
+                results[array_indices == array_idx] = self.zarr_array[array_idx * self.chunk_size:(array_idx + 1) * self.chunk_size][idx_in_array]
+
+        return results
+
+    def total_rows(self):
+        return self.total_length
+
+    def total_columns(self):
+        return self.num_columns
 
 
 def calculate_num_sets(num_rows, num_columns, dtype, max_array_bank_capacity=1e9):
