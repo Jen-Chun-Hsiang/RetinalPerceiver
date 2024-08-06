@@ -472,7 +472,7 @@ class DataConstructor:
         grouped = self.input_table.groupby(['experiment_id', 'session_id'])
         query_array = np.empty((0, 2), dtype=np.int32)
 
-        session_data_path = os.path.join(self.arr_bank_dir, constructed_name, f'session_data.zarr')
+        session_data_path = os.path.join(self.arr_bank_dir, constructed_name, 'session_data.zarr')
         for session_index, ((experiment_id, session_id), group) in enumerate(grouped):
             neurons = group['neuron_id'].unique()
             file_path = os.path.join(self.link_dir, f'experiment_{experiment_id}', f'session_{session_id}.mat')
@@ -527,7 +527,7 @@ class DataConstructor:
                 z_saved[:] = session_data
             else:
                 z_saved.append(session_data, axis=0)
-
+            print(f'z saved shape: {z_saved.shape}')
             np.save(session_fr_path, session_fr_data)
 
             # Attempt to ensure everything is written to disk

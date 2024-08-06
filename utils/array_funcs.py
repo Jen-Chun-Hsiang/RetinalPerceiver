@@ -188,6 +188,7 @@ class ZarrSampler:
         if self.num_columns < n_cols:
             n_cols = self.num_columns  # Adjust if total_length is less than requested rows
         first_rows = self.zarr_array[570824:570834, :n_cols]  # Slice the first n rows
+        print(f'total length: {self.total_length}')
         print("First few rows of the Zarr array:")
         print(first_rows)
 
