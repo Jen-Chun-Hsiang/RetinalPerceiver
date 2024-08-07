@@ -314,7 +314,7 @@ def main():
 
             data_array = data_array_sampler.sample(val_indices)
             query_index = query_index_sampler.sample(val_indices)
-            firing_rate_array = firing_rate_array_sampler(val_indices)
+            firing_rate_array = firing_rate_array_sampler.sample(val_indices)
             val_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir,
                                          device=device, cache_size=args.cache_size,
                                          image_loading_method=args.image_loading_method)
