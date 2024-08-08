@@ -294,7 +294,7 @@ def main():
         train_indices_sets = split_array(all_train_indices, num_sets)
         val_indices_sets = split_array(all_val_indices, num_sets)
 
-        for train_indices, val_indices in zip(train_indices_sets, val_indices_sets):
+        for set_index, (train_indices, val_indices) in enumerate(zip(train_indices_sets, val_indices_sets)):
             data_array = data_array_sampler.sample(train_indices)
             query_index = query_index_sampler.sample(train_indices)
             firing_rate_array = firing_rate_array_sampler.sample(train_indices)
@@ -322,6 +322,10 @@ def main():
 
             avg_val_loss = evaluator.evaluate(val_loader)
             validation_losses.append(avg_val_loss)
+
+            elapsed_time = time.time() - start_time
+            logging.info(
+                f"{filename_fixed} TrainingSet [{set_index + 1}/{num_sets}], Elapsed time: {elapsed_time:.2f} seconds \n")
 
         # Print training status
         if (epoch + 1) % 1 == 0:
