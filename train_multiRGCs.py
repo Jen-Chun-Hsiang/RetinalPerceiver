@@ -14,6 +14,7 @@ import time
 from io import StringIO
 import sys
 import pandas as pd
+import multiprocessing as mp
 from scipy.io import savemat
 # from torchinfo import summary
 # import torch.multiprocessing as mp
@@ -132,6 +133,8 @@ def main():
     savemat_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Matfiles/'
     # Generate a timestamp
     timestr = datetime.now().strftime('%Y%m%d_%H%M%S')
+    if args.num_worker > 0:
+        mp.set_start_method('spawn', force=True)
 
     # Construct the full path for the log file
     log_filename = os.path.join(saveprint_dir, f'{filename_fixed}_training_log_{timestr}.txt')
