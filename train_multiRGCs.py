@@ -111,6 +111,7 @@ def parse_args():
     # Plot parameters
     parser.add_argument('--num_cols', type=int, default=5, help='Number of columns in a figure')
     parser.add_argument('--add_sampler', action='store_true', help='Enable efficient sampler for dataset')
+    parser.add_argument('--num_worker', type=int, default=0, help='Use to offline loading data in batch')
 
     return parser.parse_args()
 
@@ -298,28 +299,15 @@ def main():
             elapsed_time = time.time() - start_time
             logging.info(f"Loop start, Elapsed time: {elapsed_time:.2f} seconds \n")
             data_array = data_array_sampler.sample(train_indices)
-            elapsed_time = time.time() - start_time
-            logging.info(f"Load data array (training), Elapsed time: {elapsed_time:.2f} seconds \n")
             query_index = query_index_sampler.sample(train_indices)
-            elapsed_time = time.time() - start_time
-            logging.info(f"Load query index (training), Elapsed time: {elapsed_time:.2f} seconds \n")
             firing_rate_array = firing_rate_array_sampler.sample(train_indices)
             elapsed_time = time.time() - start_time
-            logging.info(f"Load firing rate array (training), Elapsed time: {elapsed_time:.2f} seconds \n")
-
-            # experiment_id, session_id, neuron_id, *frame_ids = data_array[0]
-            # frame_id = frame_ids[0]
-            # print(f'(1) experiment_id: {experiment_id}')
-            # print(f'data_array: {data_array[:10, :5]}')
+            logging.info(f"Load samplers (training), Elapsed time: {elapsed_time:.2f} seconds \n")
 
             train_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir,
                                            device=device, cache_size=args.cache_size,
                                            image_loading_method=args.image_loading_method)
-            elapsed_time = time.time() - start_time
-            logging.info(f"Get training dataset, Elapsed time: {elapsed_time:.2f} seconds \n")
-            train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
-            elapsed_time = time.time() - start_time
-            logging.info(f"Load training dataset, Elapsed time: {elapsed_time:.2f} seconds \n")
+            train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.num_worker)
             avg_train_loss = trainer.train_one_epoch(train_loader)
             training_losses.append(avg_train_loss)
             elapsed_time = time.time() - start_time
@@ -327,22 +315,14 @@ def main():
 
 
             data_array = data_array_sampler.sample(val_indices)
-            elapsed_time = time.time() - start_time
-            logging.info(f"Load data array (validation), Elapsed time: {elapsed_time:.2f} seconds \n")
             query_index = query_index_sampler.sample(val_indices)
-            elapsed_time = time.time() - start_time
-            logging.info(f"Load query index (validation), Elapsed time: {elapsed_time:.2f} seconds \n")
             firing_rate_array = firing_rate_array_sampler.sample(val_indices)
             elapsed_time = time.time() - start_time
-            logging.info(f"Load firing rate array (validation), Elapsed time: {elapsed_time:.2f} seconds \n")
+            logging.info(f"Load samplers (validation), Elapsed time: {elapsed_time:.2f} seconds \n")
             val_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir,
                                          device=device, cache_size=args.cache_size,
                                          image_loading_method=args.image_loading_method)
-            elapsed_time = time.time() - start_time
-            logging.info(f"Get validation dataset, Elapsed time: {elapsed_time:.2f} seconds \n")
-            val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
-            elapsed_time = time.time() - start_time
-            logging.info(f"Load validation dataset, Elapsed time: {elapsed_time:.2f} seconds \n")
+            val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.num_worker)
             avg_val_loss = evaluator.evaluate(val_loader)
             validation_losses.append(avg_val_loss)
             elapsed_time = time.time() - start_time
