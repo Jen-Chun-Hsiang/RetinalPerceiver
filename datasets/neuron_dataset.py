@@ -10,6 +10,7 @@ from scipy.io import loadmat
 from collections import OrderedDict
 import threading
 import h5py
+from multiprocessing import Lock
 import time
 import gc
 from mmap_ninja import numpy as np_ninja
@@ -112,6 +113,8 @@ class RetinalDataset(Dataset):
             # raise ValueError(f"value is not correct (check!)")
             sample_image_tensor = self.load_image(experiment_id, session_id, frame_id)
             self.image_shape = sample_image_tensor.shape
+
+        self.cache_lock = Lock()  # Use multiprocessing.Lock
 
     def __len__(self):
         if self.chunk_indices is not None:
