@@ -92,7 +92,7 @@ class RetinalDataset(Dataset):
         self.cache_size = cache_size
         self.image_loading_method = image_loading_method
         self.image_tensor_cache = OrderedDict()
-        self.cache_lock = threading.Lock()  # Create a lock for the cache
+        # self.cache_lock = threading.Lock()  # Create a lock for the cache
 
         assert len(data_array) == len(query_series), "data_array and query_series must be the same length"
 
@@ -114,7 +114,7 @@ class RetinalDataset(Dataset):
             sample_image_tensor = self.load_image(experiment_id, session_id, frame_id)
             self.image_shape = sample_image_tensor.shape
 
-        self.cache_lock = Lock()  # Use multiprocessing.Lock
+        # self.cache_lock = Lock()  # Use multiprocessing.Lock
 
     def __len__(self):
         if self.chunk_indices is not None:
@@ -186,6 +186,28 @@ class RetinalDataset(Dataset):
 
         return images_3d, firing_rate, query_id
 
+    def load_data(self, experiment_id, session_id, frame_ids):
+        images_3d = torch.empty((len(frame_ids),) + self.image_shape[-2:], device=self.device)
+        unique_frame_ids, inverse_indices = np.unique(frame_ids, return_inverse=True)
+
+        if self.image_loading_method == 'hdf5':
+            hdf5_path = self.get_hdf5_path(experiment_id, session_id)
+            unique_frames = self.get_frames_by_indices(hdf5_path, unique_frame_ids)
+
+            for unique_idx, image in zip(unique_frame_ids, unique_frames):
+                indices = np.where(inverse_indices == unique_idx)[0]
+                for i in indices:
+                    images_3d[i] = image
+        else:
+            # Load each unique image once and assign to images_3d
+            for unique_frame_id in unique_frame_ids:
+                image = self.load_image(experiment_id, session_id, unique_frame_id)
+                indices = np.where(inverse_indices == unique_frame_id)[0]
+                for i in indices:
+                    images_3d[i] = image
+
+        return images_3d
+
     def get_hdf5_path(self, experiment_id, session_id):
         """Construct the path to the HDF5 file for a given experiment and session."""
         return os.path.join(self.root_dir, f"experiment_{experiment_id}", f"session_{session_id}.hdf5")
@@ -210,6 +232,7 @@ class RetinalDataset(Dataset):
         return frames
 
     def load_image(self, experiment_id, session_id, frame_id):
+        '''
         key = (experiment_id, session_id, frame_id)
 
         # Synchronized access to the cache
@@ -219,6 +242,7 @@ class RetinalDataset(Dataset):
                 # Move the item to the end of the cache to mark it as recently used
                 self.image_tensor_cache.move_to_end(key)
                 return self.image_tensor_cache[key]
+        '''
 
         image_tensor = None
         if self.image_loading_method == 'png':
@@ -234,13 +258,14 @@ class RetinalDataset(Dataset):
             image_data = np.load(image_path)['tensor']  # 'tensor' is the key used when saving the npz file
             image_tensor = torch.from_numpy(image_data).to(self.device)
 
+        '''
         # Synchronized cache update
         with self.cache_lock:
             # Add to cache and enforce cache size limit
             self.image_tensor_cache[key] = image_tensor
             if len(self.image_tensor_cache) > self.cache_size:
                 self.image_tensor_cache.popitem(last=False)  # Remove the oldest item
-
+        '''
         return image_tensor
 
     def get_image_path(self, experiment_id, session_id, frame_id, extension):
