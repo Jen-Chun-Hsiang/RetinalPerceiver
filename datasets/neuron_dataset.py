@@ -144,44 +144,10 @@ class RetinalDataset(Dataset):
         else:
             random_idx = idx
         experiment_id, session_id, neuron_id, *frame_ids = self.data_array[random_idx]
-        # print(f'experiment_id: {experiment_id}')
-        # print(f'session_id: {session_id}')
-        # print(f'neuron_id: {neuron_id}')
-        # print(f'frame_ids: {frame_ids}')
-        # raise ValueError(f"value is not correct (check!)")
         firing_rate = self.firing_rate_array[random_idx]
         query_id = self.query_series[random_idx]
 
-        # Find unique frame_ids and their indices
-        unique_frame_ids, inverse_indices = np.unique(frame_ids, return_inverse=True)
-
-        # Initialize an empty tensor to hold all images
-        images_3d = torch.empty((len(frame_ids),) + self.image_shape[-2:], device=self.device)
-
-        if self.image_loading_method == 'hdf5':
-            hdf5_path = self.get_hdf5_path(experiment_id, session_id)
-            unique_frames = self.get_frames_by_indices(hdf5_path, unique_frame_ids)
-
-            # Assign the loaded images to the respective positions in images_3d
-            for unique_idx, image in zip(np.unique(inverse_indices), unique_frames):
-                indices = np.where(inverse_indices == unique_idx)[0]
-                for i in indices:
-                    images_3d[i] = image
-        else:
-
-            # For 'png' or 'pt', load each unique image and assign to images_3d
-            for final_idx, frame_id in enumerate(frame_ids):
-                image = self.load_image(experiment_id, session_id, frame_id)
-                images_3d[final_idx] = image
-            '''
-            for unique_idx in np.unique(inverse_indices):
-                frame_id = unique_frame_ids[unique_idx]
-                image = self.load_image(experiment_id, session_id, frame_id)
-                indices = np.where(inverse_indices == unique_idx)[0]
-                for i in indices:
-                    images_3d[i] = image
-            '''
-
+        images_3d = self.load_data(experiment_id, session_id, frame_ids)
         images_3d = images_3d.unsqueeze(0).to(self.device)  # Adding an extra dimension to simulate batch size
 
         return images_3d, firing_rate, query_id
