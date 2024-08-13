@@ -315,6 +315,8 @@ def main():
             training_losses.append(avg_train_loss)
             elapsed_time = time.time() - start_time
             logging.info(f"Run training dataset, Elapsed time: {elapsed_time:.2f} seconds \n")
+            logging.info(f"\t Data loading average time: {train_dataset.timings:.2f} seconds \n")
+            logging.info(f"\t Model run average time: {model.timings:.2f} seconds \n")
 
 
             data_array = data_array_sampler.sample(val_indices)

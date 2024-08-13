@@ -4,6 +4,7 @@ import torch.nn.functional as F
 import numpy as np
 from models.perceiver3d import PerceiverIODecoder
 from utils.utils import add_gradient
+from utils.time_manager import TimeFunctionRun
 
 
 class RetinalCNN(nn.Module):
@@ -188,6 +189,7 @@ class RetinalPerceiverIOWithCNN(nn.Module):
         # cheap linear decoder
         self.fc = nn.Linear(num_latents, output_dim)
 
+    @TimeFunctionRun
     def forward(self, input_array, query_array):
         # Pass input through the Front End CNN
         query_array = query_array

@@ -1,6 +1,5 @@
 import torch
 from torch.utils.data import Dataset, Sampler
-from utils.array_funcs import update_unique_array, find_matching_indices_in_arrays
 import numpy as np
 from PIL import Image
 import os
@@ -8,18 +7,12 @@ import random
 import pandas as pd
 from scipy.io import loadmat
 from collections import OrderedDict
-import threading
 import h5py
-from multiprocessing import Lock
-import time
-import gc
-from mmap_ninja import numpy as np_ninja
 import zarr
-import numcodecs
 
-# from functools import lru_cache
-# from torchvision.io import read_image
-# from torchvision.transforms.functional import convert_image_dtype
+from utils.array_funcs import update_unique_array, find_matching_indices_in_arrays
+from utils.time_manager import TimeFunctionRun
+
 
 
 
@@ -122,6 +115,7 @@ class RetinalDataset(Dataset):
         else:
             return len(self.data_array)
 
+    @TimeFunctionRun
     def __getitem__(self, idx):
         """
          Retrieves a chunk of data by index.
