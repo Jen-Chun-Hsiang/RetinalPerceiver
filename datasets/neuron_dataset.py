@@ -115,7 +115,7 @@ class RetinalDataset(Dataset):
         else:
             return len(self.data_array)
 
-    @TimeFunctionRun
+    # @TimeFunctionRun
     def __getitem__(self, idx):
         """
          Retrieves a chunk of data by index.
