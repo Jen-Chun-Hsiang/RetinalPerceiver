@@ -100,7 +100,7 @@ class Trainer:
         # print(f'query_vector shape: {query_vectors.shape}')
         query_vectors = query_vectors.float().to(self.device)
         input_matrices, targets = input_matrices.to(self.device), targets.to(self.device)
-        with autocast():
+        with autocast(device_type=self.device, dtype=torch.float16):
             outputs, _ = self.model(input_matrices, query_vectors)
             try:
                 assert outputs.shape == targets.shape
