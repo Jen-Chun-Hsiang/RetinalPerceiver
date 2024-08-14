@@ -189,7 +189,7 @@ class RetinalPerceiverIOWithCNN(nn.Module):
         # cheap linear decoder
         self.fc = nn.Linear(num_latents, output_dim)
 
-    # @TimeFunctionRun
+    @TimeFunctionRun
     def forward(self, input_array, query_array):
         # Pass input through the Front End CNN
         query_array = query_array

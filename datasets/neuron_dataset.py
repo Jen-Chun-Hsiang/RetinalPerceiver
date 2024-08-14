@@ -115,7 +115,7 @@ class RetinalDataset(Dataset):
         else:
             return len(self.data_array)
 
-    # @TimeFunctionRun
+
     def __getitem__(self, idx):
         """
          Retrieves a chunk of data by index.
@@ -146,6 +146,7 @@ class RetinalDataset(Dataset):
 
         return images_3d, firing_rate, query_id
 
+    @TimeFunctionRun
     def load_data(self, experiment_id, session_id, frame_ids):
         images_3d = torch.empty((len(frame_ids),) + self.image_shape[-2:], device=self.device)
         unique_frame_ids, inverse_indices = np.unique(frame_ids, return_inverse=True)
