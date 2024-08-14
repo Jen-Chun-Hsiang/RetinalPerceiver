@@ -310,7 +310,8 @@ def main():
             train_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir,
                                            device=device, cache_size=args.cache_size,
                                            image_loading_method=args.image_loading_method)
-            train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.num_worker)
+            train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.num_worker,
+                                      pin_memory=True)
             avg_train_loss = trainer.train_one_epoch(train_loader)
             training_losses.append(avg_train_loss)
             elapsed_time = time.time() - start_time
@@ -327,7 +328,8 @@ def main():
             val_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir,
                                          device=device, cache_size=args.cache_size,
                                          image_loading_method=args.image_loading_method)
-            val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.num_worker)
+            val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.num_worker,
+                                    pin_memory=True)
             avg_val_loss = evaluator.evaluate(val_loader)
             validation_losses.append(avg_val_loss)
             elapsed_time = time.time() - start_time
