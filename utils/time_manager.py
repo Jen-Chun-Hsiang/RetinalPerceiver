@@ -29,5 +29,4 @@ class TimeFunctionRun:
                 self.timings[func.__name__] = new_ema
 
             return result
-
         return wrapper
