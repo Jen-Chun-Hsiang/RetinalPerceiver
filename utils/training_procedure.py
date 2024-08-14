@@ -1,6 +1,7 @@
 import torch
 from torch.utils.data import DataLoader
 from .loss_function import CosineNegativePairLoss
+from torch.cuda.amp import GradScaler, autocast
 import numpy as np
 from operator import itemgetter
 
@@ -33,6 +34,7 @@ class Trainer:
         self.lambda_l1 = lambda_l1
         self.contrastive_factor = contrastive_factor
         self.l1_weight = l1_weight
+        self.scaler = GradScaler()
 
         if query_array is not None:
             self.is_query_array = True
@@ -69,8 +71,10 @@ class Trainer:
                 raise ValueError(f"Loss is None for batch {batch_idx}. Check your model's output and loss function.")
 
             if (batch_idx + 1) % self.accumulation_steps == 0 or (batch_idx + 1) == len(train_loader):
-                self.optimizer.step()  # Perform optimization step
+                # self.optimizer.step()  # Perform optimization step
+                self.scaler.step(self.optimizer)
                 self.optimizer.zero_grad()  # Zero gradients for the next accumulation
+                self.scaler.update()
 
         avg_train_loss = total_train_loss / len(train_loader)
         return avg_train_loss
@@ -88,30 +92,31 @@ class Trainer:
 
     def _process_batch_with_query(self, data):
         input_matrices, targets, matrix_indices = data
-        print(f'input_matrices type: {input_matrices.dtype}')
-        print(f'targets type: {targets.dtype}')
-        print(f'matrix_indices type: {matrix_indices.dtype}')
-        raise RuntimeError("Check data type")
+        # print(f'input_matrices type: {input_matrices.dtype}')
+        # print(f'targets type: {targets.dtype}')
+        # print(f'matrix_indices type: {matrix_indices.dtype}')
+        # raise RuntimeError("Check data type")
         query_vectors = self.query_array[matrix_indices.squeeze(), :, :]
         # print(f'query_vector shape: {query_vectors.shape}')
         query_vectors = query_vectors.float().to(self.device)
         input_matrices, targets = input_matrices.to(self.device), targets.to(self.device)
-        outputs, _ = self.model(input_matrices, query_vectors)
-        try:
-            assert outputs.shape == targets.shape
-        except Exception as e:
-            print(e)
-            print(f'outputs shape: {outputs.shape}')
-            print(f'targets shape: {targets.shape}')
+        with autocast():
+            outputs, _ = self.model(input_matrices, query_vectors)
+            try:
+                assert outputs.shape == targets.shape
+            except Exception as e:
+                print(e)
+                print(f'outputs shape: {outputs.shape}')
+                print(f'targets shape: {targets.shape}')
 
-        loss = self._compute_loss(outputs, targets)
-        if torch.isnan(loss).any():
-            print(f"loss: {loss} \n")
-            print(f"outputs: {outputs} \n")
-            print(f"targets: {targets} \n")
-            raise RuntimeError("Output value contain nan")
+            loss = self._compute_loss(outputs, targets)
+            if torch.isnan(loss).any():
+                print(f"loss: {loss} \n")
+                print(f"outputs: {outputs} \n")
+                print(f"targets: {targets} \n")
+                raise RuntimeError("Output value contain nan")
 
-        return loss
+            return loss
 
     def _process_batch_with_query_contrast(self, data):
         input_matrices, targets, matrix_indices = data
@@ -156,7 +161,8 @@ class Trainer:
         return self.criterion(outputs.squeeze(), targets.squeeze())
 
     def _update_parameters(self, loss):
-        loss.backward()  # Compute the backward pass only
+        # loss.backward()  # Compute the backward pass only
+        self.scaler.scale(loss).backward()
 
     def _l1_regularization(self, weight, lambda_l1):
         return lambda_l1 * torch.abs(weight).sum()
