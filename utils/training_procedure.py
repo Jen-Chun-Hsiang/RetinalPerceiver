@@ -1,7 +1,7 @@
 import torch
 from torch.utils.data import DataLoader
 from .loss_function import CosineNegativePairLoss
-from torch.cuda.amp import GradScaler, autocast
+from torch import GradScaler, autocast
 import numpy as np
 from operator import itemgetter
 
