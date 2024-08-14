@@ -76,8 +76,8 @@ class RetinalDataset(Dataset):
         - cache_size: The maximum number of images to store in the cache.
         """
         self.data_array = data_array
-        self.query_series = query_series
-        self.firing_rate_array = firing_rate_array
+
+
         self.root_dir = root_dir
         self.chunk_indices = chunk_indices
         self.chunk_size = chunk_size
@@ -85,6 +85,10 @@ class RetinalDataset(Dataset):
         self.cache_size = cache_size
         self.image_loading_method = image_loading_method
         self.image_tensor_cache = OrderedDict()
+        self.query_series = query_series
+        # self.query_series = torch.tensor(query_series, dtype=torch.int32, device=self.device)
+        self.firing_rate_array = firing_rate_array
+        # self.firing_rate_array = torch.tensor(firing_rate_array, dtype=torch.float32, device=self.device)
         # self.cache_lock = threading.Lock()  # Create a lock for the cache
 
         assert len(data_array) == len(query_series), "data_array and query_series must be the same length"

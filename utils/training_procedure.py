@@ -88,8 +88,10 @@ class Trainer:
 
     def _process_batch_with_query(self, data):
         input_matrices, targets, matrix_indices = data
-        # print(f'matrix_indices shape: {matrix_indices.shape}')
-        # print(f'query_array shape: {self.query_array.shape}')
+        print(f'input_matrices type: {input_matrices.dtype}')
+        print(f'targets type: {targets.dtype}')
+        print(f'matrix_indices type: {matrix_indices.dtype}')
+        raise RuntimeError("Check data type")
         query_vectors = self.query_array[matrix_indices.squeeze(), :, :]
         # print(f'query_vector shape: {query_vectors.shape}')
         query_vectors = query_vectors.float().to(self.device)
