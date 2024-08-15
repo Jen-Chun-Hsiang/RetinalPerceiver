@@ -168,10 +168,10 @@ class RetinalDataset(Dataset):
             for unique_idx, unique_frame_id in enumerate(unique_frame_ids):
                 image = self.load_image(experiment_id, session_id, unique_frame_id)
                 indices = np.where(inverse_indices == unique_idx)[0]
-                repeated_image = image.repeat(len(indices), 1, 1, )  # Repeat image across new batch dimension
-                images_3d[indices] = repeated_image
-                # for i in indices:
-                #    images_3d[i] = image
+                # repeated_image = image.repeat(len(indices), 1, 1, )  # Repeat image across new batch dimension
+                # images_3d[indices] = repeated_image
+                for i in indices:
+                    images_3d[i] = image
 
         return images_3d
 
