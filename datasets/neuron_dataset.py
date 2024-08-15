@@ -170,6 +170,7 @@ class RetinalDataset(Dataset):
                 indices = np.where(inverse_indices == unique_idx)[0]
                 repeated_image = image.repeat(len(indices), 1, 1)  # Repeat image across new batch dimension
                 images_3d[indices] = repeated_image
+
                 # for i in indices:
                 #    images_3d[i] = image
 
