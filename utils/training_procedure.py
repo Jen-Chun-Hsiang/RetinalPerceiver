@@ -73,7 +73,7 @@ class Trainer:
             if (batch_idx + 1) % self.accumulation_steps == 0 or (batch_idx + 1) == len(train_loader):
                 # self.optimizer.step()  # Perform optimization step
                 self.scaler.step(self.optimizer)
-                self.optimizer.zero_grad()  # Zero gradients for the next accumulation
+                self.optimizer.zero_grad(set_to_none=True)  # Zero gradients for the next accumulation
                 self.scaler.update()
 
         avg_train_loss = total_train_loss / len(train_loader)
