@@ -161,6 +161,9 @@ def main():
                                        getattr(config, 'experimental5', None)], is_coordinates=True)
     # Generate param_list
     param_list, series_ids = integrated_list.generate_combined_param_list()
+    logging.info(f'param_list: {param_list} \n')
+    logging.info(f'series_ids: {series_ids} \n')
+    raise RuntimeError('Stop here')
 
     # Encode series_ids into query arrays
     max_values = {'Experiment': 100, 'Type': 100}
