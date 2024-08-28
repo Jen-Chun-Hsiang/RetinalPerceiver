@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+import random
 
 
 class TargetMatrixGenerator:
@@ -306,3 +307,124 @@ class IntegratedLevel:
                     series_ids.append((exp_level_id, class_params['class_level_id'], cell_params['cell_level_id']))
 
         return combined_param_list, series_ids
+
+
+def generate_sf_parameters(row_id, sf_param_table):
+    row = sf_param_table.iloc[row_id]
+    sf_cov_center = np.array([[row['sf_cov_center_1'], row['sf_cov_center_2']],
+                              [row['sf_cov_center_3'], row['sf_cov_center_4']]])
+    sf_cov_surround = np.array([[row['sf_cov_surround_1'], row['sf_cov_surround_2']],
+                                [row['sf_cov_surround_3'], row['sf_cov_surround_4']]])
+    sf_weight_surround = row['sf_weight_surround']
+    max_sf_stretch_fac = row['max_sf_stretch_fac']
+    return sf_cov_center, sf_cov_surround, sf_weight_surround, max_sf_stretch_fac
+
+
+def generate_tf_parameters(row_id, tf_param_table):
+    row = tf_param_table.iloc[row_id]
+    tf_weight_center = row['tf_weight_center']
+    tf_weight_surround = row['tf_weight_surround']
+    tf_mean_center = row['tf_mean_center']
+    tf_mean_surround = row['tf_mean_surround']
+    tf_sigma_center = row['tf_sigma_center']
+    tf_sigma_surround = row['tf_sigma_surround']
+    max_tf_stretch_fac = row['max_tf_stretch_fac']
+    return tf_weight_center, tf_weight_surround, tf_mean_center, tf_mean_surround, tf_sigma_center, tf_sigma_surround, max_tf_stretch_fac
+
+
+def generate_coordinates(posi_id, posi_cache):
+    if posi_id not in posi_cache:
+        sf_mean_center = (random.uniform(-1, 1), random.uniform(-1, 1))
+        posi_cache[posi_id] = sf_mean_center
+    else:
+        sf_mean_center = posi_cache[posi_id]
+
+    sf_mean_surround = sf_mean_center
+    return sf_mean_center, sf_mean_surround
+
+
+def apply_batch_scaling(batch_value, tf_mean_center, tf_mean_surround, tf_sigma_center, tf_sigma_surround,
+                        max_stretch_fac):
+    scale_factor = 1 + (batch_value * (max_stretch_fac - 1))
+    tf_mean_center *= scale_factor
+    tf_mean_surround *= scale_factor
+    tf_sigma_center *= scale_factor
+    tf_sigma_surround *= scale_factor
+    return tf_mean_center, tf_mean_surround, tf_sigma_center, tf_sigma_surround
+
+
+def assign_row_ids_to_cell_ids(unique_cell_ids, num_sf_rows, num_tf_rows):
+    random.shuffle(unique_cell_ids)
+    sf_row_ids = random.sample(range(num_sf_rows), len(unique_cell_ids))
+    tf_row_ids = random.sample(range(num_tf_rows), len(unique_cell_ids))
+
+    cell_id_to_row_ids = {cell_id: (sf_row_ids[i], tf_row_ids[i]) for i, cell_id in enumerate(unique_cell_ids)}
+    return cell_id_to_row_ids
+
+
+def generate_parameters(query_df, sf_param_table, tf_param_table):
+    param_list = []
+    query_list = []
+    batch_cache = {}
+    posi_cache = {}
+
+    unique_posi_ids = list(query_df['Posi_id'].unique())
+    hex_centers = create_hexagonal_centers(xlim=(0, 1), ylim=(0, 1), target_num_centers=len(unique_posi_ids))
+    posi_id_to_center = {posi_id: hex_centers[i] for i, posi_id in enumerate(unique_posi_ids)}
+
+    unique_cell_ids = list(query_df['Cell_id'].unique())
+    cell_id_to_row_ids = assign_row_ids_to_cell_ids(unique_cell_ids, len(sf_param_table), len(tf_param_table))
+
+    # Determine min value of 'max_tf_stretch_fac' for the selected tf_row_ids
+    min_max_stretch_fac = tf_param_table.loc[
+        [cell_id_to_row_ids[cell_id][1] for cell_id in unique_cell_ids], 'max_tf_stretch_fac'].min()
+
+    for _, row in query_df.iterrows():
+        batch_id = int(row['Batch_id'])
+        cell_id = int(row['Cell_id'])
+        posi_id = int(row['Posi_id'])
+        # batch_id, cell_id, posi_id = row
+
+        if batch_id not in batch_cache:
+            batch_cache[batch_id] = random.uniform(0, 1)
+        batch_value = batch_cache[batch_id]
+
+        sf_row_id, tf_row_id = cell_id_to_row_ids[cell_id]
+
+        params = {
+            'tf_weight_surround': None,
+            'tf_sigma_center': None,
+            'tf_sigma_surround': None,
+            'tf_mean_center': None,
+            'tf_mean_surround': None,
+            'tf_weight_center': None,
+            'tf_offset': 0,
+            'sf_cov_center': None,
+            'sf_cov_surround': None,
+            'sf_weight_surround': None,
+            'sf_mean_center': None,
+            'sf_mean_surround': None
+        }
+
+        params['tf_weight_center'], params[
+            'tf_weight_surround'], tf_mean_center, tf_mean_surround, tf_sigma_center, tf_sigma_surround, max_tf_stretch_fac = generate_tf_parameters(
+            tf_row_id, tf_param_table)
+        params['sf_cov_center'], params['sf_cov_surround'], params[
+            'sf_weight_surround'], max_sf_stretch_fac = generate_sf_parameters(sf_row_id, sf_param_table)
+        # params['sf_mean_center'], params['sf_mean_surround'] = generate_coordinates(posi_id, posi_cache)
+        params['sf_mean_center'] = posi_id_to_center[posi_id]
+        params['sf_mean_center'] = params['sf_mean_center']
+
+        tf_mean_center, tf_mean_surround, tf_sigma_center, tf_sigma_surround = apply_batch_scaling(
+            batch_value, tf_mean_center, tf_mean_surround, tf_sigma_center, tf_sigma_surround, min_max_stretch_fac)
+
+        params['tf_mean_center'] = tf_mean_center
+        params['tf_mean_surround'] = tf_mean_surround
+        params['tf_sigma_center'] = tf_sigma_center
+        params['tf_sigma_surround'] = tf_sigma_surround
+
+        param_list.append(params)
+        query_list.append((batch_id, cell_id, params['sf_mean_center'][0], params['sf_mean_center'][1]))
+
+    # query_list = np.array(query_list)
+    return param_list, query_list

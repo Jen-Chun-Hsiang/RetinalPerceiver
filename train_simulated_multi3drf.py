@@ -20,7 +20,7 @@ from torch.nn.parallel import DistributedDataParallel
 from utils.query_editor import get_unique_sets, QueryPermutator
 
 
-from datasets.simulated_target_rf import MultiTargetMatrixGenerator, CellClassLevel, ExperimentalLevel, IntegratedLevel
+from datasets.simulated_target_rf import MultiTargetMatrixGenerator, generate_parameters, CellClassLevel, ExperimentalLevel, IntegratedLevel
 from utils.utils import plot_and_save_3d_matrix_with_timestamp as plot3dmat
 from utils.utils import SeriesEncoder
 from datasets.simulated_dataset import MultiMatrixDataset
@@ -153,14 +153,12 @@ def main():
     device = torch.device("cuda")
     torch.cuda.empty_cache()
 
-    # Create integrated level with experimental levels
-    integrated_list = IntegratedLevel([getattr(config, 'experimental', None),
-                                       getattr(config, 'experimental2', None),
-                                       getattr(config, 'experimental3', None),
-                                       getattr(config, 'experimental4', None),
-                                       getattr(config, 'experimental5', None)], is_coordinates=True)
+    query_table = getattr(config, 'query_table', None)
+    sf_param_table = getattr(config, 'sf_param_table', None)
+    tf_param_table = getattr(config, 'tf_param_table', None)
     # Generate param_list
-    param_list, series_ids = integrated_list.generate_combined_param_list()
+    param_list, series_ids = generate_parameters(query_table, sf_param_table, tf_param_table)
+    # param_list, series_ids = integrated_list.generate_combined_param_list()
     logging.info(f'param_list: {param_list} \n')
     logging.info(f'series_ids: {series_ids} \n')
 
