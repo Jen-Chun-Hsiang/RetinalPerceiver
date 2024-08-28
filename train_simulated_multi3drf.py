@@ -163,6 +163,7 @@ def main():
     param_list, series_ids = integrated_list.generate_combined_param_list()
     logging.info(f'param_list: {param_list} \n')
     logging.info(f'series_ids: {series_ids} \n')
+
     raise RuntimeError('Stop here')
 
     # Encode series_ids into query arrays
