@@ -367,9 +367,11 @@ def generate_parameters(query_df, sf_param_table, tf_param_table):
     query_list = []
     batch_cache = {}
     posi_cache = {}
+    set_rand_seed = 42
 
     unique_posi_ids = list(query_df['Posi_id'].unique())
-    hex_centers = create_hexagonal_centers(xlim=(0, 1), ylim=(0, 1), target_num_centers=len(unique_posi_ids))
+    hex_centers = create_hexagonal_centers(xlim=(0, 1), ylim=(0, 1), target_num_centers=len(unique_posi_ids),
+                                           set_rand_seed=set_rand_seed)
     posi_id_to_center = {posi_id: hex_centers[i] for i, posi_id in enumerate(unique_posi_ids)}
 
     unique_cell_ids = list(query_df['Cell_id'].unique())
