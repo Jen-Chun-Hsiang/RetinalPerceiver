@@ -144,7 +144,7 @@ def main():
     logging.basicConfig(filename=log_filename,
                         level=logging.INFO,
                         format='%(asctime)s %(levelname)s:%(message)s')
-
+    logging.info(f'start logging... \n')
     # Check if CUDA is available
     if not torch.cuda.is_available():
         raise RuntimeError("CUDA is not available. Please check your GPU and CUDA installation.")
@@ -152,6 +152,8 @@ def main():
     # If CUDA is available, continue with the rest of the script
     device = torch.device("cuda")
     torch.cuda.empty_cache()
+
+    logging.info(f'set up GPU operation \n')
 
     query_table = getattr(config, 'query_table', None)
     sf_param_table = getattr(config, 'sf_param_table', None)
