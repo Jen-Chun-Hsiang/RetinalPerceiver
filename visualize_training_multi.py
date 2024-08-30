@@ -84,7 +84,7 @@ def main():
     sf_param_table = getattr(config, 'sf_param_table', None)
     tf_param_table = getattr(config, 'tf_param_table', None)
    # Generate param_list
-    param_list, series_ids = generate_parameters(query_table, sf_param_table, tf_param_table)
+    param_lists, series_ids = generate_parameters(query_table, sf_param_table, tf_param_table)
 
     '''
     # Save to .mat file
