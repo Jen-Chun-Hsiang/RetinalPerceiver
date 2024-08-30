@@ -26,8 +26,8 @@ def weightedsum_image_plot(output_image_np):
     plt.ylabel("Height")
 
 def main():
-    stimulus_type = 'SIMPlugIn_06022401'
-    epoch_end = 200
+    stimulus_type = 'SIMPlugIn_08292401'
+    epoch_end = 150
     is_cross_level = True
     is_full_figure_draw = True
     checkpoint_filename = f'PerceiverIO_{stimulus_type}_checkpoint_epoch_{epoch_end}'
