@@ -7,7 +7,7 @@ import logging
 from datetime import datetime
 from scipy.io import savemat
 
-from datasets.simulated_target_rf import MultiTargetMatrixGenerator, IntegratedLevel
+from datasets.simulated_target_rf import MultiTargetMatrixGenerator, generate_parameters, IntegratedLevel
 from datasets.simulated_dataset import MultiMatrixDataset
 from models.perceiver3d import RetinalPerceiverIO
 from models.cnn3d import RetinalPerceiverIOWithCNN
@@ -80,14 +80,11 @@ def main():
     config_module = f"configs.sims.{args.config_name}"
     config = __import__(config_module, fromlist=[''])
 
-    # Create integrated level with experimental levels
-    integrated_list = IntegratedLevel([getattr(config, 'experimental', None),
-                                       getattr(config, 'experimental2', None),
-                                       getattr(config, 'experimental3', None),
-                                       getattr(config, 'experimental4', None),
-                                       getattr(config, 'experimental5', None)], is_coordinates=True)
-    # Generate param_list
-    param_lists, series_ids = integrated_list.generate_combined_param_list()
+    query_table = getattr(config, 'query_table', None)
+    sf_param_table = getattr(config, 'sf_param_table', None)
+    tf_param_table = getattr(config, 'tf_param_table', None)
+   # Generate param_list
+    param_list, series_ids = generate_parameters(query_table, sf_param_table, tf_param_table)
 
     '''
     # Save to .mat file
