@@ -158,6 +158,7 @@ def main():
     query_table = getattr(config, 'query_table', None)
     sf_param_table = getattr(config, 'sf_param_table', None)
     tf_param_table = getattr(config, 'tf_param_table', None)
+    logging.info(f'query_table: {query_table} \n')
     # Generate param_list
     param_list, series_ids = generate_parameters(query_table, sf_param_table, tf_param_table)
     # param_list, series_ids = integrated_list.generate_combined_param_list()
