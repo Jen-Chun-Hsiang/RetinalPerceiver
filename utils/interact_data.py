@@ -30,4 +30,6 @@ def fill_blanks_from_excel(file_path, sheet_name=None, cell_range=None, dtypes=N
         if dtypes:
             df_filled = df_filled.astype(dtypes)
 
+        df_filled.columns = df_filled.columns.str.replace(r'\.\d+', '', regex=True)
+
     return df_filled
