@@ -3,6 +3,6 @@ import pandas as pd
 
 sim_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/DisentangleTestingSheets.xlsx'
 
-query_table = fill_blanks_from_excel(sim_dir, sheet_name='SimRealExp', cell_range='N1:P121')
+query_table = fill_blanks_from_excel(sim_dir, sheet_name='SimRealExp', cell_range='N1:P169')
 tf_param_table = pd.read_excel(sim_dir, sheet_name='TF_params', usecols='A:G')
 sf_param_table = pd.read_excel(sim_dir, sheet_name='SF_params', usecols='A:J')
