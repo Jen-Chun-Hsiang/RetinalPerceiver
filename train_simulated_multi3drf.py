@@ -166,10 +166,10 @@ def main():
     # logging.info(f'series_ids: {series_ids} \n')
 
     # Encode series_ids into query arrays
-    max_values = {'Experiment': 100, 'Type': 100}
-    skip_encoding = {'Experiment': False, 'Type': False, 'Coord_x': True, 'Coord_y': True}
-    lengths = {'Experiment': 6, 'Type': 6, 'Coord_x': 1, 'Coord_y': 1}
-    shuffle_components = None
+    max_values = getattr(config, 'max_values', None)
+    skip_encoding = getattr(config, 'skip_encoding', None)
+    lengths = getattr(config, 'lengths', None)
+    shuffle_components = getattr(config, 'shuffle_components', None)
     query_encoder = SeriesEncoder(max_values, lengths, encoding_method=args.encoding_method, is_skip=skip_encoding,
                                   shuffle_components=shuffle_components)
     query_array = query_encoder.encode(series_ids)
