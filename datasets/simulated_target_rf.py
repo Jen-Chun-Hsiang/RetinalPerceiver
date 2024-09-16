@@ -458,7 +458,10 @@ def generate_parameters(query_df, sf_param_table, tf_param_table):
 
         # Append to result lists
         param_list.append(params)
-        query_list.append((batch_id, cell_id, params['sf_mean_center'][0], params['sf_mean_center'][1]))
+        if eccentricity_exists:
+            query_list.append((batch_id, cell_id, eccentricity, params['sf_mean_center'][0], params['sf_mean_center'][1]))
+        else:
+            query_list.append((batch_id, cell_id, params['sf_mean_center'][0], params['sf_mean_center'][1]))
 
     return param_list, query_list
 
