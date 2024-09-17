@@ -139,7 +139,7 @@ def main():
         perm_cols = (0, 1)
         syn_series_ids = series_ids_permutation_uni(np.array(series_ids), perm_cols)
         logging.info(f'syn_series_ids:{syn_series_ids} \n')
-        logging.info(f'syn_series_ids shape:{syn_series_ids.shape} \n')
+        # logging.info(f'syn_series_ids shape:{syn_series_ids.shape} \n')
 
         syn_query_index = query_encoder.encode(syn_series_ids)
         query_arrays = syn_query_index
