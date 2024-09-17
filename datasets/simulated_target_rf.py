@@ -392,6 +392,7 @@ def generate_parameters(query_df, sf_param_table, tf_param_table):
     # Check if the "Eccentricity" column exists
     eccentricity_exists = 'Eccentricity' in query_df.columns
 
+    random.seed(set_rand_seed)
     for _, row in query_df.iterrows():
         batch_id = int(row['Batch_id'])
         cell_id = int(row['Cell_id'])
@@ -406,10 +407,10 @@ def generate_parameters(query_df, sf_param_table, tf_param_table):
         batch_value = batch_cache[batch_id]
 
         # If eccentricity exists and is -1, assign a batch-based random value
-        if eccentricity_exists and eccentricity == -1:
-            if batch_id not in eccentricity_cache:
-                eccentricity_cache[batch_id] = random.uniform(0, 1)
-            eccentricity = eccentricity_cache[batch_id]
+        # if eccentricity_exists and eccentricity == -1:
+        #    if batch_id not in eccentricity_cache:
+        #        eccentricity_cache[batch_id] = random.uniform(0, 1)
+        #    eccentricity = eccentricity_cache[batch_id]
 
         sf_row_id, tf_row_id = cell_id_to_row_ids[cell_id]
 
