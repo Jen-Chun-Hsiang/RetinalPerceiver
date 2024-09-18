@@ -392,7 +392,6 @@ def generate_parameters(query_df, sf_param_table, tf_param_table):
     # Check if the "Eccentricity" column exists
     eccentricity_exists = 'Eccentricity' in query_df.columns
 
-    random.seed(set_rand_seed)
     for _, row in query_df.iterrows():
         batch_id = int(row['Batch_id'])
         cell_id = int(row['Cell_id'])
@@ -400,6 +399,7 @@ def generate_parameters(query_df, sf_param_table, tf_param_table):
 
         if eccentricity_exists:
             eccentricity = float(row['Eccentricity'])
+            eccentricity_code = eccentricity
 
         # Handle batch value caching
         if batch_id not in batch_cache:
@@ -407,10 +407,10 @@ def generate_parameters(query_df, sf_param_table, tf_param_table):
         batch_value = batch_cache[batch_id]
 
         # If eccentricity exists and is -1, assign a batch-based random value
-        # if eccentricity_exists and eccentricity == -1:
-        #    if batch_id not in eccentricity_cache:
-        #        eccentricity_cache[batch_id] = random.uniform(0, 1)
-        #    eccentricity = eccentricity_cache[batch_id]
+        if eccentricity_exists and eccentricity_code == -1:
+            if batch_id not in eccentricity_cache:
+                eccentricity_cache[batch_id] = random.uniform(0, 1)
+            eccentricity = eccentricity_cache[batch_id]
 
         sf_row_id, tf_row_id = cell_id_to_row_ids[cell_id]
 
@@ -460,7 +460,7 @@ def generate_parameters(query_df, sf_param_table, tf_param_table):
         # Append to result lists
         param_list.append(params)
         if eccentricity_exists:
-            query_list.append((batch_id, cell_id, eccentricity, params['sf_mean_center'][0], params['sf_mean_center'][1]))
+            query_list.append((batch_id, cell_id, eccentricity_code, params['sf_mean_center'][0], params['sf_mean_center'][1]))
         else:
             query_list.append((batch_id, cell_id, params['sf_mean_center'][0], params['sf_mean_center'][1]))
 
