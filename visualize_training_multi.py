@@ -100,6 +100,7 @@ def main():
     shuffle_components = getattr(config, 'shuffle_components', None)
     query_encoder = SeriesEncoder(max_values, lengths, encoding_method=args.encoding_method, is_skip=skip_encoding,
                                   shuffle_components=shuffle_components)
+    logging.info(f'series_ids:{series_ids} \n')
     query_arrays = query_encoder.encode(series_ids)
     logging.info(f'query_arrays shape:{query_arrays.shape} \n')
     logging.info(f'query_arrays example 1:{query_arrays[0, :]} \n')
