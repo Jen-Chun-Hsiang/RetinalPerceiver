@@ -101,7 +101,8 @@ def main():
     query_encoder = SeriesEncoder(max_values, lengths, encoding_method=args.encoding_method, is_skip=skip_encoding,
                                   shuffle_components=shuffle_components)
     query_arrays = query_encoder.encode(series_ids)
-    logging.info(f'query_arrays example 1:{query_arrays.shape} \n')
+    logging.info(f'query_arrays shape:{query_arrays.shape} \n')
+    logging.info(f'query_arrays example 1:{query_arrays[0, :]} \n')
 
     query_permutator = None
 
@@ -139,9 +140,11 @@ def main():
         perm_cols = (0, 1)
         syn_series_ids = series_ids_permutation_uni(np.array(series_ids), perm_cols)
         logging.info(f'syn_series_ids:{syn_series_ids} \n')
+
         # logging.info(f'syn_series_ids shape:{syn_series_ids.shape} \n')
 
         syn_query_index = query_encoder.encode(syn_series_ids)
+        logging.info(f'syn_query_index example 1:{syn_query_index[0, :]} \n')
         query_arrays = syn_query_index
 
         ''' Use for unique cell id
