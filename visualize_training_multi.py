@@ -26,9 +26,10 @@ def weightedsum_image_plot(output_image_np):
     plt.ylabel("Height")
 
 def main():
-    stimulus_type = 'SIMPlugIn_09102401'
+    stimulus_type = 'SIMPlugIn_09102402'
     epoch_end = 150
     is_cross_level = True
+    perm_cols = (0, 1, 2)
     is_full_figure_draw = False
     checkpoint_filename = f'PerceiverIO_{stimulus_type}_checkpoint_epoch_{epoch_end}'
 
@@ -138,7 +139,7 @@ def main():
     model, optimizer = checkpoint_loader.load_checkpoint(model, optimizer)
 
     if is_cross_level:
-        perm_cols = (0, 1)
+
         syn_series_ids = series_ids_permutation_uni(np.array(series_ids), perm_cols)
         logging.info(f'syn_series_ids:{syn_series_ids} \n')
 
