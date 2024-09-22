@@ -516,33 +516,54 @@ def series_ids_permutation(Ds, length):
     return Df, syn_query
 
 
-def series_ids_permutation_uni(Ds, perm_cols):
+def series_ids_permutation_uni(Ds, perm_cols, repeat_samples=None, shuffle_mode='row'):
     nrows, ncols = Ds.shape
     np.random.seed()  # Ensures a different shuffle each time
 
     include_columns = [i for i in range(ncols) if i not in perm_cols]
     np_arr = np.array(Ds)
-    unique_rows = np.unique(np_arr[:, include_columns], axis=0)
 
+    # Generate all possible combinations of permutation columns
     all_possible_combinations = set(tuple(row) for row in
-                                    np.array(np.meshgrid(*[np.unique(np_arr[:, col]) for col in perm_cols])).T.reshape(-1,
-                                    len(perm_cols)))
+                                    np.array(np.meshgrid(*[np.unique(np_arr[:, col]) for col in perm_cols])).T.reshape(
+                                        -1,
+                                        len(perm_cols)))
     present_combinations = set(tuple(row) for row in np_arr[:, perm_cols])
     missing_combinations = list(all_possible_combinations - present_combinations)
+    if repeat_samples is not None:
+        shuffle_remaining = True
+    else:
+        shuffle_remaining = False
 
     result = []
-    for pair, mod in product(missing_combinations, unique_rows):
-        combined = pair + tuple(mod)
-        result.append(combined)
+    # Process each missing permutation combination
+    if shuffle_remaining is False:
+        unique_rows = np.unique(np_arr[:, include_columns], axis=0)
+        for pair, mod in product(missing_combinations, unique_rows):
+            combined = pair + tuple(mod)
+            result.append(combined)
 
-    # Sample from the original data and generate combinations based on unique values in include_columns
-    combinations = list(product(*[np.unique(np_arr[:, col]) for col in include_columns]))
-    indices = np.random.choice(nrows, size=len(combinations), replace=True)
-    sampled_data = [tuple(row) for row in np_arr[indices, :][:, perm_cols]]
+        # Sample from the original data and generate combinations based on unique values in include_columns
+        combinations = list(product(*[np.unique(np_arr[:, col]) for col in include_columns]))
+        indices = np.random.choice(nrows, size=len(combinations), replace=True)
+        sampled_data = [tuple(row) for row in np_arr[indices, :][:, perm_cols]]
 
-    # Ensure that sampled_data and combinations are zipped correctly
-    combined_list = [(a + b) for a, b in zip(sampled_data, combinations)]
-    result += combined_list
+        # Ensure that sampled_data and combinations are zipped correctly
+        combined_list = [(a + b) for a, b in zip(sampled_data, combinations)]
+        result += combined_list
+
+    else:
+        for pair in missing_combinations:
+            for _ in range(repeat_samples):
+                if shuffle_mode == 'row':
+                    # Shuffle the rows and sample one
+                    shuffled_indices = np.random.permutation(nrows)
+                    mod = tuple(np_arr[shuffled_indices[0], include_columns])
+                elif shuffle_mode == 'independent':
+                    # Shuffle each column independently and sample one
+                    mod = tuple(np.random.choice(np_arr[:, col]) for col in include_columns)
+                combined = pair + mod
+                result.append(combined)
 
     return result
 
