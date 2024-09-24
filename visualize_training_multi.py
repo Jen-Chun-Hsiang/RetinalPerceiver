@@ -96,10 +96,11 @@ def main():
 
     # Encode series_ids into query arrays
     max_values = getattr(config, 'max_values', None)
-    skip_encoding = getattr(config, 'skip_encoding', None)
+    # skip_encoding = getattr(config, 'skip_encoding', None)
+    encoding_type = getattr(config, 'encoding_type', None)
     lengths = getattr(config, 'lengths', None)
     shuffle_components = getattr(config, 'shuffle_components', None)
-    query_encoder = SeriesEncoder(max_values, lengths, encoding_method=args.encoding_method, is_skip=skip_encoding,
+    query_encoder = SeriesEncoder(max_values, lengths, encoding_method=args.encoding_method, encoding_type=encoding_type,
                                   shuffle_components=shuffle_components)
     logging.info(f'series_ids:{series_ids} \n')
     query_arrays = query_encoder.encode(series_ids)

@@ -241,7 +241,7 @@ class DataVisualizer:
 
 
 class SeriesEncoder:
-    def __init__(self, max_values, lengths, encoding_method='max_spacing', order=None, is_skip=None,
+    def __init__(self, max_values, lengths, encoding_method='max_spacing', order=None, encoding_type=None,
                  shuffle_components=None, seed=42):
         """
         Initialize the encoder with maximum values, lengths, and optional order and shuffle settings.
@@ -261,7 +261,7 @@ class SeriesEncoder:
         self.lengths = lengths
         self.encoding_method = encoding_method
         self.order = order if order is not None else list(lengths.keys())
-        self.is_skip = is_skip if is_skip is not None else {component: False for component in lengths}
+        self.encoding_type = encoding_type if encoding_type is not None else {component: 'extend' for component in lengths}
         self.shuffle_components = shuffle_components if shuffle_components is not None else []
 
         np.random.seed(seed)
@@ -309,24 +309,21 @@ class SeriesEncoder:
         Encode multiple input tuples into a concatenated vector.
         input_tuples: List of tuples, each representing values for components in the order.
         """
-
-
         encoded_vectors = []
 
         for input_values in input_tuples:
             encoded_vector = []
             for component, value in zip(self.order, input_values):
-                if self.is_skip[component]:
-                    encoded_vector.extend([value])
-                else:
+                length = self.lengths[component]
+                if self.encoding_type[component] == 'extend':
+                    encoded_vector.extend([value] * length)
+                elif self.encoding_type[component] == 'uniform':
+                    encoded_vector.extend(self.encode_component_uniformly(value, length, component))
+                elif self.encoding_type[component] == 'max_spacing':
                     max_value = self.max_values[component]
-                    length = self.lengths[component]
+                    base = self.bases[component]
+                    encoded_vector.extend(self.encode_component_max_spacing(value, max_value, length, base, component))
 
-                    if self.encoding_method == 'uniform':
-                        encoded_vector.extend(self.encode_component_uniformly(value, length, component))
-                    elif self.encoding_method == 'max_spacing':
-                        base = self.bases[component]
-                        encoded_vector.extend(self.encode_component_max_spacing(value, max_value, length, base, component))
             encoded_vectors.append(np.array(encoded_vector))
 
         # Concatenate along a new dimension
