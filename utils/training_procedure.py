@@ -103,6 +103,8 @@ class Trainer:
         num_batches = query_vectors.shape[0]
         mask = torch.rand(num_batches) < self.masking_prob
         query_vectors[mask, :, self.masking_pos] = -1
+        print(f'self.masking_pos: {self.masking_pos}')
+        print(f'mask: {mask}')
         print(f'query_vectors type: {type(query_vectors)}')
         print(f'query_vectors: {query_vectors}')
         print(f'query_vectors shape: {query_vectors.shape}')
