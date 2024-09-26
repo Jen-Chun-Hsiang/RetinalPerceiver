@@ -99,6 +99,10 @@ class Trainer:
     def _process_batch_with_query_masking(self, data):
         input_matrices, targets, matrix_indices = data
         query_vectors = self.query_array[matrix_indices]
+
+        num_batches = query_vectors.shape[0]
+        mask = torch.rand(num_batches) < self.masking_prob
+        query_vectors[mask, :, self.masking_pos] = -1
         print(f'query_vectors type: {type(query_vectors)}')
         print(f'query_vectors: {query_vectors}')
         print(f'query_vectors shape: {query_vectors.shape}')
