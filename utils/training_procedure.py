@@ -107,13 +107,12 @@ class Trainer:
         if selected_batches.numel() > 0:
             expanded_mask = selected_batches[:, None, None].expand(-1, query_vectors.shape[1], len(self.masking_pos))
             query_vectors[expanded_mask, :, self.masking_pos] = -1
-        print(f'self.masking_pos: {self.masking_pos}')
-        print(f'mask: {mask}')
-        print(f'query_vectors type: {type(query_vectors)}')
-        print(f'query_vectors: {query_vectors}')
-        print(f'query_vectors shape: {query_vectors.shape}')
-
-        raise RuntimeError("check query vector.")
+        # print(f'self.masking_pos: {self.masking_pos}')
+        # print(f'mask: {mask}')
+        # print(f'query_vectors type: {type(query_vectors)}')
+        # print(f'query_vectors: {query_vectors}')
+        # print(f'query_vectors shape: {query_vectors.shape}')
+        # raise RuntimeError("check query vector.")
         query_vectors = query_vectors.float().to(self.device)
         input_matrices, targets = input_matrices.to(self.device), targets.to(self.device)
         outputs, _ = self.model(input_matrices, query_vectors)
