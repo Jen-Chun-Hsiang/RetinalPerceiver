@@ -11,13 +11,20 @@ class Trainer:
                  query_encoder=None, query_permutator=None, series_ids=None, is_feature_L1=False,
                  is_retinal_dataset=True,
                  margin=0.1, temperature=0.1, lambda_l1=0.01, contrastive_factor=0.01,
-                 l1_weight=0.01):
+                 l1_weight=0.01, masking_pos=None, masking_prob=0.5):
         self.model = model
         self.criterion = criterion
         self.optimizer = optimizer
         self.device = device
         self.accumulation_steps = accumulation_steps
         self.is_retinal_dataset = is_retinal_dataset
+        self.masking_pos = masking_pos
+        self.masking_prob = masking_prob
+        self.is_masking = False
+        if self.masking_pos is not None:
+            self.is_masking = True
+
+
 
         self.is_contrastive_learning = is_contrastive_learning
         if self.is_contrastive_learning:
@@ -58,7 +65,10 @@ class Trainer:
                 elif self.is_selective_layers:
                     loss = self._process_batch_with_query_selective(data)
                 else:
-                    loss = self._process_batch_with_query(data)
+                    if self.is_masking:
+                        loss = self._process_batch_with_query_masking(data)
+                    else:
+                        loss = self._process_batch_with_query(data)
             else:
                 loss = self._process_batch(data)
 
@@ -86,6 +96,27 @@ class Trainer:
         loss = self._compute_loss(outputs, targets)
         return loss
 
+    def _process_batch_with_query_masking(self, data):
+        input_matrices, targets, matrix_indices = data
+        query_vectors = self.query_array[matrix_indices]
+        print(f'query_vectors type: {type(query_vectors)}')
+        print(f'query_vectors: {query_vectors}')
+        print(f'query_vectors shape: {query_vectors.shape}')
+
+        raise RuntimeError("check query vector.")
+        query_vectors = query_vectors.float().to(self.device)
+        input_matrices, targets = input_matrices.to(self.device), targets.to(self.device)
+        outputs, _ = self.model(input_matrices, query_vectors)
+        try:
+            assert outputs.shape == targets.shape
+        except Exception as e:
+            print(e)
+            print(f'outputs shape: {outputs.shape}')
+            print(f'targets shape: {targets.shape}')
+
+        loss = self._compute_loss(outputs, targets)
+
+        return loss
     def _process_batch_with_query(self, data):
         input_matrices, targets, matrix_indices = data
         query_vectors = self.query_array[matrix_indices]

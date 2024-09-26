@@ -26,7 +26,7 @@ def weightedsum_image_plot(output_image_np):
     plt.ylabel("Height")
 
 def main():
-    stimulus_type = 'SIMPlugIn_09102413'
+    stimulus_type = 'SIMPlugIn_09232402'
     epoch_end = 150
     is_cross_level = False
     perm_cols = (0, 1, 2)
