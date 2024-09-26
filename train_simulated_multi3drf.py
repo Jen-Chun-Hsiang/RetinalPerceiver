@@ -74,6 +74,7 @@ def parse_args():
     parser.add_argument('--checkpoint_path', type=str, default='./checkpoints/model.pth',
                         help='Path to save load model checkpoint')
     parser.add_argument('--load_checkpoint', action='store_true', help='Flag to load the model from checkpoint')
+    parser.add_argument('--masking_pos', type=int, default=None, help='masking positions, such as (0, 1, 2)')
     # Target matrix specificity
     parser.add_argument('--sf_surround_weight', type=float, default=0.5, help='Strength of spatial surround')
     parser.add_argument('--tf_surround_weight', type=float, default=0.2, help='Strength of temporal surround')
@@ -262,7 +263,8 @@ def main():
     trainer = Trainer(model, criterion, optimizer, device, args.accumulation_steps,
                       query_array=query_array, is_contrastive_learning=args.is_contrastive_learning,
                       series_ids=series_ids, query_encoder=query_encoder, query_permutator=query_permutator,
-                      margin=args.margin, temperature=args.temperature, contrastive_factor=args.contrastive_factor)
+                      margin=args.margin, temperature=args.temperature, contrastive_factor=args.contrastive_factor,
+                      masking_pos=args.masking_pos)
     # Initialize the Evaluator
     evaluator_contra = Evaluator(model, criterion, device, query_array=query_array,
                                  is_contrastive_learning=args.is_contrastive_learning,
