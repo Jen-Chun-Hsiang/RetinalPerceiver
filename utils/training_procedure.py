@@ -99,7 +99,6 @@ class Trainer:
     def _process_batch_with_query_masking(self, data):
         input_matrices, targets, matrix_indices = data
         query_vectors = self.query_array[matrix_indices]
-        print(f'query_vectors shape: {query_vectors.shape}')
         num_batches = query_vectors.shape[0]
         mask = torch.rand(num_batches) < self.masking_prob
         # Apply the mask
@@ -111,11 +110,16 @@ class Trainer:
         # print(f'mask: {mask}')
         # print(f'query_vectors type: {type(query_vectors)}')
         # print(f'query_vectors: {query_vectors}')
-        print(f'query_vectors shape: {query_vectors.shape}')
-        raise RuntimeError("check query vector.")
+        # print(f'query_vectors shape: {query_vectors.shape}')
+
         query_vectors = query_vectors.float().to(self.device)
         input_matrices, targets = input_matrices.to(self.device), targets.to(self.device)
         outputs, _ = self.model(input_matrices, query_vectors)
+        print(f'outputs shape: {outputs.shape}')
+        print(f'outputs type: {type(outputs)}')
+        print(f'targets shape: {targets.shape}')
+        print(f'targets type: {type(targets)}')
+        raise RuntimeError("check query vector.")
         try:
             assert outputs.shape == targets.shape
         except Exception as e:
