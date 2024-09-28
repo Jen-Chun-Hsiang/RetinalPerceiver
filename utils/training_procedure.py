@@ -115,11 +115,12 @@ class Trainer:
         query_vectors = query_vectors.float().to(self.device)
         input_matrices, targets = input_matrices.to(self.device), targets.to(self.device)
         outputs, _ = self.model(input_matrices, query_vectors)
-        print(f'outputs shape: {outputs.shape}')
-        print(f'outputs type: {type(outputs)}')
-        print(f'targets shape: {targets.shape}')
-        print(f'targets type: {type(targets)}')
-        raise RuntimeError("check query vector.")
+        outputs = outputs.squeeze()
+        # print(f'outputs shape: {outputs.shape}')
+        # print(f'outputs type: {type(outputs)}')
+        # print(f'targets shape: {targets.shape}')
+        # print(f'targets type: {type(targets)}')
+        # raise RuntimeError("check query vector.")
         try:
             assert outputs.shape == targets.shape
         except Exception as e:
