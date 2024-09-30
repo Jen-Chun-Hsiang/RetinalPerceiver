@@ -261,7 +261,10 @@ def main():
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
     # Initialize the Trainer
-    masking_pos = calculate_mask_positions(lengths, args.masking_pos)
+    if args.masking_pos is None:
+        masking_pos = None
+    else:
+        masking_pos = calculate_mask_positions(lengths, args.masking_pos)
     trainer = Trainer(model, criterion, optimizer, device, args.accumulation_steps,
                       query_array=query_array, is_contrastive_learning=args.is_contrastive_learning,
                       series_ids=series_ids, query_encoder=query_encoder, query_permutator=query_permutator,
