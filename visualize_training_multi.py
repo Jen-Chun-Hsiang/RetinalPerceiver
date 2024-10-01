@@ -28,7 +28,7 @@ def weightedsum_image_plot(output_image_np):
 def main():
     stimulus_type = 'SIMPlugIn_09232403'
     epoch_end = 120
-    is_cross_level = False
+    is_cross_level = True
     perm_cols = (0, 1)
     is_weight_in_label = True
     is_full_figure_draw = False
