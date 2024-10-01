@@ -242,13 +242,13 @@ def main():
 
         if is_full_figure_draw:
             visualizer_est_rf.plot_and_save(output_image_np, plot_type='3D_matrix', num_cols=5)
-            if is_weight_in_label:
+            if is_weight_in_label is False:
                 visualizer_inout_corr.plot_and_save(None, plot_type='scatter', x_data=labels, y_data=weights,
                                                     xlabel='Labels', ylabel='Weights',
                                                     title='Relationship between Weights and Labels')
             visualizer_est_rfstd.plot_and_save(output_image_np_std, plot_type='2D_matrix')
 
-        if is_weight_in_label:
+        if is_weight_in_label is False:
             corrcoef_vals[ii, :] = calculate_correlation(labels, weights)
         ii += 1
 
