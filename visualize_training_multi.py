@@ -26,10 +26,11 @@ def weightedsum_image_plot(output_image_np):
     plt.ylabel("Height")
 
 def main():
-    stimulus_type = 'SIMPlugIn_09102423'
-    epoch_end = 150
-    is_cross_level = True
-    perm_cols = (0, 1, 2)
+    stimulus_type = 'SIMPlugIn_09232403'
+    epoch_end = 100
+    is_cross_level = False
+    perm_cols = (0, 1)
+    is_weight_in_label = False
     is_full_figure_draw = False
     checkpoint_filename = f'PerceiverIO_{stimulus_type}_checkpoint_epoch_{epoch_end}'
 
@@ -171,8 +172,12 @@ def main():
         syn_query_index = np.array([])
         cross_level_flag = 'Data'
 
-    savedata_filename_npz = os.path.join(savedata_dir, f'{checkpoint_filename}_data_{cross_level_flag}.npz')
-    savedata_filename_mat = os.path.join(savedata_dir, f'{checkpoint_filename}_data_{cross_level_flag}.mat')
+    if is_weight_in_label:
+        label_flag = 'Label'
+    else:
+        label_flag = 'Model'
+    savedata_filename_npz = os.path.join(savedata_dir, f'{checkpoint_filename}_data_{cross_level_flag}_{is_weight_in_label}.npz')
+    savedata_filename_mat = os.path.join(savedata_dir, f'{checkpoint_filename}_data_{cross_level_flag}_{is_weight_in_label}.mat')
 
     presented_cell_ids = list(range(query_arrays.shape[0]))
 
@@ -206,7 +211,7 @@ def main():
         sample_data, sample_label, sample_index = dataset_test[0]
         logging.info(f"dataset size: {sample_data.shape}")
         output_image, weights, labels = forward_model(model, dataset_test, query_array=query_array, batch_size=batch_size,
-                                                      use_matrix_index=False)
+                                                      use_matrix_index=False, is_weight_in_label=is_weight_in_label)
         output_image_np = output_image.squeeze().cpu().numpy()
         output_image_np_std = np.std(output_image_np, axis=0)
         output_image_np_std = output_image_np_std / output_image_np_std.sum()
