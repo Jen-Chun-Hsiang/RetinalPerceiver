@@ -7,7 +7,7 @@ import logging
 from datetime import datetime
 from scipy.io import savemat
 
-from datasets.simulated_target_rf import MultiTargetMatrixGenerator, generate_parameters, IntegratedLevel
+from datasets.simulated_target_rf import MultiTargetMatrixGenerator, ParameterGenerator
 from datasets.simulated_dataset import MultiMatrixDataset
 from models.perceiver3d import RetinalPerceiverIO
 from models.cnn3d import RetinalPerceiverIOWithCNN
@@ -26,11 +26,11 @@ def weightedsum_image_plot(output_image_np):
     plt.ylabel("Height")
 
 def main():
-    stimulus_type = 'SIMPlugIn_09102413'
-    epoch_end = 150
+    stimulus_type = 'SIMPlugIn_09232403'
+    epoch_end = 120
     is_cross_level = True
-    perm_cols = (0, 1, 2)
-    is_weight_in_label = True
+    perm_cols = (0, 1)
+    is_weight_in_label = False
     is_full_figure_draw = False
     checkpoint_filename = f'PerceiverIO_{stimulus_type}_checkpoint_epoch_{epoch_end}'
 
@@ -86,7 +86,8 @@ def main():
     sf_param_table = getattr(config, 'sf_param_table', None)
     tf_param_table = getattr(config, 'tf_param_table', None)
    # Generate param_list
-    param_lists, series_ids = generate_parameters(query_table, sf_param_table, tf_param_table)
+    parameter_generator = ParameterGenerator(sf_param_table, tf_param_table)
+    param_lists, series_ids = parameter_generator.generate_parameters(query_table)
 
     '''
     # Save to .mat file
@@ -147,9 +148,11 @@ def main():
 
         # logging.info(f'syn_series_ids shape:{syn_series_ids.shape} \n')
 
+        param_lists = parameter_generator.generate_parameters_from_query_list(syn_series_ids)
         syn_query_index = query_encoder.encode(syn_series_ids)
         logging.info(f'syn_query_index example 1:{syn_query_index[0, :]} \n')
         query_arrays = syn_query_index
+
 
         ''' Use for unique cell id
         query_partition_lengths = tuple(lengths.values())
@@ -191,10 +194,7 @@ def main():
         query_array = query_arrays[presented_cell_id:presented_cell_id+1, :]
         logging.info(f'query_encoder {presented_cell_id}:{query_array.shape} \n')
         # Use param_list in MultiTargetMatrixGenerator
-        if is_cross_level:
-            param_list = param_lists[0]
-        else:
-            param_list = param_lists[presented_cell_id]
+        param_list = param_lists[presented_cell_id]
         multi_target_gen = MultiTargetMatrixGenerator(param_list)
         target_matrix = multi_target_gen.create_3d_target_matrices(
             input_height=args.input_height, input_width=args.input_width, input_depth=args.input_depth)
