@@ -377,38 +377,46 @@ class ParameterGenerator:
         self.eccentricity_cache = {}
         self.set_rand_seed = 42
 
+        # Initialize properties to None
+        self.unique_posi_ids = None
+        self.posi_id_to_center = None
+        self.unique_cell_ids = None
+        self.cell_id_to_row_ids = None
+        self.min_max_stretch_fac = None
+        self.eccentricity_exists = None
+
     def generate_parameters(self, query_df):
         param_list = []
         query_list = []
-        unique_posi_ids = list(query_df['Posi_id'].unique())
+        self.unique_posi_ids = list(query_df['Posi_id'].unique())
         hex_centers = create_hexagonal_centers(
             xlim=(0, 1),
             ylim=(0, 1),
-            target_num_centers=len(unique_posi_ids),
+            target_num_centers=len(self.unique_posi_ids),
             set_rand_seed=self.set_rand_seed
         )
-        posi_id_to_center = {posi_id: hex_centers[i] for i, posi_id in enumerate(unique_posi_ids)}
+        self.posi_id_to_center = {posi_id: hex_centers[i] for i, posi_id in enumerate(self.unique_posi_ids)}
 
-        unique_cell_ids = list(query_df['Cell_id'].unique())
-        cell_id_to_row_ids = assign_row_ids_to_cell_ids(
-            unique_cell_ids, len(self.sf_param_table), len(self.tf_param_table)
+        self.unique_cell_ids = list(query_df['Cell_id'].unique())
+        self.cell_id_to_row_ids = assign_row_ids_to_cell_ids(
+            self.unique_cell_ids, len(self.sf_param_table), len(self.tf_param_table)
         )
 
         # Determine min value of 'max_tf_stretch_fac' for the selected tf_row_ids
-        min_max_stretch_fac = self.tf_param_table.loc[
-            [cell_id_to_row_ids[cell_id][1] for cell_id in unique_cell_ids],
+        self.min_max_stretch_fac = self.tf_param_table.loc[
+            [self.cell_id_to_row_ids[cell_id][1] for cell_id in self.unique_cell_ids],
             'max_tf_stretch_fac'
         ].min()
 
         # Check if the "Eccentricity" column exists
-        eccentricity_exists = 'Eccentricity' in query_df.columns
+        self.eccentricity_exists = 'Eccentricity' in query_df.columns
 
         for _, row in query_df.iterrows():
             batch_id = int(row['Batch_id'])
             cell_id = int(row['Cell_id'])
             posi_id = int(row['Posi_id'])
 
-            if eccentricity_exists:
+            if self.eccentricity_exists:
                 eccentricity = float(row['Eccentricity'])
                 eccentricity_code = eccentricity
 
@@ -418,12 +426,12 @@ class ParameterGenerator:
             batch_value = self.batch_cache[batch_id]
 
             # If eccentricity exists and is -1, assign a batch-based random value
-            if eccentricity_exists and eccentricity_code == -1:
+            if self.eccentricity_exists and eccentricity_code == -1:
                 if batch_id not in self.eccentricity_cache:
                     self.eccentricity_cache[batch_id] = random.uniform(0, 1)
                 eccentricity = self.eccentricity_cache[batch_id]
 
-            sf_row_id, tf_row_id = cell_id_to_row_ids[cell_id]
+            sf_row_id, tf_row_id = self.cell_id_to_row_ids[cell_id]
 
             params = {
                 'tf_weight_surround': None,
@@ -450,13 +458,13 @@ class ParameterGenerator:
                 sf_row_id, self.sf_param_table)
 
             # Assign position-based centers
-            params['sf_mean_center'] = posi_id_to_center[posi_id]
+            params['sf_mean_center'] = self.posi_id_to_center[posi_id]
 
             # Apply batch scaling for temporal frequency parameters
             (tf_mean_center, tf_mean_surround,
              tf_sigma_center, tf_sigma_surround) = apply_batch_scaling(
                 batch_value, tf_mean_center, tf_mean_surround,
-                tf_sigma_center, tf_sigma_surround, min_max_stretch_fac)
+                tf_sigma_center, tf_sigma_surround, self.min_max_stretch_fac)
 
             params['tf_mean_center'] = tf_mean_center
             params['tf_mean_surround'] = tf_mean_surround
@@ -464,7 +472,7 @@ class ParameterGenerator:
             params['tf_sigma_surround'] = tf_sigma_surround
 
             # If eccentricity exists, apply eccentricity scaling to spatial frequency parameters
-            if eccentricity_exists:
+            if self.eccentricity_exists:
                 (sf_cov_center, sf_cov_surround) = apply_eccentricity_scaling(
                     eccentricity, sf_cov_center, sf_cov_surround, local_max_sf_stretch_fac)
 
@@ -473,7 +481,7 @@ class ParameterGenerator:
 
             # Append to result lists
             param_list.append(params)
-            if eccentricity_exists:
+            if self.eccentricity_exists:
                 query_list.append((batch_id, cell_id, eccentricity_code,
                                    params['sf_mean_center'][0], params['sf_mean_center'][1]))
             else:
@@ -488,23 +496,16 @@ class ParameterGenerator:
         if not query_list:
             return param_list  # Return an empty list if query_list is empty
 
-        # Check if eccentricity exists based on length of tuples in query_list
-        if len(query_list[0]) == 5:
-            eccentricity_exists = True
-        else:
-            eccentricity_exists = False
+        # Ensure that required attributes are available
+        required_attributes = ['cell_id_to_row_ids', 'min_max_stretch_fac', 'eccentricity_exists']
+        for attr in required_attributes:
+            if getattr(self, attr) is None:
+                raise ValueError(f"Attribute '{attr}' is not set. Please run 'generate_parameters' first.")
 
-        # Collect unique cell_ids
-        unique_cell_ids = set([item[1] for item in query_list])
-
-        cell_id_to_row_ids = assign_row_ids_to_cell_ids(
-            unique_cell_ids, len(self.sf_param_table), len(self.tf_param_table))
-
-        # Determine min value of 'max_tf_stretch_fac' for the selected tf_row_ids
-        min_max_stretch_fac = self.tf_param_table.loc[
-            [cell_id_to_row_ids[cell_id][1] for cell_id in unique_cell_ids],
-            'max_tf_stretch_fac'
-        ].min()
+        # Use the stored attributes
+        cell_id_to_row_ids = self.cell_id_to_row_ids
+        min_max_stretch_fac = self.min_max_stretch_fac
+        eccentricity_exists = self.eccentricity_exists
 
         for item in query_list:
             if eccentricity_exists:
