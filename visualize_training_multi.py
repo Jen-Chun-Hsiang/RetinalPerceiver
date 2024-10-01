@@ -30,7 +30,7 @@ def main():
     epoch_end = 120
     is_cross_level = True
     perm_cols = (0, 1)
-    is_weight_in_label = False
+    is_weight_in_label = True
     is_full_figure_draw = False
     checkpoint_filename = f'PerceiverIO_{stimulus_type}_checkpoint_epoch_{epoch_end}'
 
@@ -85,7 +85,7 @@ def main():
     query_table = getattr(config, 'query_table', None)
     sf_param_table = getattr(config, 'sf_param_table', None)
     tf_param_table = getattr(config, 'tf_param_table', None)
-   # Generate param_list
+    # Generate param_list
     parameter_generator = ParameterGenerator(sf_param_table, tf_param_table)
     param_lists, series_ids = parameter_generator.generate_parameters(query_table)
 
