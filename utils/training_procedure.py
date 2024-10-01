@@ -451,12 +451,13 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
                     is_adding = True
 
                 else:
-                    query_vectors = query_array_tensor.repeat(batch_size, 1, 1).to(images.device)
-                    # print(f'query_vector shape: {query_vectors.shape}')
-                    # print(f'images shape: {images.shape}')
-                    if query_vectors.size(0) != images.size(0):
-                        query_vectors = query_vectors[:images.size(0), :, :]
-                    weights, _ = model(images, query_vectors)
+                    if is_weight_in_label is False:
+                        query_vectors = query_array_tensor.repeat(batch_size, 1, 1).to(images.device)
+                        # print(f'query_vector shape: {query_vectors.shape}')
+                        # print(f'images shape: {images.shape}')
+                        if query_vectors.size(0) != images.size(0):
+                            query_vectors = query_vectors[:images.size(0), :, :]
+                        weights, _ = model(images, query_vectors)
             else:
                 if is_retinal_dataset:
                     images, labels, _ = data
@@ -468,7 +469,8 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
             # images = images.to(next(model.parameters()).device)
             # print(f'weights type: {type(weights)}')
             # print(f'weights shape: {weights.shape}')
-            weights_list = weights.cpu().tolist()
+            if is_weight_in_label is False:
+                weights_list = weights.cpu().tolist()
 
             if is_adding:
                 within_idx_list = within_idx.cpu().tolist()
@@ -478,7 +480,9 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
                 batch_indices_tensor = torch.tensor(all_batch_idx)
                 within_batch_indices_tensor = torch.tensor(all_within_batch_idx)
 
-            all_weights.extend(weights_list)
+            if is_weight_in_label is False:
+                all_weights.extend(weights_list)
+
             all_labels.extend(labels.cpu().tolist() if torch.is_tensor(labels) else labels)
 
     if logger:
