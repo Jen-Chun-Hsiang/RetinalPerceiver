@@ -176,8 +176,8 @@ def main():
         label_flag = 'Label'
     else:
         label_flag = 'Model'
-    savedata_filename_npz = os.path.join(savedata_dir, f'{checkpoint_filename}_data_{cross_level_flag}_{is_weight_in_label}.npz')
-    savedata_filename_mat = os.path.join(savedata_dir, f'{checkpoint_filename}_data_{cross_level_flag}_{is_weight_in_label}.mat')
+    savedata_filename_npz = os.path.join(savedata_dir, f'{checkpoint_filename}_data_{cross_level_flag}_{label_flag}.npz')
+    savedata_filename_mat = os.path.join(savedata_dir, f'{checkpoint_filename}_data_{cross_level_flag}_{label_flag}.mat')
 
     presented_cell_ids = list(range(query_arrays.shape[0]))
 
