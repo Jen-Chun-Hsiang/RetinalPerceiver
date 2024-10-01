@@ -242,12 +242,14 @@ def main():
 
         if is_full_figure_draw:
             visualizer_est_rf.plot_and_save(output_image_np, plot_type='3D_matrix', num_cols=5)
-            visualizer_inout_corr.plot_and_save(None, plot_type='scatter', x_data=labels, y_data=weights,
-                                                xlabel='Labels', ylabel='Weights',
-                                                title='Relationship between Weights and Labels')
+            if is_weight_in_label:
+                visualizer_inout_corr.plot_and_save(None, plot_type='scatter', x_data=labels, y_data=weights,
+                                                    xlabel='Labels', ylabel='Weights',
+                                                    title='Relationship between Weights and Labels')
             visualizer_est_rfstd.plot_and_save(output_image_np_std, plot_type='2D_matrix')
 
-        corrcoef_vals[ii, :] = calculate_correlation(labels, weights)
+        if is_weight_in_label:
+            corrcoef_vals[ii, :] = calculate_correlation(labels, weights)
         ii += 1
 
     rf_spatial_array = np.stack(rf_spatial_array_list, axis=2)
