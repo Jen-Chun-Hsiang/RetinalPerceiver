@@ -92,7 +92,7 @@ def main():
     # syn_param_list = np.array(syn_param_list, dtype=float)
     # syn_param_lists = [x if x is not None else np.nan for x in syn_param_lists]
     print(f'syn_param_list type: {type(syn_param_lists)}')
-    print(f'param_list type: {type(param_list)}')
+    print(f'param_lists type: {type(param_lists)}')
 
     # Save to .mat file
     savemat(os.path.join(savemat_dir, 'sim_multi_list_10022401.mat'),
