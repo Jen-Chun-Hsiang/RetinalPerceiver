@@ -89,7 +89,7 @@ def main():
     parameter_generator = ParameterGenerator(sf_param_table, tf_param_table)
     param_lists, series_ids = parameter_generator.generate_parameters(query_table)
     syn_param_lists = parameter_generator.generate_parameters_from_query_list(series_ids)
-    syn_param_list = [x if x is not None else np.nan for x in syn_param_list]
+    syn_param_lists = [x if x is not None else np.nan for x in syn_param_lists]
     print(f'syn_param_list type: {type(syn_param_lists)}')
     print(f'series_ids type: {type(series_ids)}')
 
