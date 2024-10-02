@@ -513,9 +513,11 @@ def series_ids_permutation(Ds, length):
     return Df, syn_query
 
 
-def series_ids_permutation_uni(Ds, perm_cols, repeat_samples=None, shuffle_mode='row'):
+def series_ids_permutation_uni(Ds, perm_cols, repeat_samples=None, shuffle_mode='row', random_seed=42):
     nrows, ncols = Ds.shape
-    np.random.seed()  # Ensures a different shuffle each time
+
+    # Initialize random generator with a fixed seed if provided
+    rng = np.random.default_rng(random_seed)
 
     include_columns = [i for i in range(ncols) if i not in perm_cols]
     np_arr = np.array(Ds)
@@ -542,7 +544,7 @@ def series_ids_permutation_uni(Ds, perm_cols, repeat_samples=None, shuffle_mode=
 
         # Sample from the original data and generate combinations based on unique values in include_columns
         combinations = list(product(*[np.unique(np_arr[:, col]) for col in include_columns]))
-        indices = np.random.choice(nrows, size=len(combinations), replace=True)
+        indices = rng.choice(nrows, size=len(combinations), replace=True)
         sampled_data = [tuple(row) for row in np_arr[indices, :][:, perm_cols]]
 
         # Ensure that sampled_data and combinations are zipped correctly
@@ -554,11 +556,11 @@ def series_ids_permutation_uni(Ds, perm_cols, repeat_samples=None, shuffle_mode=
             for _ in range(repeat_samples):
                 if shuffle_mode == 'row':
                     # Shuffle the rows and sample one
-                    shuffled_indices = np.random.permutation(nrows)
+                    shuffled_indices = rng.permutation(nrows)
                     mod = tuple(np_arr[shuffled_indices[0], include_columns])
                 elif shuffle_mode == 'independent':
                     # Shuffle each column independently and sample one
-                    mod = tuple(np.random.choice(np_arr[:, col]) for col in include_columns)
+                    mod = tuple(rng.choice(np_arr[:, col]) for col in include_columns)
                 combined = pair + mod
                 result.append(combined)
 

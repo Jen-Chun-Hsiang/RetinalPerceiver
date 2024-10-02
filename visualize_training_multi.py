@@ -88,13 +88,14 @@ def main():
     # Generate param_list
     parameter_generator = ParameterGenerator(sf_param_table, tf_param_table)
     param_lists, series_ids = parameter_generator.generate_parameters(query_table)
+    syn_param_lists = parameter_generator.generate_parameters_from_query_list(series_ids)
 
-    '''
+
     # Save to .mat file
-    savemat(os.path.join(savemat_dir, 'sim_multi_list_02282402.mat'),
-            {"param_list": param_lists, "series_ids": series_ids})
+    savemat(os.path.join(savemat_dir, 'sim_multi_list_10022401.mat'),
+            {"param_list": param_lists, "series_ids": series_ids, "syn_param_lists": syn_param_lists})
     raise RuntimeError("Script stopped after saving outputs.")
-    '''
+
 
     # Encode series_ids into query arrays
     max_values = getattr(config, 'max_values', None)
