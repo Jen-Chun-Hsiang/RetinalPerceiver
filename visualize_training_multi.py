@@ -91,8 +91,8 @@ def main():
     syn_param_lists = parameter_generator.generate_parameters_from_query_list(series_ids)
     # syn_param_list = np.array(syn_param_list, dtype=float)
     # syn_param_lists = [x if x is not None else np.nan for x in syn_param_lists]
-    print(f'syn_param_list type: {type(syn_param_lists)}')
-    print(f'syn_param_lists: {syn_param_lists}')
+    # print(f'syn_param_list type: {type(syn_param_lists)}')
+    # print(f'syn_param_lists: {syn_param_lists}')
     print(f'param_lists type: {type(param_lists)}')
     print(f'param_lists : {type(param_lists)}')
 
