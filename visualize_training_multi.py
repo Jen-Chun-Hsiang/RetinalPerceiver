@@ -94,7 +94,7 @@ def main():
     # print(f'syn_param_list type: {type(syn_param_lists)}')
     # print(f'syn_param_lists: {syn_param_lists}')
     print(f'param_lists type: {type(param_lists)}')
-    print(f'param_lists : {type(param_lists)}')
+    print(f'param_lists : {param_lists}')
 
     # Save to .mat file
     savemat(os.path.join(savemat_dir, 'sim_multi_list_10022401.mat'),
