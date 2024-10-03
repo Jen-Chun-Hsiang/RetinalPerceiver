@@ -1,12 +1,23 @@
 import pandas as pd
+import re
 
 def fill_blanks_from_excel(file_path, sheet_name=None, cell_range=None, dtypes=None):
     # Parse the cell range (e.g., "B21:D45")
     if cell_range:
         # Split the range into start and end points
         start_range, end_range = cell_range.split(':')
-        start_col, start_row = start_range[0], int(start_range[1:])
-        end_col, end_row = end_range[0], int(end_range[1:])
+
+        # Use regex to split into column letters and row numbers
+        start_match = re.match(r"([A-Za-z]+)(\d+)", start_range)
+        end_match = re.match(r"([A-Za-z]+)(\d+)", end_range)
+
+        if not start_match or not end_match:
+            raise ValueError("Invalid cell range format")
+
+        start_col, start_row = start_match.groups()
+        end_col, end_row = end_match.groups()
+        start_row = int(start_row)
+        end_row = int(end_row)
 
         # Determine the columns to use based on letters
         usecols = f"{start_col}:{end_col}"
