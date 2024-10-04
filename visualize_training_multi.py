@@ -82,6 +82,9 @@ def main():
     config_module = f"configs.sims.{args.config_name}"
     config = __import__(config_module, fromlist=[''])
 
+    if not hasattr(args, 'rng_seed') or args.rng_seed is None:
+        args.rng_seed = 42
+
     query_table = getattr(config, 'query_table', None)
     sf_param_table = getattr(config, 'sf_param_table', None)
     tf_param_table = getattr(config, 'tf_param_table', None)
