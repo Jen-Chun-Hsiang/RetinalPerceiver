@@ -13,14 +13,14 @@ import logging
 import time
 from io import StringIO
 import sys
-from torchinfo import summary
+import random
 import torch.distributed as dist
-from scipy.io import savemat
-from torch.nn.parallel import DistributedDataParallel
-from utils.query_editor import get_unique_sets, QueryPermutator
+# from torchinfo import summary
+# from scipy.io import savemat
+# from torch.nn.parallel import DistributedDataParallel
+# from utils.query_editor import get_unique_sets, QueryPermutator
 
-
-from datasets.simulated_target_rf import MultiTargetMatrixGenerator, generate_parameters, CellClassLevel, ExperimentalLevel, IntegratedLevel
+from datasets.simulated_target_rf import MultiTargetMatrixGenerator, generate_parameters
 from utils.utils import plot_and_save_3d_matrix_with_timestamp as plot3dmat
 from utils.utils import SeriesEncoder
 from utils.accessory import calculate_mask_positions
@@ -51,6 +51,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Script for Model Training to get 3D RF in simulation")
     parser.add_argument('--config_name', type=str, default='sim_022822', help='Config file name for data generation')
     parser.add_argument('--experiment_name', type=str, default='new_experiment', help='Experiment name')
+    parser.add_argument('--rng_seed', type=int, default=None, help='assign a random seed')
     parser.add_argument('--model', type=str, choices=['RetinalPerceiver', 'RetinalCNN'], required=True,
                         help='Model to train')
     parser.add_argument('--input_depth', type=int, default=20, help='Number of time points')
@@ -155,15 +156,17 @@ def main():
     # If CUDA is available, continue with the rest of the script
     device = torch.device("cuda")
     torch.cuda.empty_cache()
-
     logging.info(f'set up GPU operation \n')
+
+    if args.rng_seed is None:
+        args.rng_seed = random.randint(0, int(1e9))
 
     query_table = getattr(config, 'query_table', None)
     sf_param_table = getattr(config, 'sf_param_table', None)
     tf_param_table = getattr(config, 'tf_param_table', None)
     logging.info(f'query_table: {query_table} \n')
     # Generate param_list
-    param_list, series_ids = generate_parameters(query_table, sf_param_table, tf_param_table)
+    param_list, series_ids = generate_parameters(query_table, sf_param_table, tf_param_table, seed=args.rng_seed)
     # param_list, series_ids = integrated_list.generate_combined_param_list()
     # logging.info(f'param_list: {param_list} \n')
     # logging.info(f'series_ids: {series_ids} \n')

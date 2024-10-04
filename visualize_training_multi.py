@@ -30,7 +30,7 @@ def main():
     epoch_end = 150
     is_cross_level = True
     perm_cols = (0, 1, 2)
-    is_weight_in_label = False
+    is_weight_in_label =
     is_full_figure_draw = False
     checkpoint_filename = f'PerceiverIO_{stimulus_type}_checkpoint_epoch_{epoch_end}'
 
@@ -88,18 +88,18 @@ def main():
     # Generate param_list
     parameter_generator = ParameterGenerator(sf_param_table, tf_param_table)
     param_lists, series_ids = parameter_generator.generate_parameters(query_table)
-    syn_param_lists = parameter_generator.generate_parameters_from_query_list(series_ids)
+    # syn_param_lists = parameter_generator.generate_parameters_from_query_list(series_ids)
     # syn_param_list = np.array(syn_param_list, dtype=float)
     # syn_param_lists = [x if x is not None else np.nan for x in syn_param_lists]
-    print(f'syn_param_list type: {type(syn_param_lists)}')
-    print(f'syn_param_lists: {syn_param_lists[0]}')
-    print(f'param_lists type: {type(param_lists)}')
-    print(f'param_lists : {param_lists[0]}')
+    # print(f'syn_param_list type: {type(syn_param_lists)}')
+    # print(f'syn_param_lists: {syn_param_lists[0]}')
+    # print(f'param_lists type: {type(param_lists)}')
+    # print(f'param_lists : {param_lists[0]}')
 
     # Save to .mat file
-    savemat(os.path.join(savemat_dir, 'sim_multi_list_10022401.mat'),
-            {"param_list": param_lists, "series_ids": series_ids, "syn_param_lists": syn_param_lists})
-    raise RuntimeError("Script stopped after saving outputs.")
+    # savemat(os.path.join(savemat_dir, 'sim_multi_list_10022401.mat'),
+    #        {"param_list": param_lists, "series_ids": series_ids, "syn_param_lists": syn_param_lists})
+    # raise RuntimeError("Script stopped after saving outputs.")
 
 
     # Encode series_ids into query arrays

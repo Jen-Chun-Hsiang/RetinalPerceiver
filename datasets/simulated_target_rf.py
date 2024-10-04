@@ -372,7 +372,7 @@ def assign_row_ids_to_cell_ids(unique_cell_ids, num_sf_rows, num_tf_rows):
 import random
 
 class ParameterGenerator:
-    def __init__(self, sf_param_table, tf_param_table):
+    def __init__(self, sf_param_table, tf_param_table, seed=None):
         self.sf_param_table = sf_param_table
         self.tf_param_table = tf_param_table
 
