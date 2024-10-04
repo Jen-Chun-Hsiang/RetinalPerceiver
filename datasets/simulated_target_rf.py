@@ -382,9 +382,9 @@ class ParameterGenerator:
 
         # Use a unique seed per instance to ensure different randomness across instances
         if seed is None:
-            self.seed = random.randint(0, int(1e9))
+            self.instance_seed = random.randint(0, int(1e9))
         else:
-            self.seed = seed
+            self.instance_seed = seed
         self.random_state = random.Random(self.instance_seed)
 
         # Initialize other properties to None
