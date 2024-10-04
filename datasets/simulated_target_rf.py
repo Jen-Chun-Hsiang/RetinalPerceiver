@@ -369,15 +369,22 @@ def assign_row_ids_to_cell_ids(unique_cell_ids, num_sf_rows, num_tf_rows):
     return cell_id_to_row_ids
 
 
+import random
+
 class ParameterGenerator:
     def __init__(self, sf_param_table, tf_param_table):
         self.sf_param_table = sf_param_table
         self.tf_param_table = tf_param_table
+
+        # Initialize caches for batch values and eccentricities
         self.batch_cache = {}
         self.eccentricity_cache = {}
-        self.set_rand_seed = 42
 
-        # Initialize properties to None
+        # Use a unique seed per instance to ensure different randomness across instances
+        self.instance_seed = random.randint(0, 1e9)
+        self.random_state = random.Random(self.instance_seed)
+
+        # Initialize other properties to None
         self.unique_posi_ids = None
         self.posi_id_to_center = None
         self.unique_cell_ids = None
@@ -393,7 +400,7 @@ class ParameterGenerator:
             xlim=(0, 1),
             ylim=(0, 1),
             target_num_centers=len(self.unique_posi_ids),
-            set_rand_seed=self.set_rand_seed
+            set_rand_seed=self.instance_seed  # Use instance-specific seed
         )
         self.posi_id_to_center = {posi_id: hex_centers[i] for i, posi_id in enumerate(self.unique_posi_ids)}
 
@@ -411,25 +418,36 @@ class ParameterGenerator:
         # Check if the "Eccentricity" column exists
         self.eccentricity_exists = 'Eccentricity' in query_df.columns
 
+        # Precompute and store batch values
+        unique_batch_ids = query_df['Batch_id'].unique()
+        for batch_id in unique_batch_ids:
+            if batch_id not in self.batch_cache:
+                self.batch_cache[batch_id] = self.random_state.uniform(0, 1)
+
+        # Precompute and store eccentricity values if needed
+        if self.eccentricity_exists:
+            batch_ids_with_ecc_minus_one = query_df.loc[query_df['Eccentricity'] == -1, 'Batch_id'].unique()
+            for batch_id in batch_ids_with_ecc_minus_one:
+                if batch_id not in self.eccentricity_cache:
+                    self.eccentricity_cache[batch_id] = self.random_state.uniform(0, 1)
+
         for _, row in query_df.iterrows():
             batch_id = int(row['Batch_id'])
             cell_id = int(row['Cell_id'])
             posi_id = int(row['Posi_id'])
 
             if self.eccentricity_exists:
-                eccentricity = float(row['Eccentricity'])
-                eccentricity_code = eccentricity
+                eccentricity_code = float(row['Eccentricity'])
 
-            # Handle batch value caching
-            if batch_id not in self.batch_cache:
-                self.batch_cache[batch_id] = random.uniform(0, 1)
+            # Retrieve batch value from cache
             batch_value = self.batch_cache[batch_id]
 
-            # If eccentricity exists and is -1, assign a batch-based random value
-            if self.eccentricity_exists and eccentricity_code == -1:
-                if batch_id not in self.eccentricity_cache:
-                    self.eccentricity_cache[batch_id] = random.uniform(0, 1)
-                eccentricity = self.eccentricity_cache[batch_id]
+            # Retrieve eccentricity from cache if needed
+            if self.eccentricity_exists:
+                if eccentricity_code == -1:
+                    eccentricity = self.eccentricity_cache[batch_id]
+                else:
+                    eccentricity = eccentricity_code
 
             sf_row_id, tf_row_id = self.cell_id_to_row_ids[cell_id]
 
@@ -497,7 +515,8 @@ class ParameterGenerator:
             return param_list  # Return an empty list if query_list is empty
 
         # Ensure that required attributes are available
-        required_attributes = ['cell_id_to_row_ids', 'min_max_stretch_fac', 'eccentricity_exists']
+        required_attributes = ['cell_id_to_row_ids', 'min_max_stretch_fac',
+                               'eccentricity_exists', 'batch_cache', 'eccentricity_cache']
         for attr in required_attributes:
             if getattr(self, attr) is None:
                 raise ValueError(f"Attribute '{attr}' is not set. Please run 'generate_parameters' first.")
@@ -513,17 +532,19 @@ class ParameterGenerator:
             else:
                 batch_id, cell_id, sf_mean_center_x, sf_mean_center_y = item
 
-            # Handle batch value caching
-            if batch_id not in self.batch_cache:
-                self.batch_cache[batch_id] = random.uniform(0, 1)
-            batch_value = self.batch_cache[batch_id]
+            # Retrieve batch value from cache
+            if batch_id in self.batch_cache:
+                batch_value = self.batch_cache[batch_id]
+            else:
+                raise ValueError(f"Batch ID {batch_id} not found in batch cache.")
 
-            # If eccentricity exists and eccentricity_code == -1, assign a batch-based random value
+            # Retrieve eccentricity from cache if needed
             if eccentricity_exists:
                 if eccentricity_code == -1:
-                    if batch_id not in self.eccentricity_cache:
-                        self.eccentricity_cache[batch_id] = random.uniform(0, 1)
-                    eccentricity = self.eccentricity_cache[batch_id]
+                    if batch_id in self.eccentricity_cache:
+                        eccentricity = self.eccentricity_cache[batch_id]
+                    else:
+                        raise ValueError(f"Eccentricity for Batch ID {batch_id} not found in eccentricity cache.")
                 else:
                     eccentricity = eccentricity_code
 
