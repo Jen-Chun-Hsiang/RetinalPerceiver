@@ -544,6 +544,7 @@ class ParameterGenerator:
             # Retrieve eccentricity from cache if needed
             if eccentricity_exists:
                 if eccentricity_code == -1:
+                    print( self.eccentricity_cache)
                     if batch_id in self.eccentricity_cache:
                         eccentricity = self.eccentricity_cache[batch_id]
                     else:
