@@ -543,14 +543,17 @@ class ParameterGenerator:
 
             # Retrieve eccentricity from cache if needed
             if eccentricity_exists:
-                print(f'eccentricity_code: {eccentricity_code}')
-                print(f'batch_id: {batch_id}')
                 if eccentricity_code == -1:
-                    print(self.eccentricity_cache)
                     if batch_id in self.eccentricity_cache:
                         eccentricity = self.eccentricity_cache[batch_id]
                     else:
-                        raise ValueError(f"Eccentricity for Batch ID {batch_id} not found in eccentricity cache.")
+                        # Choose a random value from self.eccentricity_cache
+                        if self.eccentricity_cache:
+                            eccentricity = self.random_state.choice(list(self.eccentricity_cache.values()))
+                        else:
+                            # If the cache is empty, generate a new random value and store it
+                            eccentricity = self.random_state.uniform(0, 1)
+                            self.eccentricity_cache[batch_id] = eccentricity
                 else:
                     eccentricity = eccentricity_code
 
