@@ -20,7 +20,7 @@ import torch.distributed as dist
 # from torch.nn.parallel import DistributedDataParallel
 # from utils.query_editor import get_unique_sets, QueryPermutator
 
-from datasets.simulated_target_rf import MultiTargetMatrixGenerator, generate_parameters
+from datasets.simulated_target_rf import MultiTargetMatrixGenerator, ParameterGenerator
 from utils.utils import plot_and_save_3d_matrix_with_timestamp as plot3dmat
 from utils.utils import SeriesEncoder
 from utils.accessory import calculate_mask_positions
@@ -166,7 +166,8 @@ def main():
     tf_param_table = getattr(config, 'tf_param_table', None)
     logging.info(f'query_table: {query_table} \n')
     # Generate param_list
-    param_list, series_ids = generate_parameters(query_table, sf_param_table, tf_param_table, seed=args.rng_seed)
+    parameter_generator = ParameterGenerator(sf_param_table, tf_param_table, seed=args.rng_seed)
+    param_lists, series_ids = parameter_generator.generate_parameters(query_table)
     # param_list, series_ids = integrated_list.generate_combined_param_list()
     # logging.info(f'param_list: {param_list} \n')
     # logging.info(f'series_ids: {series_ids} \n')
