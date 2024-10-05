@@ -193,7 +193,7 @@ def main():
     '''
 
     # Use param_list in MultiTargetMatrixGenerator
-    multi_target_gen = MultiTargetMatrixGenerator(param_list)
+    multi_target_gen = MultiTargetMatrixGenerator(param_lists)
     target_matrix = multi_target_gen.create_3d_target_matrices(
         input_height=args.input_height, input_width=args.input_width, input_depth=args.input_depth)
 
