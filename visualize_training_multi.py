@@ -91,17 +91,17 @@ def main():
     # Generate param_list
     parameter_generator = ParameterGenerator(sf_param_table, tf_param_table, seed=args.rng_seed)
     param_lists, series_ids = parameter_generator.generate_parameters(query_table)
-    syn_param_lists = parameter_generator.generate_parameters_from_query_list(series_ids)
+    # syn_param_lists = parameter_generator.generate_parameters_from_query_list(series_ids)
     # syn_param_list = np.array(syn_param_list, dtype=float)
     # syn_param_lists = [x if x is not None else np.nan for x in syn_param_lists]
     # print(f'syn_param_list type: {type(syn_param_lists)}')
-    print(f'syn_param_lists: {syn_param_lists[0]}')
-    print(f'param_lists : {param_lists[0]}')
-    print(f'syn_param_lists: {syn_param_lists[100]}')
-    print(f'param_lists : {param_lists[100]}')
-    print(f'syn_param_lists: {syn_param_lists[-1]}')
-    print(f'param_lists : {param_lists[-1]}')
-    raise RuntimeError("Script stopped after saving outputs.")
+    # print(f'syn_param_lists: {syn_param_lists[0]}')
+    # print(f'param_lists : {param_lists[0]}')
+    # print(f'syn_param_lists: {syn_param_lists[100]}')
+    # print(f'param_lists : {param_lists[100]}')
+    # print(f'syn_param_lists: {syn_param_lists[-1]}')
+    # print(f'param_lists : {param_lists[-1]}')
+    # raise RuntimeError("Script stopped after saving outputs.")
 
     # Save to .mat file
     # savemat(os.path.join(savemat_dir, 'sim_multi_list_10022401.mat'),
@@ -157,32 +157,12 @@ def main():
     if is_cross_level:
 
         syn_series_ids = series_ids_permutation_uni(np.array(series_ids), perm_cols)
-        logging.info(f'syn_series_ids:{syn_series_ids} \n')
-
-        # logging.info(f'syn_series_ids shape:{syn_series_ids.shape} \n')
-
         param_lists = parameter_generator.generate_parameters_from_query_list(syn_series_ids)
         syn_query_index = query_encoder.encode(syn_series_ids)
         logging.info(f'syn_query_index example 1:{syn_query_index[0, :]} \n')
         query_arrays = syn_query_index
-
-
-        ''' Use for unique cell id
-        query_partition_lengths = tuple(lengths.values())
-        syn_series_ids, syn_query_index = series_ids_permutation(np.array(series_ids), permute_series_length)
-        examine_list = array_to_list_of_tuples(syn_query_index)  # List of tuples for row selection
-        query_arrays = rearrange_array(query_arrays, query_partition_lengths, examine_list)
-        '''
         cross_level_flag = 'Interpolation'
 
-        '''
-        savedata_filename_mat = os.path.join(savedata_dir, f'checkin_queryarray_consistancy_02.mat')
-        savemat(savedata_filename_mat, {
-            'query_arrays': query_arrays, 'series_ids': series_ids,
-            'syn_series_ids': syn_series_ids, 'syn_query_index': syn_query_index
-        })
-        raise RuntimeError("Stop here for checking.")
-        '''
     else:
         syn_series_ids = np.array([])
         syn_query_index = np.array([])
@@ -208,10 +188,12 @@ def main():
         logging.info(f'query_encoder {presented_cell_id}:{query_array.shape} \n')
         # Use param_list in MultiTargetMatrixGenerator
         param_list = param_lists[presented_cell_id]
+        print(f'param_list.shape: {param_list}')
         multi_target_gen = MultiTargetMatrixGenerator(param_list)
+        print(f'target_matrices length: {len(multi_target_gen.target_matrices)}')
         target_matrix = multi_target_gen.create_3d_target_matrices(
             input_height=args.input_height, input_width=args.input_width, input_depth=args.input_depth)
-
+        print(f'target matrix: {target_matrix.shape}')
         logging.info(f'target matrix: {target_matrix.shape}  \n')
 
         # Initialize the dataset with the device
