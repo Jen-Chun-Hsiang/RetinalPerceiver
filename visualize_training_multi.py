@@ -190,7 +190,7 @@ def main():
         param_list = param_lists[presented_cell_id]
         print(f'param_list.shape: {param_list}')
         multi_target_gen = MultiTargetMatrixGenerator(param_list)
-        print(f'target_matrices length: {len(multi_target_gen.target_matrices)}')
+        # print(f'target_matrices length: {len(multi_target_gen.target_matrices)}')
         target_matrix = multi_target_gen.create_3d_target_matrices(
             input_height=args.input_height, input_width=args.input_width, input_depth=args.input_depth)
         print(f'target matrix: {target_matrix.shape}')
