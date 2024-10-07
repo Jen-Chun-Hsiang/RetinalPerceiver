@@ -95,9 +95,13 @@ def main():
     # syn_param_list = np.array(syn_param_list, dtype=float)
     # syn_param_lists = [x if x is not None else np.nan for x in syn_param_lists]
     # print(f'syn_param_list type: {type(syn_param_lists)}')
-    # print(f'syn_param_lists: {syn_param_lists[0]}')
-    # print(f'param_lists type: {type(param_lists)}')
-    # print(f'param_lists : {param_lists[0]}')
+    print(f'syn_param_lists: {syn_param_lists[0]}')
+    print(f'param_lists : {param_lists[0]}')
+    print(f'syn_param_lists: {syn_param_lists[100]}')
+    print(f'param_lists : {param_lists[100]}')
+    print(f'syn_param_lists: {syn_param_lists[-1]}')
+    print(f'param_lists : {param_lists[-1]}')
+    raise RuntimeError("Script stopped after saving outputs.")
 
     # Save to .mat file
     # savemat(os.path.join(savemat_dir, 'sim_multi_list_10022401.mat'),
