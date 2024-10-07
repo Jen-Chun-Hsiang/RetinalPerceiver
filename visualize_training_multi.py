@@ -95,9 +95,9 @@ def main():
     # syn_param_list = np.array(syn_param_list, dtype=float)
     # syn_param_lists = [x if x is not None else np.nan for x in syn_param_lists]
     # print(f'syn_param_list type: {type(syn_param_lists)}')
-    print(f'syn_param_lists: {syn_param_lists[0]}')
+    # print(f'syn_param_lists: {syn_param_lists[0]}')
     # print(f'param_lists type: {type(param_lists)}')
-    print(f'param_lists : {param_lists[0]}')
+    # print(f'param_lists : {param_lists[0]}')
 
     # Save to .mat file
     # savemat(os.path.join(savemat_dir, 'sim_multi_list_10022401.mat'),
@@ -192,7 +192,7 @@ def main():
     savedata_filename_mat = os.path.join(savedata_dir, f'{checkpoint_filename}_data_{cross_level_flag}_{label_flag}.mat')
 
     presented_cell_ids = list(range(query_arrays.shape[0]))
-
+    logging.info(f"presented_cell_ids: {presented_cell_ids}")
     num_cols = 5
     corrcoef_vals = np.zeros((query_arrays.shape[0], 1))
     rf_spatial_array_list = []
@@ -219,6 +219,8 @@ def main():
 
         sample_data, sample_label, sample_index = dataset_test[0]
         logging.info(f"dataset size: {sample_data.shape}")
+        logging.info(f"sample_label: {sample_label}")
+        logging.info(f"sample_index: {sample_index}")
         output_image, weights, labels = forward_model(model, dataset_test, query_array=query_array, batch_size=batch_size,
                                                       use_matrix_index=False, is_weight_in_label=is_weight_in_label)
         output_image_np = output_image.squeeze().cpu().numpy()

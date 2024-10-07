@@ -24,8 +24,6 @@ class Trainer:
         if self.masking_pos is not None:
             self.is_masking = True
 
-
-
         self.is_contrastive_learning = is_contrastive_learning
         if self.is_contrastive_learning:
             if query_encoder is None or query_permutator is None or series_ids is None:
@@ -131,6 +129,7 @@ class Trainer:
         loss = self._compute_loss(outputs, targets)
 
         return loss
+
     def _process_batch_with_query(self, data):
         input_matrices, targets, matrix_indices = data
         query_vectors = self.query_array[matrix_indices]
@@ -163,8 +162,9 @@ class Trainer:
             query_vectors = torch.from_numpy(query_array).unsqueeze(1)
             query_vectors = query_vectors.float().to(self.device)
             _, perm_embedding = self.model(input_matrices, query_vectors)
-            contra_loss += self.contrastive_factor*torch.matmul(targets.T, self.neg_contra_loss_fn(perm_embedding.view(num_batch, -1),
-                                                                           outputs_embedding.view(num_batch, -1)))
+            contra_loss += self.contrastive_factor * torch.matmul(targets.T, self.neg_contra_loss_fn(
+                perm_embedding.view(num_batch, -1),
+                outputs_embedding.view(num_batch, -1)))
 
         return self._compute_loss(outputs_predict, targets) + contra_loss
 
@@ -177,8 +177,8 @@ class Trainer:
         neuron_ids = query_vectors[:, 3].to(self.device)
         if self.is_feature_L1:
             outputs_predict, feature_gamma, spatial_gamma = self.model(input_matrices, dataset_ids, neuron_ids)
-            l1_loss = self.l1_weight*(self._l1_regularization(feature_gamma, self.lambda_l1) +
-                                      self._l1_regularization(spatial_gamma, self.lambda_l1))
+            l1_loss = self.l1_weight * (self._l1_regularization(feature_gamma, self.lambda_l1) +
+                                        self._l1_regularization(spatial_gamma, self.lambda_l1))
         else:
             outputs_predict = self.model(input_matrices, dataset_ids, neuron_ids)
             raise ValueError(f"Temporal close {neuron_ids}.")
@@ -381,6 +381,7 @@ class CheckpointLoader:
         self.validation_contra_losses = self.checkpoint.get('validation_contra_losses', [])
         return self.validation_contra_losses
 
+
 # task: needed to add the demonstration of original dataset
 # (1) just the label results
 # (2) the trained model results
@@ -414,14 +415,15 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
                     is_adding = False
                     continue
                 if is_rescale_image:
-                    images = images*2-1
+                    images = images * 2 - 1
 
                 if use_matrix_index:
                     query_vectors = query_array_tensor[matrix_indices].to(images.device)
                     weights = model(images, query_vectors).squeeze()
+
                 if model_type == 'FiLMCNN':
                     query_vectors = query_array_tensor.repeat(batch_size, 1)
-                    #input_matrices = input_matrices.to(images.device)
+                    # input_matrices = input_matrices.to(images.device)
                     dataset_ids = query_vectors[:, 0].to(images.device)
                     neuron_ids = query_vectors[:, 3].to(images.device)
                     matrix_indices = matrix_indices.to(images.device)
@@ -529,7 +531,7 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
         else:
             if is_retinal_dataset:
                 images, _, _ = data
-                #print(f'images size:{images.shape}')
+                # print(f'images size:{images.shape}')
             else:
                 images, _ = data
 
@@ -537,12 +539,12 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
                 continue
             images = images.to(next(model.parameters()).device)
             weights_batch = normalized_weights[idx:idx + images.size(0)].to(images.device).view(-1, 1, 1, 1, 1)
-            #print(f'weights_batch size:{weights_batch.shape}')
+            # print(f'weights_batch size:{weights_batch.shape}')
             weighted_images = images * weights_batch
 
-        #print(f'weighted images size:{weighted_images.shape}')
+        # print(f'weighted images size:{weighted_images.shape}')
         batch_sum = weighted_images.sum(dim=0)  # Sum over the batch
-        #print(f'batch sum size:{batch_sum.shape}')
+        # print(f'batch sum size:{batch_sum.shape}')
 
         if weighted_sum is None:
             print(f'weighted sum size:{weighted_sum.shape}')
