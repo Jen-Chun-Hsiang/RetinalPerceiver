@@ -102,7 +102,7 @@ def main():
     # Save to .mat file
     # savemat(os.path.join(savemat_dir, 'sim_multi_list_10022401.mat'),
     #        {"param_list": param_lists, "series_ids": series_ids, "syn_param_lists": syn_param_lists})
-    raise RuntimeError("Script stopped after saving outputs.")
+    # raise RuntimeError("Script stopped after saving outputs.")
 
 
     # Encode series_ids into query arrays
@@ -223,6 +223,7 @@ def main():
         logging.info(f"sample_index: {sample_index}")
         output_image, weights, labels = forward_model(model, dataset_test, query_array=query_array, batch_size=batch_size,
                                                       use_matrix_index=False, is_weight_in_label=is_weight_in_label)
+        raise RuntimeError("Script stopped after saving outputs.")
         output_image_np = output_image.squeeze().cpu().numpy()
         output_image_np_std = np.std(output_image_np, axis=0)
         output_image_np_std = output_image_np_std / output_image_np_std.sum()
