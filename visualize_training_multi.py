@@ -155,7 +155,6 @@ def main():
     model, optimizer = checkpoint_loader.load_checkpoint(model, optimizer)
 
     if is_cross_level:
-
         syn_series_ids = series_ids_permutation_uni(np.array(series_ids), perm_cols)
         param_lists = parameter_generator.generate_parameters_from_query_list(syn_series_ids)
         syn_query_index = query_encoder.encode(syn_series_ids)
