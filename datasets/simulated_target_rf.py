@@ -360,10 +360,15 @@ def apply_eccentricity_scaling(eccentricity, sf_cov_center, sf_cov_surround, max
     return sf_cov_center, sf_cov_surround
 
 
-def assign_row_ids_to_cell_ids(unique_cell_ids, num_sf_rows, num_tf_rows):
-    random.shuffle(unique_cell_ids)
-    sf_row_ids = random.sample(range(num_sf_rows), len(unique_cell_ids))
-    tf_row_ids = random.sample(range(num_tf_rows), len(unique_cell_ids))
+def assign_row_ids_to_cell_ids(unique_cell_ids, num_sf_rows, num_tf_rows, random_state):
+    if len(unique_cell_ids) > num_sf_rows or len(unique_cell_ids) > num_tf_rows:
+        raise ValueError("Number of unique cell IDs exceeds available row IDs.")
+
+    # Shuffle unique_cell_ids to ensure random assignment
+    random_state.shuffle(unique_cell_ids)
+
+    sf_row_ids = random_state.sample(range(num_sf_rows), len(unique_cell_ids))
+    tf_row_ids = random_state.sample(range(num_tf_rows), len(unique_cell_ids))
 
     cell_id_to_row_ids = {cell_id: (sf_row_ids[i], tf_row_ids[i]) for i, cell_id in enumerate(unique_cell_ids)}
     return cell_id_to_row_ids
@@ -409,7 +414,7 @@ class ParameterGenerator:
 
         self.unique_cell_ids = list(query_df['Cell_id'].unique())
         self.cell_id_to_row_ids = assign_row_ids_to_cell_ids(
-            self.unique_cell_ids, len(self.sf_param_table), len(self.tf_param_table)
+            self.unique_cell_ids, len(self.sf_param_table), len(self.tf_param_table), self.random_state
         )
 
         # Determine min value of 'max_tf_stretch_fac' for the selected tf_row_ids
