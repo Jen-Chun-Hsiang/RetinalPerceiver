@@ -188,12 +188,12 @@ def main():
         logging.info(f'query_encoder {presented_cell_id}:{query_array.shape} \n')
         # Use param_list in MultiTargetMatrixGenerator
         param_list = param_lists[presented_cell_id]
-        print(f'param_list.shape: {param_list}')
+        # print(f'param_list.shape: {param_list}')
         multi_target_gen = MultiTargetMatrixGenerator(param_list)
         # print(f'target_matrices length: {len(multi_target_gen.target_matrices)}')
         target_matrix = multi_target_gen.create_3d_target_matrices(
             input_height=args.input_height, input_width=args.input_width, input_depth=args.input_depth)
-        print(f'target matrix: {target_matrix.shape}')
+        # print(f'target matrix: {target_matrix.shape}')
         logging.info(f'target matrix: {target_matrix.shape}  \n')
 
         # Initialize the dataset with the device
@@ -209,7 +209,7 @@ def main():
         logging.info(f"sample_index: {sample_index}")
         output_image, weights, labels = forward_model(model, dataset_test, query_array=query_array, batch_size=batch_size,
                                                       use_matrix_index=False, is_weight_in_label=is_weight_in_label)
-        raise RuntimeError("Script stopped after saving outputs.")
+        # raise RuntimeError("Script stopped after saving outputs.")
         output_image_np = output_image.squeeze().cpu().numpy()
         output_image_np_std = np.std(output_image_np, axis=0)
         output_image_np_std = output_image_np_std / output_image_np_std.sum()
