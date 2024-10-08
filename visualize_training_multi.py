@@ -157,6 +157,12 @@ def main():
     if is_cross_level:
         syn_series_ids = series_ids_permutation_uni(np.array(series_ids), perm_cols)
         param_lists = parameter_generator.generate_parameters_from_query_list(syn_series_ids)
+        print(f'syn_param_lists 1: {param_lists[0]}')
+        print(f'syn_param_lists 2: {param_lists[201]}')
+        print(f'syn_param_lists 3: {param_lists[401]}')
+        print(f'syn_param_lists 4: {param_lists[1201]}')
+        print(f'syn_param_lists 5: {param_lists[-1]}')
+        raise RuntimeError("Script stopped after saving outputs.")
         syn_query_index = query_encoder.encode(syn_series_ids)
         logging.info(f'syn_query_index example 1:{syn_query_index[0, :]} \n')
         query_arrays = syn_query_index
