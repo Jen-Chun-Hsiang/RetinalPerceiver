@@ -29,7 +29,7 @@ def main():
     stimulus_type = 'SIMPlugIn_09012402'
     epoch_end = 100
     is_cross_level = False
-    perm_cols = (0, 1, 2)  # (0, 1, 2) for masking
+    perm_cols = (0, 1)  # (0, 1, 2) for masking
     is_weight_in_label = False
     is_full_figure_draw = False
     checkpoint_filename = f'PerceiverIO_{stimulus_type}_checkpoint_epoch_{epoch_end}'
