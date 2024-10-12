@@ -33,22 +33,29 @@ def main():
     perm_cols = (0, 1)  # (0, 1, 2) for masking
     is_full_figure_draw = False
 
-    # Define the list of configurations you want to run
-    configurations = [
-        {'is_cross_level': False, 'is_weight_in_label': False},
-        {'is_cross_level': True, 'is_weight_in_label': False},
-        {'is_cross_level': True, 'is_weight_in_label': True},
-    ]
+    # Define all possible configurations
+    configurations = {
+        '1': {'is_cross_level': False, 'is_weight_in_label': False},
+        '2': {'is_cross_level': True, 'is_weight_in_label': False},
+        '3': {'is_cross_level': True, 'is_weight_in_label': True},
+    }
 
-    for config in configurations:
-        run_configuration(
-            stimulus_type=stimulus_type,
-            epoch_end=epoch_end,
-            perm_cols=perm_cols,
-            is_full_figure_draw=is_full_figure_draw,
-            is_cross_level=config['is_cross_level'],
-            is_weight_in_label=config['is_weight_in_label']
-        )
+    # Specify which configurations to run
+    config_ids = ['3']  # Adjust this list to include the config IDs you want to run
+
+    for key in config_ids:
+        if key in configurations:
+            config = configurations[key]
+            run_configuration(
+                stimulus_type=stimulus_type,
+                epoch_end=epoch_end,
+                perm_cols=perm_cols,  # Use specific perm_cols from config
+                is_full_figure_draw=is_full_figure_draw,
+                is_cross_level=config['is_cross_level'],
+                is_weight_in_label=config['is_weight_in_label']
+            )
+        else:
+            print(f"No configuration found for key: {key}")
 
 
 def run_configuration(stimulus_type, epoch_end, perm_cols, is_full_figure_draw, is_cross_level, is_weight_in_label):
