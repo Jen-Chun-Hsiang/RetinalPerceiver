@@ -25,13 +25,33 @@ def weightedsum_image_plot(output_image_np):
     plt.xlabel("Width")
     plt.ylabel("Height")
 
+
 def main():
+    # Common variables for all configurations
     stimulus_type = 'SIMPlugIn_09012404'
     epoch_end = 100
-    is_cross_level = True
     perm_cols = (0, 1)  # (0, 1, 2) for masking
-    is_weight_in_label = False
     is_full_figure_draw = False
+
+    # Define the list of configurations you want to run
+    configurations = [
+        {'is_cross_level': False, 'is_weight_in_label': False},
+        {'is_cross_level': True, 'is_weight_in_label': False},
+        {'is_cross_level': True, 'is_weight_in_label': True},
+    ]
+
+    for config in configurations:
+        run_configuration(
+            stimulus_type=stimulus_type,
+            epoch_end=epoch_end,
+            perm_cols=perm_cols,
+            is_full_figure_draw=is_full_figure_draw,
+            is_cross_level=config['is_cross_level'],
+            is_weight_in_label=config['is_weight_in_label']
+        )
+
+
+def run_configuration(stimulus_type, epoch_end, perm_cols, is_full_figure_draw, is_cross_level, is_weight_in_label):
     checkpoint_filename = f'PerceiverIO_{stimulus_type}_checkpoint_epoch_{epoch_end}'
 
     # default parameters
@@ -275,5 +295,7 @@ def main():
         'syn_series_ids': syn_series_ids, 'syn_query_index': syn_query_index,
         'rf_spatial_peak_array': rf_spatial_peak_array, 'rf_spatial_trough_array': rf_spatial_trough_array
     })
+
+
 if __name__ == "__main__":
     main()
