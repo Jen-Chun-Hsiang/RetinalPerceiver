@@ -28,7 +28,7 @@ def weightedsum_image_plot(output_image_np):
 
 def main():
     # Common variables for all configurations
-    stimulus_type = 'SIMPlugIn_09012402'
+    stimulus_type = 'SIMPlugIn_09012403'
     epoch_end = 100
     perm_cols = (0, 1, 2, 3)  # (0, 1, 2) for masking (0, 1, 2, 3) for num_cell
     is_full_figure_draw = False
@@ -41,8 +41,7 @@ def main():
     }
 
     # Specify which configurations to run
-    # config_ids = ['1', '2', '3']  # Adjust this list to include the config IDs you want to run
-    config_ids = ['2', '3']
+    config_ids = ['1', '2', '3']  # Adjust this list to include the config IDs you want to run
     for key in config_ids:
         if key in configurations:
             config = configurations[key]
@@ -186,19 +185,17 @@ def run_configuration(stimulus_type, epoch_end, perm_cols, is_full_figure_draw, 
     if is_cross_level:
         syn_series_ids = series_ids_permutation_uni(np.array(series_ids), perm_cols)
         param_lists = parameter_generator.generate_parameters_from_query_list(syn_series_ids)
-        print(f'syn_param_lists 1: {param_lists[0]}')
-        print(f'syn_param_lists 2: {param_lists[201]}')
-        print(f'syn_param_lists 3: {param_lists[401]}')
-        print(f'syn_param_lists 4: {param_lists[1201]}')
-        print(f'syn_param_lists 5: {param_lists[-1]}')
+        # print(f'syn_param_lists 1: {param_lists[0]}')
+        # print(f'syn_param_lists 2: {param_lists[201]}')
+        # print(f'syn_param_lists 3: {param_lists[401]}')
+        # print(f'syn_param_lists 4: {param_lists[1201]}')
+        # print(f'syn_param_lists 5: {param_lists[-1]}')
         # raise RuntimeError("Script stopped after saving outputs.")
         syn_query_index = query_encoder.encode(syn_series_ids)
 
         logging.info(f'syn_query_index example 1:{syn_query_index[0, :]} \n')
         query_arrays = syn_query_index
         cross_level_flag = 'Interpolation'
-
-
     else:
         syn_series_ids = np.array([])
         syn_query_index = np.array([])
@@ -208,8 +205,6 @@ def run_configuration(stimulus_type, epoch_end, perm_cols, is_full_figure_draw, 
         label_flag = 'Label'
     else:
         label_flag = 'Model'
-
-
 
     savedata_filename_npz = os.path.join(savedata_dir, f'{checkpoint_filename}_data_{cross_level_flag}_{label_flag}.npz')
     savedata_filename_mat = os.path.join(savedata_dir, f'{checkpoint_filename}_data_{cross_level_flag}_{label_flag}.mat')
@@ -227,26 +222,16 @@ def run_configuration(stimulus_type, epoch_end, perm_cols, is_full_figure_draw, 
         logging.info(f'query_encoder {presented_cell_id}:{query_array.shape} \n')
         # Use param_list in MultiTargetMatrixGenerator
         param_list = param_lists[presented_cell_id]
-        logging.info(f'param_list: {param_list}  \n')
-        # print(f'param_list.shape: {param_list}')
         multi_target_gen = MultiTargetMatrixGenerator(param_list)
-        # print(f'target_matrices length: {len(multi_target_gen.target_matrices)}')
         target_matrix = multi_target_gen.create_3d_target_matrices(
             input_height=args.input_height, input_width=args.input_width, input_depth=args.input_depth)
-        # print(f'target matrix: {target_matrix.shape}')
-        # logging.info(f'target matrix: {target_matrix.shape}  \n')
 
         # Initialize the dataset with the device
-
         # plot3dmat(target_matrix[0, :, :, :], num_cols, savefig_dir, file_prefix=f'plot_3D_matrix_{cross_level_flag}_{presented_cell_id}')
         dataset_test = MultiMatrixDataset(target_matrix, length=total_length, device=device, combination_set=[1],
                                      add_noise=args.add_noise, noise_level=args.noise_level, use_relu=args.use_relu,
                                      output_offset=args.output_offset)
 
-        sample_data, sample_label, sample_index = dataset_test[0]
-        # logging.info(f"dataset size: {sample_data.shape}")
-        # logging.info(f"sample_label: {sample_label}")
-        # logging.info(f"sample_index: {sample_index}")
         output_image, weights, labels = forward_model(model, dataset_test, query_array=query_array, batch_size=batch_size,
                                                       use_matrix_index=False, is_weight_in_label=is_weight_in_label)
         # raise RuntimeError("Script stopped after saving outputs.")
