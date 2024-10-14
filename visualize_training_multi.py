@@ -30,7 +30,7 @@ def main():
     # Common variables for all configurations
     stimulus_type = 'SIMPlugIn_09102403'
     epoch_end = 150
-    perm_cols = (0, 1, 2)  # (0, 1, 2) for masking (0, 1, 2, 3)
+    perm_cols = (0, 1, 2)  # (0, 1, 2) for masking (0, 1, 2, 3) for num_cell
     is_full_figure_draw = False
 
     # Define all possible configurations
@@ -41,8 +41,8 @@ def main():
     }
 
     # Specify which configurations to run
-    config_ids = ['1', '2', '3']  # Adjust this list to include the config IDs you want to run
-
+    # config_ids = ['1', '2', '3']  # Adjust this list to include the config IDs you want to run
+    config_ids = ['2']
     for key in config_ids:
         if key in configurations:
             config = configurations[key]
@@ -116,6 +116,8 @@ def run_configuration(stimulus_type, epoch_end, perm_cols, is_full_figure_draw, 
     sf_param_table = getattr(config, 'sf_param_table', None)
     tf_param_table = getattr(config, 'tf_param_table', None)
     # Generate param_list
+    if args.rng_seed is None:
+        raise RuntimeError("Random seed it not assigned at the training.")
     parameter_generator = ParameterGenerator(sf_param_table, tf_param_table, seed=args.rng_seed)
     param_lists, series_ids = parameter_generator.generate_parameters(query_table)
     # syn_param_lists = parameter_generator.generate_parameters_from_query_list(series_ids)
@@ -184,12 +186,12 @@ def run_configuration(stimulus_type, epoch_end, perm_cols, is_full_figure_draw, 
     if is_cross_level:
         syn_series_ids = series_ids_permutation_uni(np.array(series_ids), perm_cols)
         param_lists = parameter_generator.generate_parameters_from_query_list(syn_series_ids)
-        # print(f'syn_param_lists 1: {param_lists[0]}')
-        # print(f'syn_param_lists 2: {param_lists[201]}')
-        # print(f'syn_param_lists 3: {param_lists[401]}')
-        # print(f'syn_param_lists 4: {param_lists[1201]}')
-        # print(f'syn_param_lists 5: {param_lists[-1]}')
-        # raise RuntimeError("Script stopped after saving outputs.")
+        print(f'syn_param_lists 1: {param_lists[0]}')
+        print(f'syn_param_lists 2: {param_lists[201]}')
+        print(f'syn_param_lists 3: {param_lists[401]}')
+        print(f'syn_param_lists 4: {param_lists[1201]}')
+        print(f'syn_param_lists 5: {param_lists[-1]}')
+        raise RuntimeError("Script stopped after saving outputs.")
         syn_query_index = query_encoder.encode(syn_series_ids)
         logging.info(f'syn_query_index example 1:{syn_query_index[0, :]} \n')
         query_arrays = syn_query_index
