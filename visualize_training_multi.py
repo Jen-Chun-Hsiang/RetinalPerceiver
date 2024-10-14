@@ -42,11 +42,11 @@ def main():
 
     # Specify which configurations to run
     # config_ids = ['1', '2', '3']  # Adjust this list to include the config IDs you want to run
-    config_ids = ['3']
+    config_ids = ['2', '3']
     for key in config_ids:
         if key in configurations:
             config = configurations[key]
-            run_configuration(
+            is_continue = run_configuration(
                 stimulus_type=stimulus_type,
                 epoch_end=epoch_end,
                 perm_cols=perm_cols,  # Use specific perm_cols from config
@@ -197,6 +197,7 @@ def run_configuration(stimulus_type, epoch_end, perm_cols, is_full_figure_draw, 
         query_arrays = syn_query_index
         cross_level_flag = 'Interpolation'
 
+
     else:
         syn_series_ids = np.array([])
         syn_query_index = np.array([])
@@ -206,6 +207,9 @@ def run_configuration(stimulus_type, epoch_end, perm_cols, is_full_figure_draw, 
         label_flag = 'Label'
     else:
         label_flag = 'Model'
+
+    return True
+
     savedata_filename_npz = os.path.join(savedata_dir, f'{checkpoint_filename}_data_{cross_level_flag}_{label_flag}.npz')
     savedata_filename_mat = os.path.join(savedata_dir, f'{checkpoint_filename}_data_{cross_level_flag}_{label_flag}.mat')
 
