@@ -28,9 +28,9 @@ def weightedsum_image_plot(output_image_np):
 
 def main():
     # Common variables for all configurations
-    stimulus_type = 'SIMPlugIn_09102403'
-    epoch_end = 150
-    perm_cols = (0, 1, 2)  # (0, 1, 2) for masking (0, 1, 2, 3) for num_cell
+    stimulus_type = 'SIMPlugIn_09012402'
+    epoch_end = 100
+    perm_cols = (0, 1, 2, 3)  # (0, 1, 2) for masking (0, 1, 2, 3) for num_cell
     is_full_figure_draw = False
 
     # Define all possible configurations
@@ -193,6 +193,7 @@ def run_configuration(stimulus_type, epoch_end, perm_cols, is_full_figure_draw, 
         print(f'syn_param_lists 5: {param_lists[-1]}')
         # raise RuntimeError("Script stopped after saving outputs.")
         syn_query_index = query_encoder.encode(syn_series_ids)
+
         logging.info(f'syn_query_index example 1:{syn_query_index[0, :]} \n')
         query_arrays = syn_query_index
         cross_level_flag = 'Interpolation'
@@ -208,7 +209,7 @@ def run_configuration(stimulus_type, epoch_end, perm_cols, is_full_figure_draw, 
     else:
         label_flag = 'Model'
 
-    return True
+
 
     savedata_filename_npz = os.path.join(savedata_dir, f'{checkpoint_filename}_data_{cross_level_flag}_{label_flag}.npz')
     savedata_filename_mat = os.path.join(savedata_dir, f'{checkpoint_filename}_data_{cross_level_flag}_{label_flag}.mat')
@@ -226,13 +227,14 @@ def run_configuration(stimulus_type, epoch_end, perm_cols, is_full_figure_draw, 
         logging.info(f'query_encoder {presented_cell_id}:{query_array.shape} \n')
         # Use param_list in MultiTargetMatrixGenerator
         param_list = param_lists[presented_cell_id]
+        logging.info(f'param_list: {param_list}  \n')
         # print(f'param_list.shape: {param_list}')
         multi_target_gen = MultiTargetMatrixGenerator(param_list)
         # print(f'target_matrices length: {len(multi_target_gen.target_matrices)}')
         target_matrix = multi_target_gen.create_3d_target_matrices(
             input_height=args.input_height, input_width=args.input_width, input_depth=args.input_depth)
         # print(f'target matrix: {target_matrix.shape}')
-        logging.info(f'target matrix: {target_matrix.shape}  \n')
+        # logging.info(f'target matrix: {target_matrix.shape}  \n')
 
         # Initialize the dataset with the device
 
