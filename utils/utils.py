@@ -555,9 +555,23 @@ def series_ids_permutation_uni(Ds, perm_cols, repeat_samples=None, shuffle_mode=
 
         # Prepare the DataFrame for included columns based on shuffle mode
         if shuffle_mode == 'row':
-            # Shuffle the rows and tile to match the length of missing_df
-            shuffled_df = df[include_columns].sample(n=len(missing_df), replace=True, random_state=random_seed)
-            missing_df[include_columns] = shuffled_df.values
+            # Calculate how many full duplicates of df are needed
+            num_duplicates = len(missing_df) // len(df)  # Floor division to get full duplicates
+            remaining_samples = len(missing_df) % len(df)  # Remaining rows to fill
+
+            # Concatenate full duplicates of df
+            duplicated_df = pd.concat([df[include_columns]] * num_duplicates, ignore_index=True)
+
+            # Sample the remaining rows from df to fill up the size of missing_df
+            if remaining_samples > 0:
+                remaining_df = df[include_columns].sample(n=remaining_samples, replace=False, random_state=random_seed)
+                # Concatenate the duplicated DataFrame with the remaining random sample
+                final_df = pd.concat([duplicated_df, remaining_df], ignore_index=True)
+            else:
+                final_df = duplicated_df
+
+            # Assign the final sampled values to missing_df
+            missing_df[include_columns] = final_df.values
 
         elif shuffle_mode == 'independent':
             # Shuffle each column independently and tile to match the length of missing_df
@@ -566,7 +580,7 @@ def series_ids_permutation_uni(Ds, perm_cols, repeat_samples=None, shuffle_mode=
                 missing_df[col] = shuffled_col
 
         missing_df = missing_df[sorted(missing_df.columns)]
-        result = missing_df
+        result = missing_df.drop_duplicates()
 
     for i, item in enumerate(Ds[0]):
         result[i] = result[i].astype(type(item))
