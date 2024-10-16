@@ -149,7 +149,8 @@ def run_configuration(stimulus_type, epoch_end, perm_cols, is_full_figure_draw, 
     query_arrays = query_encoder.encode(series_ids)
     logging.info(f'query_arrays shape:{query_arrays.shape} \n')
     logging.info(f'query_arrays example 1:{query_arrays[0, :]} \n')
-
+    logging.info(f'query_arrays example -1:{query_arrays[-1, :]} \n')
+    raise RuntimeError("Script stopped after saving outputs.")
     query_permutator = None
 
     # Initialize the DataVisualizer
