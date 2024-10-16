@@ -568,7 +568,10 @@ def series_ids_permutation_uni(Ds, perm_cols, repeat_samples=None, shuffle_mode=
         missing_df = missing_df[sorted(missing_df.columns)]
         result = missing_df
 
+    for i, item in enumerate(Ds[0]):
+        result[i] = result[i].astype(type(item))
     # Convert the final DataFrame back to a list of tuples
+
     result_list = [tuple(x) for x in result.to_numpy()]
 
     return result_list
