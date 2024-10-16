@@ -43,7 +43,7 @@ def main():
     }
 
     # Specify which configurations to run
-    config_ids = ['1', '2', '3']  # Adjust this list to include the config IDs you want to run
+    config_ids = ['2', '3']  # Adjust this list to include the config IDs you want to run
     for key in config_ids:
         if key in configurations:
             config = configurations[key]
@@ -188,10 +188,11 @@ def run_configuration(stimulus_type, epoch_end, perm_cols, is_full_figure_draw, 
     model, optimizer = checkpoint_loader.load_checkpoint(model, optimizer)
 
     if is_cross_level:
+        logging.info(f'series_ids example 1:{series_ids[0]} \n')
         syn_series_ids = series_ids_permutation_uni(np.array(series_ids), perm_cols, rand_sample_cols=rand_sample_cols,
                                                     num_rand_sample=num_rand_sample)
-        logging.info(f'syn_series_ids example 1:{syn_series_ids[0, :]} \n')
-        logging.info(f'syn_series_ids example -1:{syn_series_ids[-1, :]} \n')
+        logging.info(f'syn_series_ids example 1:{syn_series_ids[0]} \n')
+        logging.info(f'syn_series_ids example -1:{syn_series_ids[-1]} \n')
 
         param_lists = parameter_generator.generate_parameters_from_query_list(syn_series_ids)
         print(f'syn_param_lists 1: {param_lists[0]}')
