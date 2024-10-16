@@ -28,7 +28,7 @@ def weightedsum_image_plot(output_image_np):
 
 def main():
     # Common variables for all configurations
-    stimulus_type = 'SIMPlugIn_09232401'
+    stimulus_type = 'SIMPlugIn_09232402'
     epoch_end = 150
     perm_cols = [0, 1]  # (0, 1) for linear (0, 1, 2) for masking (0, 1, 2, 3) for num_cell
     rand_sample_cols = [2, 3]
@@ -43,7 +43,7 @@ def main():
     }
 
     # Specify which configurations to run
-    config_ids = ['2', '3']  # Adjust this list to include the config IDs you want to run
+    config_ids = ['1', '2', '3']  # Adjust this list to include the config IDs you want to run
     for key in config_ids:
         if key in configurations:
             config = configurations[key]
