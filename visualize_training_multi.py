@@ -195,12 +195,12 @@ def run_configuration(stimulus_type, epoch_end, perm_cols, is_full_figure_draw, 
         logging.info(f'syn_series_ids example -1:{syn_series_ids[-1]} \n')
 
         param_lists = parameter_generator.generate_parameters_from_query_list(syn_series_ids)
-        print(f'syn_param_lists 1: {param_lists[0]}')
+        # print(f'syn_param_lists 1: {param_lists[0]}')
         # print(f'syn_param_lists 2: {param_lists[201]}')
         # print(f'syn_param_lists 3: {param_lists[401]}')
         # print(f'syn_param_lists 4: {param_lists[1201]}')
-        print(f'syn_param_lists 5: {param_lists[-1]}')
-        raise RuntimeError("Script stopped after saving outputs.")
+        # print(f'syn_param_lists 5: {param_lists[-1]}')
+        # raise RuntimeError("Script stopped after saving outputs.")
         syn_query_index = query_encoder.encode(syn_series_ids)
 
         logging.info(f'syn_query_index example 1:{syn_query_index[0, :]} \n')
