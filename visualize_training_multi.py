@@ -28,9 +28,11 @@ def weightedsum_image_plot(output_image_np):
 
 def main():
     # Common variables for all configurations
-    stimulus_type = 'SIMPlugIn_09012405'
-    epoch_end = 100
-    perm_cols = (0, 1, 2, 3)  # (0, 1, 2) for masking (0, 1, 2, 3) for num_cell
+    stimulus_type = 'SIMPlugIn_09232401'
+    epoch_end = 150
+    perm_cols = (0, 1)  # (0, 1) for linear (0, 1, 2) for masking (0, 1, 2, 3) for num_cell
+    rand_sample_cols = [2, 3]
+    num_rand_sample = 2
     is_full_figure_draw = False
 
     # Define all possible configurations
@@ -51,13 +53,17 @@ def main():
                 perm_cols=perm_cols,  # Use specific perm_cols from config
                 is_full_figure_draw=is_full_figure_draw,
                 is_cross_level=config['is_cross_level'],
-                is_weight_in_label=config['is_weight_in_label']
+                is_weight_in_label=config['is_weight_in_label'],
+                rand_sample_cols=rand_sample_cols,
+                num_rand_sample=num_rand_sample,
+
             )
         else:
             print(f"No configuration found for key: {key}")
 
 
-def run_configuration(stimulus_type, epoch_end, perm_cols, is_full_figure_draw, is_cross_level, is_weight_in_label):
+def run_configuration(stimulus_type, epoch_end, perm_cols, is_full_figure_draw, is_cross_level, is_weight_in_label,
+                      rand_sample_cols, num_rand_sample):
     checkpoint_filename = f'PerceiverIO_{stimulus_type}_checkpoint_epoch_{epoch_end}'
 
     # default parameters
@@ -148,10 +154,8 @@ def run_configuration(stimulus_type, epoch_end, perm_cols, is_full_figure_draw, 
     logging.info(f'series_ids:{series_ids} \n')
     query_arrays = query_encoder.encode(series_ids)
     logging.info(f'query_arrays shape:{query_arrays.shape} \n')
-    logging.info(f'query_arrays example 1:{query_arrays[0, :]} \n')
-    logging.info(f'query_arrays example -1:{query_arrays[-1, :]} \n')
-    raise RuntimeError("Script stopped after saving outputs.")
-    query_permutator = None
+
+    # query_permutator = None
 
     # Initialize the DataVisualizer
     visualizer_est_rf = DataVisualizer(savefig_dir, file_prefix=f'{stimulus_type}_Estimate_RF')
@@ -184,14 +188,18 @@ def run_configuration(stimulus_type, epoch_end, perm_cols, is_full_figure_draw, 
     model, optimizer = checkpoint_loader.load_checkpoint(model, optimizer)
 
     if is_cross_level:
-        syn_series_ids = series_ids_permutation_uni(np.array(series_ids), perm_cols)
+        syn_series_ids = series_ids_permutation_uni(np.array(series_ids), perm_cols, rand_sample_cols=rand_sample_cols,
+                                                    num_rand_sample=num_rand_sample)
+        logging.info(f'syn_series_ids example 1:{syn_series_ids[0, :]} \n')
+        logging.info(f'syn_series_ids example -1:{syn_series_ids[-1, :]} \n')
+
         param_lists = parameter_generator.generate_parameters_from_query_list(syn_series_ids)
-        # print(f'syn_param_lists 1: {param_lists[0]}')
+        print(f'syn_param_lists 1: {param_lists[0]}')
         # print(f'syn_param_lists 2: {param_lists[201]}')
         # print(f'syn_param_lists 3: {param_lists[401]}')
         # print(f'syn_param_lists 4: {param_lists[1201]}')
-        # print(f'syn_param_lists 5: {param_lists[-1]}')
-        # raise RuntimeError("Script stopped after saving outputs.")
+        print(f'syn_param_lists 5: {param_lists[-1]}')
+        raise RuntimeError("Script stopped after saving outputs.")
         syn_query_index = query_encoder.encode(syn_series_ids)
 
         logging.info(f'syn_query_index example 1:{syn_query_index[0, :]} \n')

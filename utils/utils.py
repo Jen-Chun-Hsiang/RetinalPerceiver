@@ -4,6 +4,7 @@ import numpy as np
 from datetime import datetime
 import matplotlib.pyplot as plt
 import hashlib
+import pandas as pd
 from itertools import product
 
 
@@ -509,62 +510,68 @@ def series_ids_permutation(Ds, length):
             if len(cids) > 0:
                 syn_query[i, j] = cids[0]  # Python's 0-based indexing is maintained
 
-
     return Df, syn_query
 
 
-def series_ids_permutation_uni(Ds, perm_cols, repeat_samples=None, shuffle_mode='row', random_seed=42):
-    nrows, ncols = Ds.shape
+def series_ids_permutation_uni(Ds, perm_cols, repeat_samples=None, shuffle_mode='row', random_seed=42,
+                               rand_sample_cols=None, num_rand_sample=1):
+    np.random.seed(random_seed)  # Set the random seed for numpy operations
+    df = pd.DataFrame(Ds)  # Convert the input data to a DataFrame
 
-    # Initialize random generator with a fixed seed if provided
-    rng = np.random.default_rng(random_seed)
+    # Calculate the columns that are not to be permuted or randomly sampled
+    include_columns = [col for col in df.columns if
+                       col not in perm_cols and (rand_sample_cols is None or col not in rand_sample_cols)]
 
-    include_columns = [i for i in range(ncols) if i not in perm_cols]
-    np_arr = np.array(Ds)
-
-    # Generate all possible combinations of permutation columns
-    all_possible_combinations = set(tuple(row) for row in
-                                    np.array(np.meshgrid(*[np.unique(np_arr[:, col]) for col in perm_cols])).T.reshape(
-                                        -1,
-                                        len(perm_cols)))
-    present_combinations = set(tuple(row) for row in np_arr[:, perm_cols])
-    missing_combinations = list(all_possible_combinations - present_combinations)
-    if repeat_samples is not None:
-        shuffle_remaining = True
+    # Create all possible combinations of values in the permutation columns
+    all_combinations = pd.MultiIndex.from_product([df[col].unique() for col in perm_cols], names=perm_cols)
+    # Current combinations present in the DataFrame
+    present_combinations = pd.MultiIndex.from_frame(df[perm_cols].drop_duplicates())
+    # Identify missing combinations
+    if rand_sample_cols is None:
+        missing_combinations = all_combinations.difference(present_combinations)
     else:
-        shuffle_remaining = False
+        missing_combinations = all_combinations
 
-    result = []
-    # Process each missing permutation combination
-    if shuffle_remaining is False:
-        unique_rows = np.unique(np_arr[:, include_columns], axis=0)
-        for pair, mod in product(missing_combinations, unique_rows):
-            combined = pair + tuple(mod)
-            result.append(combined)
+    # Prepare a DataFrame to hold the result
+    result = pd.DataFrame()
 
-        # Sample from the original data and generate combinations based on unique values in include_columns
-        combinations = list(product(*[np.unique(np_arr[:, col]) for col in include_columns]))
-        indices = rng.choice(nrows, size=len(combinations), replace=True)
-        sampled_data = [tuple(row) for row in np_arr[indices, :][:, perm_cols]]
+    if not missing_combinations.empty:
+        # Convert MultiIndex to DataFrame for easy handling
+        missing_df = missing_combinations.to_frame(index=False)
 
-        # Ensure that sampled_data and combinations are zipped correctly
-        combined_list = [(a + b) for a, b in zip(sampled_data, combinations)]
-        result += combined_list
+        if repeat_samples is not None:
+            # Repeat each missing combination 'repeat_samples' times if needed
+            missing_df = pd.concat([missing_df] * repeat_samples, ignore_index=True)
 
-    else:
-        for pair in missing_combinations:
-            for _ in range(repeat_samples):
-                if shuffle_mode == 'row':
-                    # Shuffle the rows and sample one
-                    shuffled_indices = rng.permutation(nrows)
-                    mod = tuple(np_arr[shuffled_indices[0], include_columns])
-                elif shuffle_mode == 'independent':
-                    # Shuffle each column independently and sample one
-                    mod = tuple(rng.choice(np_arr[:, col]) for col in include_columns)
-                combined = pair + mod
-                result.append(combined)
+        if rand_sample_cols:
+            # Expand missing_df for random sampling
+            expanded_missing_df = pd.concat([missing_df] * num_rand_sample, ignore_index=True)
+            # Create random samples for specified columns
+            for col in rand_sample_cols:
+                random_samples = np.random.uniform(df[col].min(), df[col].max(), size=len(expanded_missing_df))
+                expanded_missing_df[col] = random_samples
 
-    return result
+            missing_df = expanded_missing_df
+
+        # Prepare the DataFrame for included columns based on shuffle mode
+        if shuffle_mode == 'row':
+            # Shuffle the rows and tile to match the length of missing_df
+            shuffled_df = df[include_columns].sample(n=len(missing_df), replace=True, random_state=random_seed)
+            missing_df[include_columns] = shuffled_df.values
+
+        elif shuffle_mode == 'independent':
+            # Shuffle each column independently and tile to match the length of missing_df
+            for col in include_columns:
+                shuffled_col = np.random.choice(df[col], size=len(missing_df), replace=True)
+                missing_df[col] = shuffled_col
+
+        missing_df = missing_df[sorted(missing_df.columns)]
+        result = missing_df
+
+    # Convert the final DataFrame back to a list of tuples
+    result_list = [tuple(x) for x in result.to_numpy()]
+
+    return result_list
 
 
 def array_to_list_of_tuples(arr):
