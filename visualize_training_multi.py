@@ -28,9 +28,10 @@ def weightedsum_image_plot(output_image_np):
 
 def main():
     # Common variables for all configurations
-    stimulus_type = 'SIMPlugIn_09012413'
-    epoch_end = 100
+    stimulus_type = 'SIMPlugIn_09102405'
+    epoch_end = 150
     perm_cols = [0, 1, 2, 3]  # (0, 1) for linear (0, 1, 2) for masking (0, 1, 2, 3) for num_cell
+    repeat_samples = 12  # None for other, 12 for linear
     rand_sample_cols = None  # [2, 3]for linear
     num_rand_sample = 12
     is_full_figure_draw = False
@@ -54,6 +55,7 @@ def main():
                 is_full_figure_draw=is_full_figure_draw,
                 is_cross_level=config['is_cross_level'],
                 is_weight_in_label=config['is_weight_in_label'],
+                repeat_samples=repeat_samples,
                 rand_sample_cols=rand_sample_cols,
                 num_rand_sample=num_rand_sample,
 
@@ -63,7 +65,7 @@ def main():
 
 
 def run_configuration(stimulus_type, epoch_end, perm_cols, is_full_figure_draw, is_cross_level, is_weight_in_label,
-                      rand_sample_cols, num_rand_sample):
+                      repeat_samples, rand_sample_cols, num_rand_sample):
     checkpoint_filename = f'PerceiverIO_{stimulus_type}_checkpoint_epoch_{epoch_end}'
 
     # default parameters
@@ -189,8 +191,8 @@ def run_configuration(stimulus_type, epoch_end, perm_cols, is_full_figure_draw, 
 
     if is_cross_level:
         logging.info(f'series_ids example 1:{series_ids[0]} \n')
-        syn_series_ids = series_ids_permutation_uni(np.array(series_ids), perm_cols, rand_sample_cols=rand_sample_cols,
-                                                    num_rand_sample=num_rand_sample)
+        syn_series_ids = series_ids_permutation_uni(np.array(series_ids), perm_cols, repeat_samples=repeat_samples,
+                                                    rand_sample_cols=rand_sample_cols, num_rand_sample=num_rand_sample)
         logging.info(f'syn_series_ids example 1:{syn_series_ids[0]} \n')
         logging.info(f'syn_series_ids example -1:{syn_series_ids[-1]} \n')
 
