@@ -291,10 +291,12 @@ def main():
         model, optimizer = checkpoint_loader.load_checkpoint(model, optimizer)
         start_epoch = checkpoint_loader.get_epoch()
         training_losses, validation_losses = checkpoint_loader.get_training_losses(), checkpoint_loader.get_validation_losses()
+        learning_rate_dynamics = checkpoint_loader.get_learning_rate_dynamics()
     else:
         start_epoch = 0
         training_losses = []
         validation_losses = []
+        learning_rate_dynamics = []
         validation_contra_losses = []
         start_time = time.time()  # Capture the start time
 
@@ -305,6 +307,7 @@ def main():
         # torch.cuda.empty_cache()
         avg_val_loss = evaluator.evaluate(val_loader)
         scheduler.step(avg_val_loss)
+        learning_rate_dynamics.append(scheduler.get_last_lr())
         validation_losses.append(avg_val_loss)
         avg_val_loss = evaluator_contra.evaluate(val_loader)
         validation_contra_losses.append(avg_val_loss)
