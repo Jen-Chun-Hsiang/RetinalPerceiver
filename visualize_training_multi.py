@@ -30,9 +30,9 @@ def main():
     # Common variables for all configurations
     stimulus_type = 'SIMPlugIn_09102405'
     epoch_end = 150
-    perm_cols = [0, 1, 2, 3]  # (0, 1) for linear (0, 1, 2) for masking (0, 1, 2, 3) for num_cell
-    repeat_samples = 12  # None for other, 12 for linear
-    rand_sample_cols = None  # [2, 3]for linear
+    perm_cols = [0, 1, 2]  # (0, 1) for linear | (0, 1, 2) for masking | (0, 1, 2, 3) for num_cell
+    repeat_samples = 12  # None for other | 12 for masking
+    rand_sample_cols = None  # [2, 3] for linear | None for others
     num_rand_sample = 12
     is_full_figure_draw = False
 
