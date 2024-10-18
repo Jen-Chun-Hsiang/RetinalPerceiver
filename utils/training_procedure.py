@@ -136,12 +136,12 @@ class Trainer:
         query_vectors = query_vectors.float().to(self.device)
         input_matrices, targets = input_matrices.to(self.device), targets.to(self.device)
         outputs, _ = self.model(input_matrices, query_vectors)
-        try:
-            assert outputs.shape == targets.shape
-        except Exception as e:
-            print(e)
-            print(f'outputs shape: {outputs.shape}')
-            print(f'targets shape: {targets.shape}')
+        # try:
+        #    assert outputs.shape == targets.shape
+        # except Exception as e:
+        #    print(e)
+        #    print(f'outputs shape: {outputs.shape}')
+        #    print(f'targets shape: {targets.shape}')
 
         loss = self._compute_loss(outputs, targets)
 
