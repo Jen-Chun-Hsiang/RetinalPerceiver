@@ -28,23 +28,24 @@ def weightedsum_image_plot(output_image_np):
 
 def main():
     # Common variables for all configurations
-    stimulus_type = 'SIMPlugIn_09232413'
-    epoch_end = 150
-    perm_cols = [0, 1]  # (0, 1) for linear 923 | (0, 1, 2) for masking 910 | (0, 1, 2, 3) for num_cell 901
-    repeat_samples = None  # None for other | 12 for masking 910 | 1 for num_cell 901
-    rand_sample_cols = [2, 3]  # [2, 3] for linear 923 | None for others
+    stimulus_type = 'SIMPlugIn_09012402'
+    epoch_end = 100
+    perm_cols = [0, 1, 2, 3]  # (0, 1) for linear 923 | (0, 1, 2) for masking 910 | (0, 1, 2, 3) for num_cell 901
+    repeat_samples = 1  # None for other | 12 for masking 910 | 1 for num_cell 901
+    rand_sample_cols = None  # [2, 3] for linear 923 | None for others
     num_rand_sample = 12
     is_full_figure_draw = False
 
     # Define all possible configurations
     configurations = {
         '1': {'is_cross_level': False, 'is_weight_in_label': False},
-        '2': {'is_cross_level': True, 'is_weight_in_label': False},
-        '3': {'is_cross_level': True, 'is_weight_in_label': True},
+        '2': {'is_cross_level': False, 'is_weight_in_label': True},
+        '3': {'is_cross_level': True, 'is_weight_in_label': False},
+        '4': {'is_cross_level': True, 'is_weight_in_label': True},
     }
 
     # Specify which configurations to run
-    config_ids = ['1', '2', '3']  # Adjust this list to include the config IDs you want to run
+    config_ids = ['2']  # Adjust this list to include the config IDs you want to run
     for key in config_ids:
         if key in configurations:
             config = configurations[key]
