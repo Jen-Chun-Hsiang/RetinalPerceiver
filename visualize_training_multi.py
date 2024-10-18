@@ -45,7 +45,7 @@ def main():
     }
 
     # Specify which configurations to run
-    config_ids = ['2']  # Adjust this list to include the config IDs you want to run
+    config_ids = ['1', '3', '4']  # Adjust this list to include the config IDs you want to run
     for key in config_ids:
         if key in configurations:
             config = configurations[key]
