@@ -28,11 +28,11 @@ def weightedsum_image_plot(output_image_np):
 
 def main():
     # Common variables for all configurations
-    stimulus_type = 'SIMPlugIn_09232454'
-    epoch_end = 120
-    perm_cols = [0, 1]  # (0, 1) for linear 923 | (0, 1, 2) for masking 910 | (0, 1, 2, 3) for num_cell 901
-    repeat_samples = None  # None for other | 12 for masking 910 | 1 for num_cell 901
-    rand_sample_cols = [2, 3]  # [2, 3] for linear 923 | None for others
+    stimulus_type = 'SIMPlugIn_09012453'
+    epoch_end = 200
+    perm_cols = [0, 1, 2, 3]  # (0, 1) for linear 923 | (0, 1, 2) for masking 910 | (0, 1, 2, 3) for num_cell 901
+    repeat_samples = 1  # None for other | 12 for masking 910 | 1 for num_cell 901
+    rand_sample_cols = None  # [2, 3] for linear 923 | None for others
     num_rand_sample = 12
     is_full_figure_draw = False
 
