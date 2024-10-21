@@ -111,7 +111,7 @@ def main():
     query_index = query_index.astype('int64')
     firing_rate_array = firing_rate_array.astype('float32')
 
-    '''
+
     # Prepare a dictionary with the variables
     mat_dict = {
         'data_array': data_array,
@@ -121,7 +121,7 @@ def main():
     }
     # Save the dictionary to a .mat file
     savemat(f'{mat_dir}check_data.mat', mat_dict)
-    '''
+    raise RuntimeError('Check data')
 
     # construct the query array for query encoder
     query_df = pd.DataFrame(query_array, columns=['experiment_id', 'neuron_id'])
