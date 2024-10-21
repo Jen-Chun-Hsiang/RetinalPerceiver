@@ -230,6 +230,9 @@ def main():
     presented_cell_ids = list(range(query_array.shape[0]))
     num_cols = 5
     corrcoef_vals = np.zeros((query_array.shape[0], 1))
+    all_output_images = []
+    all_weights = []
+    all_labels = []
     ii = 0
     for cell_count, presented_cell_id in enumerate(presented_cell_ids):
         query_array_one = query_array[presented_cell_id:presented_cell_id+1, :]
@@ -259,15 +262,21 @@ def main():
             output_image_np_std = np.std(output_image_np, axis=0)
             visualizer_est_rfstd.plot_and_save(output_image_np_std, plot_type='2D_matrix')
 
+        # Store the data from the current iteration
+        all_output_images.append(output_image.squeeze().cpu().numpy())
+        all_weights.append(weights)
+        all_labels.append(labels)
+
         corrcoef_vals[ii, :] = calculate_correlation(labels, weights)
         ii += 1
 
     logging.info(f'correlation coefficient: {corrcoef_vals} \n')
     np.save(savedata_filename_npy, corrcoef_vals)
 
-    # Save the dictionary as a .mat file
+    # Save everything to a .mat file
     savemat(savedata_filename_mat, {'corrcoef_vals': corrcoef_vals, 'query_array': query_array,
-                                    'weights': weights, 'labels': labels})
+                                    'all_output_images': all_output_images, 'all_weights': all_weights,
+                                    'all_labels': all_labels})
 
 if __name__ == "__main__":
     main()
