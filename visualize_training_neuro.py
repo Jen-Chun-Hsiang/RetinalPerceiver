@@ -96,6 +96,11 @@ def main():
     config_module = f"configs.neuros.{config_name}"
     config = __import__(config_module, fromlist=[''])
 
+    if is_test_dataset:
+        data_stride = 1
+    else:
+        data_stride = args.data_stride
+
     # In the upcoming training procedure, the tables below will be saved with the training file
     # Load and make sure the table is correct
 
@@ -103,7 +108,7 @@ def main():
     filtered_data = getattr(config, 'filtered_data', None)
 
     # construct the array for dataset
-    data_constructor = DataConstructor(filtered_data, seq_len=args.input_depth, stride=args.data_stride,
+    data_constructor = DataConstructor(filtered_data, seq_len=args.input_depth, stride=data_stride,
                                        link_dir=link_dir, resp_dir=resp_dir)
     data_array, query_array, query_index, firing_rate_array = data_constructor.construct_data()
     data_array = data_array.astype('int64')
@@ -121,7 +126,8 @@ def main():
     }
     # Save the dictionary to a .mat file
     savemat(f'{mat_dir}check_data.mat', mat_dict)
-    raise RuntimeError('Check data')
+    # raise RuntimeError('Check data')
+
 
     # construct the query array for query encoder
     query_df = pd.DataFrame(query_array, columns=['experiment_id', 'neuron_id'])
@@ -161,10 +167,12 @@ def main():
 
     # Get how many unique cells are there
     if is_test_dataset:
-        train_proportion = 0.999
+        train_proportion = 1
+        chunk_size = 1
     else:
         train_proportion = args.train_proportion
-    train_indices, val_indices = train_val_split(len(data_array), args.chunk_size, test_size=1 - train_proportion)
+        chunk_size = args.chunk_size
+    train_indices, val_indices = train_val_split(len(data_array), chunk_size, test_size=1 - train_proportion)
     train_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir, train_indices,
                                    args.chunk_size, device=device, cache_size=args.cache_size,
                                    image_loading_method=args.image_loading_method)
@@ -269,6 +277,7 @@ def main():
 
         corrcoef_vals[ii, :] = calculate_correlation(labels, weights)
         ii += 1
+        break
 
     logging.info(f'correlation coefficient: {corrcoef_vals} \n')
     np.save(savedata_filename_npy, corrcoef_vals)
