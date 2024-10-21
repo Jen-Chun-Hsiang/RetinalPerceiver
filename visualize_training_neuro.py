@@ -35,7 +35,7 @@ def main():
     is_weight_in_label = False  # check if the data is good
     is_full_figure_draw = True  # determine whether draw for each neuro or just get stats
     is_test_dataset = True
-    test_config_name = None  # 'neuro_exp1_3cell_041324_test_12' None
+    test_config_name = 'neuro_exp3_3cell_061424_test_3'  # default: None, for natural images 'neuro_exp3_3cell_061424_test_3'
     is_use_matrix_index = True
     savefig_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Figures/'
     saveprint_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Prints/'
@@ -174,7 +174,7 @@ def main():
         chunk_size = args.chunk_size
     train_indices, val_indices = train_val_split(len(data_array), chunk_size, test_size=1 - train_proportion)
     train_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir, train_indices,
-                                   args.chunk_size, device=device, cache_size=args.cache_size,
+                                   chunk_size, device=device, cache_size=args.cache_size,
                                    image_loading_method=args.image_loading_method)
 
     check_loader = DataLoader(train_dataset, batch_size=2, shuffle=True)
