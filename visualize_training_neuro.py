@@ -35,7 +35,7 @@ def main():
     is_weight_in_label = False  # check if the data is good
     is_full_figure_draw = True  # determine whether draw for each neuro or just get stats
     is_test_dataset = True
-    test_config_name = 'neuro_exp3_3cell_061424_test_3'  # default: None, for natural images 'neuro_exp3_3cell_061424_test_3'
+    test_config_name = 'neuro_exp3_3cell_061424_test_2'  # default: None, for natural images 'neuro_exp3_3cell_061424_test_3'
     is_use_matrix_index = True
     savefig_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Figures/'
     saveprint_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Prints/'
