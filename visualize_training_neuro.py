@@ -277,7 +277,7 @@ def main():
 
         corrcoef_vals[ii, :] = calculate_correlation(labels, weights)
         ii += 1
-        break
+        # break
 
     logging.info(f'correlation coefficient: {corrcoef_vals} \n')
     np.save(savedata_filename_npy, corrcoef_vals)
