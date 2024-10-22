@@ -5,17 +5,23 @@ run_task_id = 1
 scale_factor = 1 / 2.5
 padding_size = 5
 experiment_id = 3
+session_id = 3
 set_name = 'TestSet'
 
 def convert_png_to_ph_overwrite():
     # (1) Convert png to ph
-    convert_root = f"/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/{set_name}/Stimulus" \
-                   f"/experiment_{experiment_id}/"
+    if session_id is not None:
+        convert_root = f"/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/{set_name}/Stimulus" \
+                       f"/experiment_{experiment_id}/session_{session_id}"
+    else:
+        convert_root = f"/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/{set_name}/Stimulus" \
+                    f"/experiment_{experiment_id}/"
     converter = PNGToTensorConverter(convert_root, overwrite=True, scale_factor=scale_factor, padding_size=padding_size)
     converter.start_conversion()
 
 
 def convert_png_to_ph_addnew():
+    raise RuntimeError('wrong functions')
     # (2) Skip conversion if .pt file exists:
     convert_root = f"/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/{set_name}/Stimulus" \
                    f"/experiment_{experiment_id}/"
