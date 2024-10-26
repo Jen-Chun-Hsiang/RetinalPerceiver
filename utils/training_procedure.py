@@ -259,9 +259,9 @@ class Evaluator:
 '''
 
 
-def save_checkpoint(epoch, model, optimizer, args, training_losses,
+def save_checkpoint(epoch, model, optimizer, scheduler, args, training_losses,
                     validation_losses, validation_contra_losses=None,
-                    file_path=None):
+                    file_path=None, learning_rate_dynamics=None):
     """
     Saves a checkpoint of the training process.
 
@@ -277,10 +277,12 @@ def save_checkpoint(epoch, model, optimizer, args, training_losses,
         'epoch': epoch,
         'model_state_dict': model.state_dict(),
         'optimizer_state_dict': optimizer.state_dict(),
+        'scheduler_state_dict': scheduler.state_dict(),
         'args': args,
         'training_losses': training_losses,
         'validation_losses': validation_losses,
-        'validation_contra_losses': validation_contra_losses
+        'validation_contra_losses': validation_contra_losses,
+        'learning_rate_dynamics': learning_rate_dynamics
     }
     torch.save(checkpoint, file_path)
 
@@ -292,6 +294,7 @@ class CheckpointLoader:
         self.training_losses = None
         self.validation_losses = None
         self.validation_contra_losses = None
+        self.learning_rate_dynamics = None
         self.args = None
         self.checkpoint = torch.load(checkpoint_path, map_location=device)
         # self.checkpoint = torch.load(checkpoint_path)
@@ -307,7 +310,7 @@ class CheckpointLoader:
         self.args = self.checkpoint['args']
         return self.args
 
-    def load_checkpoint(self, model, optimizer):
+    def load_checkpoint(self, model, optimizer, scheduler):
         """
         Load a training checkpoint into the model and optimizer.
 
@@ -318,6 +321,7 @@ class CheckpointLoader:
         """
         model.load_state_dict(self.checkpoint['model_state_dict'])
         optimizer.load_state_dict(self.checkpoint['optimizer_state_dict'])
+        scheduler.load_state_dict(self.checkpoint['scheduler_state_dict'])
 
         return model, optimizer
 
@@ -340,6 +344,12 @@ class CheckpointLoader:
         """ Return the list of recorded validation losses. """
         self.validation_contra_losses = self.checkpoint.get('validation_contra_losses', [])
         return self.validation_contra_losses
+
+    def load_learning_rate_dynamics(self):
+        """ Return the list of recorded validation losses. """
+        self.learning_rate_dynamics = self.checkpoint.get('learning_rate_dynamics', [])
+        return self.learning_rate_dynamics
+
 
 # task: needed to add the demonstration of original dataset
 # (1) just the label results
