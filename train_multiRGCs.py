@@ -284,7 +284,7 @@ def main():
 
     for epoch in range(start_epoch, args.epochs):
         avg_train_loss = trainer.train_one_epoch(train_loader)
-        scheduler.step(avg_val_loss)
+        scheduler.step(avg_train_loss)
         training_losses.append(avg_train_loss)
         learning_rate_dynamics.append(scheduler.get_last_lr())
 
