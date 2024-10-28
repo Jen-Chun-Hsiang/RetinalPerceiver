@@ -266,7 +266,8 @@ def main():
 
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=args.schedule_factor, patience=5)
+    # scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=args.schedule_factor, patience=5)
+    scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=10, T_mult=2, eta_min=1e-6)
 
     # Initialize the Trainer
     if args.masking_pos is None:
@@ -307,7 +308,8 @@ def main():
 
         # torch.cuda.empty_cache()
         avg_val_loss = evaluator.evaluate(val_loader)
-        scheduler.step(avg_val_loss)
+        # scheduler.step(avg_val_loss)
+        scheduler.step(epoch + (epoch / args.epochs))
         learning_rate_dynamics.append(scheduler.get_last_lr())
         validation_losses.append(avg_val_loss)
         avg_val_loss = evaluator_contra.evaluate(val_loader)
