@@ -69,6 +69,7 @@ def parse_args():
     parser.add_argument('--epochs', type=int, default=100, help='Number of training epochs')
     parser.add_argument('--batch_size', type=int, default=64, help='Batch size for training')
     parser.add_argument('--learning_rate', type=float, default=0.001, help='Learning rate')
+    parser.add_argument('--schedule_method', type=str, default='RLRP', help='Method used for scheduler')
     parser.add_argument('--schedule_factor', type=float, default=0.2, help='Learning rate')
     parser.add_argument('--weight_decay', type=float, default=0.001, help='Weight decay')
     parser.add_argument('--checkpoint_path', type=str, default='./checkpoints/model.pth',
@@ -262,7 +263,10 @@ def main():
 
     criterion = loss_functions[args.loss_fn]
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=args.schedule_factor, patience=5)
+    if args.schedule_method.lower() == 'rlrp':
+        scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=args.schedule_factor, patience=5)
+    elif args.schedule_method.lower == 'cawr':
+
     # Initialize the Trainer
     trainer = Trainer(model, criterion, optimizer, device, args.accumulation_steps,
                       query_array=query_array)
@@ -284,7 +288,10 @@ def main():
 
     for epoch in range(start_epoch, args.epochs):
         avg_train_loss = trainer.train_one_epoch(train_loader)
-        scheduler.step(avg_train_loss)
+        if args.schedule_method.lower() == 'rlrp':
+            scheduler.step(avg_train_loss)
+        elif args.schedule_method.lower == 'cawr':
+
         training_losses.append(avg_train_loss)
         learning_rate_dynamics.append(scheduler.get_last_lr())
 
