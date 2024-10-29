@@ -310,7 +310,7 @@ class CheckpointLoader:
         self.args = self.checkpoint['args']
         return self.args
 
-    def load_checkpoint(self, model, optimizer, scheduler):
+    def load_checkpoint(self, model, optimizer, scheduler=None):
         """
         Load a training checkpoint into the model and optimizer.
 
@@ -321,7 +321,8 @@ class CheckpointLoader:
         """
         model.load_state_dict(self.checkpoint['model_state_dict'])
         optimizer.load_state_dict(self.checkpoint['optimizer_state_dict'])
-        scheduler.load_state_dict(self.checkpoint['scheduler_state_dict'])
+        if scheduler is not None:
+            scheduler.load_state_dict(self.checkpoint['scheduler_state_dict'])
 
         return model, optimizer, scheduler
 
