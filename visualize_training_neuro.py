@@ -233,7 +233,10 @@ def main():
                                           device=device).to(device)
 
     optimizer = optim.Adam(model.parameters(), lr=0.001)
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=args.schedule_factor, patience=5)
+    if hasattr(args, 'schedule_factor'):
+        scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=args.schedule_factor, patience=5)
+    else:
+        scheduler = None
     model, optimizer, scheduler = checkpoint_loader.load_checkpoint(model, optimizer, scheduler)
 
     presented_cell_ids = list(range(query_array.shape[0]))
