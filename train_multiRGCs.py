@@ -266,7 +266,7 @@ def main():
     if args.schedule_method.lower() == 'rlrp':
         scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=args.schedule_factor, patience=5)
     elif args.schedule_method.lower == 'cawr':
-
+        optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=10, T_mult=2, eta_min=1e-6)
     # Initialize the Trainer
     trainer = Trainer(model, criterion, optimizer, device, args.accumulation_steps,
                       query_array=query_array)
@@ -291,6 +291,7 @@ def main():
         if args.schedule_method.lower() == 'rlrp':
             scheduler.step(avg_train_loss)
         elif args.schedule_method.lower == 'cawr':
+            scheduler.step(epoch + (epoch / args.epochs))
 
         training_losses.append(avg_train_loss)
         learning_rate_dynamics.append(scheduler.get_last_lr())
