@@ -323,7 +323,7 @@ class CheckpointLoader:
         optimizer.load_state_dict(self.checkpoint['optimizer_state_dict'])
         scheduler.load_state_dict(self.checkpoint['scheduler_state_dict'])
 
-        return model, optimizer
+        return model, optimizer, scheduler
 
     def load_epoch(self):
         """ Return the epoch at which training was interrupted. """
