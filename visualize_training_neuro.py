@@ -286,7 +286,8 @@ def main():
     # Save everything to a .mat file
     savemat(savedata_filename_mat, {'corrcoef_vals': corrcoef_vals, 'query_array': query_array,
                                     'all_output_images': all_output_images, 'all_weights': all_weights,
-                                    'all_labels': all_labels})
+                                    'all_labels': all_labels, 'training_losses': training_losses,
+                                    'validation_losses': validation_losses})
 
 if __name__ == "__main__":
     main()
