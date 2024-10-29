@@ -233,7 +233,8 @@ def main():
                                           device=device).to(device)
 
     optimizer = optim.Adam(model.parameters(), lr=0.001)
-    model, optimizer = checkpoint_loader.load_checkpoint(model, optimizer)
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=args.schedule_factor, patience=5)
+    model, optimizer, scheduler = checkpoint_loader.load_checkpoint(model, optimizer, scheduler)
 
     presented_cell_ids = list(range(query_array.shape[0]))
     num_cols = 5
