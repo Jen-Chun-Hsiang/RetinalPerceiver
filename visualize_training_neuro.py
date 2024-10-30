@@ -47,6 +47,7 @@ def main():
     link_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Link/'
     resp_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Response/'
     mat_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Matfiles/'
+    arr_bank_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/ArrayBanks/'
 
     if is_test_dataset:
         is_original_dataset = True
@@ -104,12 +105,17 @@ def main():
 
     # construct the array for dataset
     data_constructor = DataConstructor(filtered_data, seq_len=args.input_depth, stride=args.data_stride,
-                                       link_dir=link_dir, resp_dir=resp_dir)
-    data_array, query_array, query_index, firing_rate_array = data_constructor.construct_data()
-    data_array = data_array.astype('int64')
+                                       link_dir=link_dir, resp_dir=resp_dir, arr_bank_dir=arr_bank_dir)
+    if args.use_dataset_split:
+        construct_folder_name = args.config_name
+        query_array = data_constructor.construct_data_saved(construct_folder_name)
+    else:
+        data_array, query_array, query_index, firing_rate_array = data_constructor.construct_data()
+        data_array = data_array.astype('int64')
+        query_index = query_index.astype('int64')
+        firing_rate_array = firing_rate_array.astype('float32')
+
     query_array = query_array.astype('int64')
-    query_index = query_index.astype('int64')
-    firing_rate_array = firing_rate_array.astype('float32')
 
     '''
     # Prepare a dictionary with the variables
