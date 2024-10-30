@@ -299,13 +299,13 @@ def main():
         val_indices_sets = split_array(all_val_indices, num_sets)
 
         for set_index, (train_indices, val_indices) in enumerate(zip(train_indices_sets, val_indices_sets)):
-            elapsed_time = time.time() - start_time
-            logging.info(f"Loop start, Elapsed time: {elapsed_time:.2f} seconds \n")
+            # elapsed_time = time.time() - start_time
+            # logging.info(f"Loop start, Elapsed time: {elapsed_time:.2f} seconds \n")
             data_array = data_array_sampler.sample(train_indices)
             query_index = query_index_sampler.sample(train_indices)
             firing_rate_array = firing_rate_array_sampler.sample(train_indices)
-            elapsed_time = time.time() - start_time
-            logging.info(f"Load samplers (training), Elapsed time: {elapsed_time:.2f} seconds \n")
+            # elapsed_time = time.time() - start_time
+            # logging.info(f"Load samplers (training), Elapsed time: {elapsed_time:.2f} seconds \n")
 
             train_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir,
                                            device=device, cache_size=args.cache_size,
@@ -313,8 +313,8 @@ def main():
             train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.num_worker)
             avg_train_loss = trainer.train_one_epoch(train_loader)
             training_losses.append(avg_train_loss)
-            elapsed_time = time.time() - start_time
-            logging.info(f"Run training dataset, Elapsed time: {elapsed_time:.2f} seconds \n")
+            # elapsed_time = time.time() - start_time
+            # logging.info(f"Run training dataset, Elapsed time: {elapsed_time:.2f} seconds \n")
             # logging.info(f"\t Data loading average time: {train_dataset.timings:.2f} seconds \n")
             # logging.info(f"\t Model run average time: {model.timings:.2f} seconds \n")
 
@@ -323,22 +323,22 @@ def main():
             query_index = query_index_sampler.sample(val_indices)
             firing_rate_array = firing_rate_array_sampler.sample(val_indices)
             elapsed_time = time.time() - start_time
-            logging.info(f"Load samplers (validation), Elapsed time: {elapsed_time:.2f} seconds \n")
+            # logging.info(f"Load samplers (validation), Elapsed time: {elapsed_time:.2f} seconds \n")
             val_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir,
                                          device=device, cache_size=args.cache_size,
                                          image_loading_method=args.image_loading_method)
             val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.num_worker)
             avg_val_loss = evaluator.evaluate(val_loader)
             validation_losses.append(avg_val_loss)
-            elapsed_time = time.time() - start_time
-            logging.info(f"Run validation dataset, Elapsed time: {elapsed_time:.2f} seconds \n")
+            # elapsed_time = time.time() - start_time
+            # logging.info(f"Run validation dataset, Elapsed time: {elapsed_time:.2f} seconds \n")
 
-            elapsed_time = time.time() - start_time
-            logging.info(
-                f"{filename_fixed} TrainingSet [{set_index + 1}/{num_sets}], Elapsed time: {elapsed_time:.2f} seconds \n")
+            # elapsed_time = time.time() - start_time
+            # logging.info(
+            #     f"{filename_fixed} TrainingSet [{set_index + 1}/{num_sets}], Elapsed time: {elapsed_time:.2f} seconds \n")
 
         # Print training status
-        if (epoch + 1) % 1 == 0:
+        if (epoch + 1) % 5 == 0:
             elapsed_time = time.time() - start_time
             # Log the epoch and elapsed time, and on a new indented line, log the losses
             logging.info(

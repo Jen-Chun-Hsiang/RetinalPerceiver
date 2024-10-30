@@ -170,16 +170,18 @@ def main():
         train_proportion = 0.999
     else:
         train_proportion = args.train_proportion
-    train_indices, val_indices = train_val_split(len(data_array), args.chunk_size, test_size=1 - train_proportion)
-    train_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir, train_indices,
+
+    if is_original_dataset:
+        train_indices, val_indices = train_val_split(len(data_array), args.chunk_size, test_size=1 - train_proportion)
+        train_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir, train_indices,
                                    args.chunk_size, device=device, cache_size=args.cache_size,
                                    image_loading_method=args.image_loading_method)
 
-    check_loader = DataLoader(train_dataset, batch_size=2, shuffle=True)
-    dataiter = iter(check_loader)
-    movie, labels, index = next(dataiter)
-    logging.info(f'movie clip: {movie.shape} labels:{labels} index:{index} \n')
-    del movie, labels, index, dataiter, check_loader
+        check_loader = DataLoader(train_dataset, batch_size=2, shuffle=True)
+        dataiter = iter(check_loader)
+        movie, labels, index = next(dataiter)
+        logging.info(f'movie clip: {movie.shape} labels:{labels} index:{index} \n')
+        del movie, labels, index, dataiter, check_loader
 
     '''
     queryvec = torch.from_numpy(query_array).unsqueeze(1)
