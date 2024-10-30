@@ -243,10 +243,11 @@ def main():
         query_array_one = query_array[presented_cell_id:presented_cell_id+1, :]
         logging.info(f'query_encoder {cell_count}:{query_array_one} \n')
 
-        sample_data, sample_label, sample_index = train_dataset[0]
-        logging.info(f"dataset size: {sample_data.shape}")
+
         # if specified query array, always make sure is_weight_in_label
         if is_original_dataset:
+            sample_data, sample_label, sample_index = train_dataset[0]
+            logging.info(f"dataset size: {sample_data.shape}")
             dataset_test = train_dataset
         else:
             dataset_test = MultiMatrixDataset(sample_data, length=total_length, device=device, combination_set=[1],
