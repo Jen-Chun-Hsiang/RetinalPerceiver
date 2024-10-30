@@ -73,6 +73,8 @@ def parse_args():
     parser.add_argument('--epochs', type=int, default=100, help='Number of training epochs')
     parser.add_argument('--batch_size', type=int, default=64, help='Batch size for training')
     parser.add_argument('--learning_rate', type=float, default=0.001, help='Learning rate')
+    parser.add_argument('--schedule_method', type=str, default='RLRP', help='Method used for scheduler')
+    parser.add_argument('--schedule_factor', type=float, default=0.2, help='Learning rate')
     parser.add_argument('--weight_decay', type=float, default=0.001, help='Weight decay')
     parser.add_argument('--checkpoint_path', type=str, default='./checkpoints/model.pth',
                         help='Path to save load model checkpoint')
@@ -259,6 +261,10 @@ def main():
 
     criterion = loss_functions[args.loss_fn]
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
+    if args.schedule_method.lower() == 'rlrp':
+        scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=args.schedule_factor, patience=5)
+    elif args.schedule_method.lower() == 'cawr':
+        scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=5, T_mult=2, eta_min=1e-6)
     # Initialize the Trainer
     trainer = Trainer(model, criterion, optimizer, device, args.accumulation_steps,
                       query_array=query_array)
@@ -268,13 +274,14 @@ def main():
     # Optionally, load from checkpoint
     if args.load_checkpoint:
         checkpoint_loader = CheckpointLoader(checkpoint_path=args.checkpoint_path, device=device)
-        model, optimizer = checkpoint_loader.load_checkpoint(model, optimizer)
+        model, optimizer, scheduler = checkpoint_loader.load_checkpoint(model, optimizer, scheduler)
         start_epoch = checkpoint_loader.get_epoch()
         training_losses, validation_losses = checkpoint_loader.get_training_losses(), checkpoint_loader.get_validation_losses()
     else:
         start_epoch = 0
         training_losses = []
         validation_losses = []
+        learning_rate_dynamics = []
         start_time = time.time()  # Capture the start time
 
     session_data_path = os.path.join(arr_bank_dir, construct_folder_name, 'session_data.zarr')
@@ -310,7 +317,13 @@ def main():
                                            image_loading_method=args.image_loading_method)
             train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=args.num_worker)
             avg_train_loss = trainer.train_one_epoch(train_loader)
+            if args.schedule_method.lower() == 'rlrp':
+                scheduler.step(avg_train_loss)
+            elif args.schedule_method.lower() == 'cawr':
+                scheduler.step(epoch + (epoch / args.epochs))
+
             training_losses.append(avg_train_loss)
+            learning_rate_dynamics.append(scheduler.get_last_lr())
             # elapsed_time = time.time() - start_time
             # logging.info(f"Run training dataset, Elapsed time: {elapsed_time:.2f} seconds \n")
             # logging.info(f"\t Data loading average time: {train_dataset.timings:.2f} seconds \n")
@@ -353,7 +366,8 @@ def main():
             assert training_losses is not None, "training_losses is None or undefined"
             assert validation_losses is not None, "validation_losses is None or undefined"
 
-            save_checkpoint(epoch, model, optimizer, args, training_losses, validation_losses,
+            save_checkpoint(epoch, model, optimizer, scheduler, args, training_losses, validation_losses,
+                            learning_rate_dynamics=learning_rate_dynamics,
                             file_path=os.path.join(savemodel_dir, checkpoint_filename))
 
 
