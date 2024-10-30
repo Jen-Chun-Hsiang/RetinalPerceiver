@@ -291,13 +291,11 @@ def main():
     num_sets = calculate_num_sets(data_array_sampler.total_rows(), data_array_sampler.total_columns(), np.int32,
                                   max_array_bank_capacity=args.max_array_bank_capacity)
     logging.info(f'Number of sets: {num_sets} \n')
+    all_train_indices, all_val_indices = train_val_split(data_array_sampler.total_length, args.chunk_size,
+                                                         test_size=1 - args.train_proportion)
+    train_indices_sets = split_array(all_train_indices, num_sets)
+    val_indices_sets = split_array(all_val_indices, num_sets)
     for epoch in range(start_epoch, args.epochs):
-
-        all_train_indices, all_val_indices = train_val_split(data_array_sampler.total_length, args.chunk_size,
-                                                             test_size=1 - args.train_proportion)
-        train_indices_sets = split_array(all_train_indices, num_sets)
-        val_indices_sets = split_array(all_val_indices, num_sets)
-
         for set_index, (train_indices, val_indices) in enumerate(zip(train_indices_sets, val_indices_sets)):
             # elapsed_time = time.time() - start_time
             # logging.info(f"Loop start, Elapsed time: {elapsed_time:.2f} seconds \n")
