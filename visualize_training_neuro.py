@@ -20,6 +20,7 @@ from models.perceiver3d import RetinalPerceiverIO
 from models.cnn3d import RetinalPerceiverIOWithCNN
 from models.style3d import StyleCNN
 from models.FiLM3d import FiLMCNN
+from utils.array_funcs import split_array, calculate_num_sets, ZarrSampler
 # (0) identify the cell we have modeled their responses
 # (1) show the receptive field with the white noise
 # (2) show the response to the test set
@@ -234,6 +235,28 @@ def main():
 
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     model, optimizer = checkpoint_loader.load_checkpoint(model, optimizer)
+
+    session_data_path = os.path.join(arr_bank_dir, construct_folder_name, 'session_data.zarr')
+    session_fr_data_path = os.path.join(arr_bank_dir, construct_folder_name, 'session_fr.zarr')
+    query_index_data_path = os.path.join(arr_bank_dir, construct_folder_name, 'session_query_index.zarr')
+
+    data_array_sampler = ZarrSampler(session_data_path, 50000)
+    firing_rate_array_sampler = ZarrSampler(session_fr_data_path, 50000)
+    query_index_sampler = ZarrSampler(query_index_data_path, 50000)
+
+    num_sets = calculate_num_sets(data_array_sampler.total_rows(), data_array_sampler.total_columns(), np.int32,
+                                  max_array_bank_capacity=args.max_array_bank_capacity)
+
+    all_train_indices, all_val_indices = train_val_split(data_array_sampler.total_length, args.chunk_size,
+                                                         test_size=1 - args.train_proportion)
+    train_indices_sets = split_array(all_train_indices, num_sets)
+    train_indices = train_indices_sets[0]
+    data_array = data_array_sampler.sample(train_indices)
+    query_index = query_index_sampler.sample(train_indices)
+    firing_rate_array = firing_rate_array_sampler.sample(train_indices)
+    train_dataset = RetinalDataset(data_array, query_index, firing_rate_array, image_root_dir,
+                                   device=device, cache_size=args.cache_size,
+                                   image_loading_method=args.image_loading_method)
 
     presented_cell_ids = list(range(query_array.shape[0]))
     num_cols = 5
