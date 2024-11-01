@@ -234,7 +234,16 @@ def main():
                                           device=device).to(device)
 
     optimizer = optim.Adam(model.parameters(), lr=0.001)
-    model, optimizer = checkpoint_loader.load_checkpoint(model, optimizer)
+    if hasattr(args, 'schedule_method'):
+        if args.schedule_method.lower() == 'rlrp':
+            scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=args.schedule_factor,
+                                                             patience=5)
+        elif args.schedule_method.lower() == 'cawr':
+            scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=5, T_mult=2, eta_min=1e-6)
+    else:
+        scheduler = None
+    model, optimizer, scheduler = checkpoint_loader.load_checkpoint(model, optimizer, scheduler)
+
 
     session_data_path = os.path.join(arr_bank_dir, construct_folder_name, 'session_data.zarr')
     session_fr_data_path = os.path.join(arr_bank_dir, construct_folder_name, 'session_fr.zarr')
