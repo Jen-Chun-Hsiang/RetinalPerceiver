@@ -28,7 +28,7 @@ from utils.array_funcs import split_array, calculate_num_sets, ZarrSampler
 
 def main():
     stimulus_type = 'PlugIn_2024102801'  # get the name from the check point folder
-    epoch_end = 110  # the number of epoch in the check_point file
+    epoch_end = 200  # the number of epoch in the check_point file
     total_length = 10000
     initial_size = (10, 24, 32)
     is_original_dataset = False  # use original training data (True) or use the white noise generator (False)
