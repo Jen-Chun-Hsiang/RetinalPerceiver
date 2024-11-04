@@ -136,6 +136,7 @@ class RetinalDataset(Dataset):
         images_3d = self.load_data(experiment_id, session_id, frame_ids)
         images_3d = images_3d.unsqueeze(0)  # Adding an extra dimension to simulate batch size
 
+        print(f"Tensor device in __getitem__: {images_3d.device}")
         return images_3d, firing_rate, query_id  # output tensor in cpu
 
 
@@ -189,7 +190,7 @@ class RetinalDataset(Dataset):
         if self.image_loading_method == 'png':
             image_path = self.get_image_path(experiment_id, session_id, frame_id, '.png')
             image = Image.open(image_path)
-            image_tensor = torch.from_numpy(np.array(image)).float().to(self.device)
+            image_tensor = torch.from_numpy(np.array(image)).float()
             image_tensor = (image_tensor / 255.0) * 2.0 - 1.0  # Normalize to [-1, 1]
         elif self.image_loading_method == 'pt':
             image_path = self.get_image_path(experiment_id, session_id, frame_id, '.pt')
