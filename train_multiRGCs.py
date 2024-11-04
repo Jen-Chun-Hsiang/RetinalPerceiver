@@ -344,7 +344,7 @@ def main():
                 image_loading_method=args.image_loading_method
                 )
             val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False,
-                                    num_workers=args.num_worker)
+                                    num_workers=args.num_worker, pin_memory=True)
             avg_val_loss = evaluator.evaluate(val_loader)
             total_val_loss += avg_val_loss
 
