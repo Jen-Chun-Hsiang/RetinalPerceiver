@@ -76,8 +76,6 @@ class RetinalDataset(Dataset):
         - cache_size: The maximum number of images to store in the cache.
         """
         self.data_array = data_array
-
-
         self.root_dir = root_dir
         self.chunk_indices = chunk_indices
         self.chunk_size = chunk_size
@@ -86,10 +84,7 @@ class RetinalDataset(Dataset):
         self.image_loading_method = image_loading_method
         self.image_tensor_cache = OrderedDict()
         self.query_series = query_series
-        # self.query_series = torch.tensor(query_series, dtype=torch.int32, device=self.device)
         self.firing_rate_array = firing_rate_array
-        # self.firing_rate_array = torch.tensor(firing_rate_array, dtype=torch.float32, device=self.device)
-        # self.cache_lock = threading.Lock()  # Create a lock for the cache
 
         assert len(data_array) == len(query_series), "data_array and query_series must be the same length"
 
@@ -103,15 +98,8 @@ class RetinalDataset(Dataset):
             # Dummy load to get image size for 'png' or 'pt' formats
             experiment_id, session_id, neuron_id, *frame_ids = self.data_array[0]
             frame_id = frame_ids[0]
-            # print(f'(2) experiment_id: {experiment_id}')
-            # print(f'session_id: {session_id}')
-            # print(f'neuron_id: {neuron_id}')
-            # print(f'frame_ids: {frame_id}')
-            # raise ValueError(f"value is not correct (check!)")
             sample_image_tensor = self.load_image(experiment_id, session_id, frame_id)
             self.image_shape = sample_image_tensor.shape
-
-        # self.cache_lock = Lock()  # Use multiprocessing.Lock
 
     def __len__(self):
         if self.chunk_indices is not None:
@@ -146,13 +134,13 @@ class RetinalDataset(Dataset):
         query_id = self.query_series[random_idx]
 
         images_3d = self.load_data(experiment_id, session_id, frame_ids)
-        images_3d = images_3d.unsqueeze(0).to(self.device)  # Adding an extra dimension to simulate batch size
+        images_3d = images_3d.unsqueeze(0)  # Adding an extra dimension to simulate batch size
 
-        return images_3d, firing_rate, query_id
+        return images_3d, firing_rate, query_id  # output tensor in cpu
 
 
     def load_data(self, experiment_id, session_id, frame_ids):
-        images_3d = torch.empty((len(frame_ids),) + self.image_shape[-2:], device=self.device)
+        images_3d = torch.empty((len(frame_ids),) + self.image_shape[-2:], dtype=torch.float32)
         unique_frame_ids, inverse_indices = np.unique(frame_ids, return_inverse=True)
 
         if self.image_loading_method == 'hdf5':
@@ -168,11 +156,8 @@ class RetinalDataset(Dataset):
             for unique_idx, unique_frame_id in enumerate(unique_frame_ids):
                 image = self.load_image(experiment_id, session_id, unique_frame_id)
                 indices = np.where(inverse_indices == unique_idx)[0]
-                repeated_image = image.repeat(len(indices), 1, 1)  # Repeat image across new batch dimension
-                images_3d[indices] = repeated_image
-
-                # for i in indices:
-                #    images_3d[i] = image
+                # repeated_image = image.repeat(len(indices), 1, 1)
+                images_3d[indices] = image
 
         return images_3d
 
@@ -200,18 +185,6 @@ class RetinalDataset(Dataset):
         return frames
 
     def load_image(self, experiment_id, session_id, frame_id):
-        '''
-        key = (experiment_id, session_id, frame_id)
-
-        # Synchronized access to the cache
-        with self.cache_lock:
-            # Check if the image is in the cache
-            if key in self.image_tensor_cache:
-                # Move the item to the end of the cache to mark it as recently used
-                self.image_tensor_cache.move_to_end(key)
-                return self.image_tensor_cache[key]
-        '''
-
         image_tensor = None
         if self.image_loading_method == 'png':
             image_path = self.get_image_path(experiment_id, session_id, frame_id, '.png')
@@ -220,20 +193,12 @@ class RetinalDataset(Dataset):
             image_tensor = (image_tensor / 255.0) * 2.0 - 1.0  # Normalize to [-1, 1]
         elif self.image_loading_method == 'pt':
             image_path = self.get_image_path(experiment_id, session_id, frame_id, '.pt')
-            image_tensor = torch.load(image_path, map_location=self.device)
+            image_tensor = torch.load(image_path, map_location='cpu')
         elif self.image_loading_method == 'npz':
             image_path = self.get_image_path(experiment_id, session_id, frame_id, '.npz')
             image_data = np.load(image_path)['tensor']  # 'tensor' is the key used when saving the npz file
-            image_tensor = torch.from_numpy(image_data).to(self.device)
+            image_tensor = torch.from_numpy(image_data)
 
-        '''
-        # Synchronized cache update
-        with self.cache_lock:
-            # Add to cache and enforce cache size limit
-            self.image_tensor_cache[key] = image_tensor
-            if len(self.image_tensor_cache) > self.cache_size:
-                self.image_tensor_cache.popitem(last=False)  # Remove the oldest item
-        '''
         return image_tensor
 
     def get_image_path(self, experiment_id, session_id, frame_id, extension):

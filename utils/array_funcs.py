@@ -210,7 +210,6 @@ class ZarrSampler:
             if idx_in_array.size > 0:
                 results[array_indices == array_idx] = self.zarr_array[array_idx * self.chunk_size:(array_idx + 1) * self.chunk_size][idx_in_array]
 
-
         return results
 
     def total_rows(self):

@@ -320,7 +320,7 @@ def main():
                 image_loading_method=args.image_loading_method
             )
             train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True,
-                                      num_workers=args.num_worker)
+                                      num_workers=args.num_worker, pin_memory=True)
             avg_train_loss = trainer.train_one_epoch(train_loader)
             total_train_loss += avg_train_loss
 
