@@ -136,7 +136,7 @@ class RetinalDataset(Dataset):
         images_3d = self.load_data(experiment_id, session_id, frame_ids)
         images_3d = images_3d.unsqueeze(0)  # Adding an extra dimension to simulate batch size
 
-        print(f"Tensor device in __getitem__: {images_3d.device}")
+        # print(f"Tensor device in __getitem__: {images_3d.device}")
         return images_3d, firing_rate, query_id  # output tensor in cpu
 
 
