@@ -300,7 +300,7 @@ def save_checkpoint(epoch, model, optimizer, scheduler, args, training_losses,
 
 
 class CheckpointLoader:
-    def __init__(self, checkpoint_path, savemodel_dir, device):
+    def __init__(self, checkpoint_path, savemodel_dir):
         self.checkpoint = None
         self.start_epoch = None
         self.training_losses = None
