@@ -100,11 +100,11 @@ class RetinalDataset(Dataset):
         else:
             # Dummy load to get image size for 'png' or 'pt' formats
             experiment_id, session_id, neuron_id, *frame_ids = self.data_array[0]
-            if experiment_id == 0:
-                print(f'data_array 0: {self.data_array[0]}')
-                print(f'data_array 1: {self.data_array[1]}')
-                print(f'data_array 2: {self.data_array[2]}')
-                raise RuntimeError('Check data array')
+            # if experiment_id == 0:
+            #    print(f'data_array 0: {self.data_array[0]}')
+            #    print(f'data_array 1: {self.data_array[1]}')
+            #    print(f'data_array 2: {self.data_array[2]}')
+            #    raise RuntimeError('Check data array')
             frame_id = frame_ids[0]
             # print(f'(2) experiment_id: {experiment_id}')
             # print(f'session_id: {session_id}')
