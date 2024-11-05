@@ -2,6 +2,7 @@ import torch
 from torch.utils.data import DataLoader
 from .loss_function import CosineNegativePairLoss
 from torch import GradScaler, autocast
+import os
 import numpy as np
 from operator import itemgetter
 
@@ -299,7 +300,7 @@ def save_checkpoint(epoch, model, optimizer, scheduler, args, training_losses,
 
 
 class CheckpointLoader:
-    def __init__(self, checkpoint_path, device):
+    def __init__(self, checkpoint_path, savemodel_dir, device):
         self.checkpoint = None
         self.start_epoch = None
         self.training_losses = None
@@ -307,7 +308,8 @@ class CheckpointLoader:
         self.validation_contra_losses = None
         self.learning_rate_dynamics = None
         self.args = None
-        self.checkpoint = torch.load(checkpoint_path, map_location=device)
+        file_path = os.path.join(savemodel_dir, checkpoint_path)
+        self.checkpoint = torch.load(file_path)
         # self.checkpoint = torch.load(checkpoint_path)
 
     def load_args(self):
