@@ -84,7 +84,7 @@ def main():
     visualizer_prog = DataVisualizer(savefig_dir, file_prefix=f'{stimulus_type}_Training_progress')
 
     # Load the training and model parameters
-    checkpoint_loader = CheckpointLoader(checkpoint_path=checkpoint_path, device=device)
+    checkpoint_loader = CheckpointLoader(checkpoint_path=checkpoint_path)
     training_losses, validation_losses = checkpoint_loader.load_training_losses(), checkpoint_loader.load_validation_losses()
     logging.info(f'training_losses:{training_losses} \n')
     logging.info(f'validation_losses:{validation_losses} \n')
