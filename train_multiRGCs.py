@@ -381,7 +381,7 @@ def main():
                 "data_transfer_times": timing_data["data_transfer_times"],
                 "model_processing_times": timing_data["model_processing_times"]
             }
-            file_path = os.path.join(save_timer_dir, f"timing_data_epoch_{epoch + 1}.mat")
+            file_path = os.path.join(save_timer_dir, f"{filename_fixed}_timing_data_epoch_{epoch + 1}.mat")
             savemat(file_path, timing_data_dict)
             trainer.reset_timing_data()
 
