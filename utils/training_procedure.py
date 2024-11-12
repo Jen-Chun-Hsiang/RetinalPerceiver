@@ -183,6 +183,21 @@ class Trainer:
     def _l1_regularization(self, weight, lambda_l1):
         return lambda_l1 * torch.abs(weight).sum()
 
+    def get_timing_data(self):
+        """Retrieve the collected timing data."""
+        return {
+            "data_loading_times": self.data_loading_times,
+            "data_transfer_times": self.data_transfer_times,
+            "model_processing_times": self.model_processing_times
+        }
+
+    def reset_timing_data(self):
+        """Reset timing data lists for a fresh epoch or training session."""
+        self.data_loading_times = []
+        self.data_transfer_times = []
+        self.model_processing_times = []
+
+
 
 class Evaluator(Trainer):
     def __init__(self, model, criterion, device,
