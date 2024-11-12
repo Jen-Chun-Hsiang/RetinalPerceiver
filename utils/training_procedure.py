@@ -3,8 +3,19 @@ from torch.utils.data import DataLoader
 from .loss_function import CosineNegativePairLoss
 from torch import GradScaler, autocast
 import os
+from contextlib import contextmanager
+import time
 import numpy as np
 from operator import itemgetter
+
+
+@contextmanager
+def timer(log_list):
+    """Context manager to time a code block and append the duration to a log list."""
+    start_time = time.time()
+    yield  # Run the block of code inside the `with` statement
+    end_time = time.time()
+    log_list.append(end_time - start_time)
 
 
 class Trainer:
@@ -20,6 +31,10 @@ class Trainer:
         self.device = device
         self.accumulation_steps = accumulation_steps
         self.is_retinal_dataset = is_retinal_dataset
+        # Properties to store timing information
+        self.data_loading_times = []
+        self.data_transfer_times = []
+        self.model_processing_times = []
 
         self.is_contrastive_learning = is_contrastive_learning
         if self.is_contrastive_learning:
@@ -54,7 +69,9 @@ class Trainer:
         if len(train_loader) == 0:
             raise ValueError("train_loader is empty. The training process requires a non-empty train_loader.")
 
-        for batch_idx, data in enumerate(train_loader):
+        for batch_idx in range(len(train_loader)):
+            with timer(self.data_loading_times):
+                data = next(iter(train_loader))
             if self.is_query_array:
                 if self.is_contrastive_learning:
                     loss = self._process_batch_with_query_contrast(data)
@@ -93,31 +110,29 @@ class Trainer:
 
     def _process_batch_with_query(self, data):
         input_matrices, targets, matrix_indices = data
-        # print(f'input_matrices type: {input_matrices.dtype}')
-        # print(f'targets type: {targets.dtype}')
-        # print(f'matrix_indices type: {matrix_indices.dtype}')
-        # raise RuntimeError("Check data type")
         query_vectors = self.query_array[matrix_indices.squeeze(), :, :]
-        # print(f'query_vector shape: {query_vectors.shape}')
-        query_vectors = query_vectors.float().to(self.device)
-        input_matrices, targets = input_matrices.to(self.device), targets.to(self.device)
-        with autocast(device_type="cuda", dtype=torch.float16):
-            outputs, _ = self.model(input_matrices, query_vectors)
-            try:
-                assert outputs.shape == targets.shape
-            except Exception as e:
-                print(e)
-                print(f'outputs shape: {outputs.shape}')
-                print(f'targets shape: {targets.shape}')
+        with timer(self.data_transfer_times):
+            query_vectors = query_vectors.float().to(self.device)
+            input_matrices, targets = input_matrices.to(self.device), targets.to(self.device)
 
-            loss = self._compute_loss(outputs, targets)
-            if torch.isnan(loss).any():
-                print(f"loss: {loss} \n")
-                print(f"outputs: {outputs} \n")
-                print(f"targets: {targets} \n")
-                raise RuntimeError("Output value contain nan")
+        with timer(self.model_processing_times):
+            with autocast(device_type="cuda", dtype=torch.float16):
+                outputs, _ = self.model(input_matrices, query_vectors)
+                try:
+                    assert outputs.shape == targets.shape
+                except Exception as e:
+                    print(e)
+                    print(f'outputs shape: {outputs.shape}')
+                    print(f'targets shape: {targets.shape}')
 
-            return loss
+                loss = self._compute_loss(outputs, targets)
+                if torch.isnan(loss).any():
+                    print(f"loss: {loss} \n")
+                    print(f"outputs: {outputs} \n")
+                    print(f"targets: {targets} \n")
+                    raise RuntimeError("Output value contain nan")
+
+        return loss
 
     def _process_batch_with_query_contrast(self, data):
         input_matrices, targets, matrix_indices = data
