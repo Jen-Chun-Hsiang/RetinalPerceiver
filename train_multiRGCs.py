@@ -128,6 +128,7 @@ def main():
     savemodel_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/CheckPoints/'
     saveprint_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Prints/'
     savefig_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Figures/'
+    save_timer_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Timers/'
     image_root_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Stimulus/'
     link_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Link/'
     resp_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/VideoSpikeDataset/TrainingSet/Response/'
@@ -373,6 +374,16 @@ def main():
             save_checkpoint(epoch, model, optimizer, scheduler, args, training_losses, validation_losses,
                             learning_rate_dynamics=learning_rate_dynamics,
                             file_path=os.path.join(savemodel_dir, checkpoint_filename))
+
+            timing_data = trainer.get_timing_data()
+            timing_data_dict = {
+                "data_loading_times": timing_data["data_loading_times"],
+                "data_transfer_times": timing_data["data_transfer_times"],
+                "model_processing_times": timing_data["model_processing_times"]
+            }
+            file_path = os.path.join(save_timer_dir, f"timing_data_epoch_{epoch + 1}.mat")
+            savemat(file_path, timing_data_dict)
+            trainer.reset_timing_data()
 
 
 if __name__ == '__main__':
