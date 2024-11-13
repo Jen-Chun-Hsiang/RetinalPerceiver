@@ -10,12 +10,26 @@ from operator import itemgetter
 
 
 @contextmanager
-def timer(log_list):
-    """Context manager to time a code block and append the duration to a log list."""
+def timer(log_values, tau=0.99):
+    """Context manager to time a code block and update log values with min, max, and moving average."""
     start_time = time.time()
     yield  # Run the block of code inside the `with` statement
     end_time = time.time()
-    log_list.append(end_time - start_time)
+
+    duration = end_time - start_time
+
+    # Handle the first-time setting of values
+    if log_values['min'] is None:
+        log_values['min'] = duration
+        log_values['max'] = duration
+        log_values['moving_avg'] = duration
+    else:
+        # Update minimum and maximum
+        log_values['min'] = min(log_values['min'], duration)
+        log_values['max'] = max(log_values['max'], duration)
+
+        # Update moving average with exponential weighting
+        log_values['moving_avg'] = tau * log_values['moving_avg'] + (1 - tau) * duration
 
 
 class Trainer:
@@ -32,9 +46,9 @@ class Trainer:
         self.accumulation_steps = accumulation_steps
         self.is_retinal_dataset = is_retinal_dataset
         # Properties to store timing information
-        self.data_loading_times = []
-        self.data_transfer_times = []
-        self.model_processing_times = []
+        self.data_loading_times = {'min': None, 'max': None, 'moving_avg': None}
+        self.data_transfer_times = {'min': None, 'max': None, 'moving_avg': None}
+        self.model_processing_times = {'min': None, 'max': None, 'moving_avg': None}
 
         self.is_contrastive_learning = is_contrastive_learning
         if self.is_contrastive_learning:
@@ -193,9 +207,9 @@ class Trainer:
 
     def reset_timing_data(self):
         """Reset timing data lists for a fresh epoch or training session."""
-        self.data_loading_times = []
-        self.data_transfer_times = []
-        self.model_processing_times = []
+        self.data_loading_times = {'min': None, 'max': None, 'moving_avg': None}
+        self.data_transfer_times = {'min': None, 'max': None, 'moving_avg': None}
+        self.model_processing_times = {'min': None, 'max': None, 'moving_avg': None}
 
 
 

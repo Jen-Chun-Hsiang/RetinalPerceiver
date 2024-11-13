@@ -30,6 +30,7 @@ from models.cnn3d import RetinalPerceiverIOWithCNN
 from utils.training_procedure import Trainer, Evaluator, save_checkpoint, CheckpointLoader
 from utils.loss_function import loss_functions
 from utils.array_funcs import split_array, load_keyword_based_arrays, VirtualArraySampler, calculate_num_sets, ZarrSampler
+from utils.helper import convert_none_to_nan
 
 
 def parse_covariance(string):
@@ -377,9 +378,9 @@ def main():
 
             timing_data = trainer.get_timing_data()
             timing_data_dict = {
-                "data_loading_times": timing_data["data_loading_times"],
-                "data_transfer_times": timing_data["data_transfer_times"],
-                "model_processing_times": timing_data["model_processing_times"]
+                "data_loading_times": convert_none_to_nan(timing_data["data_loading_times"]),
+                "data_transfer_times": convert_none_to_nan(timing_data["data_transfer_times"]),
+                "model_processing_times": convert_none_to_nan(timing_data["model_processing_times"])
             }
             file_path = os.path.join(save_timer_dir, f"{filename_fixed}_timing_data_epoch_{epoch + 1}.mat")
             savemat(file_path, timing_data_dict)
