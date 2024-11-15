@@ -171,6 +171,11 @@ class VirtualArraySampler:
 
 class ZarrSampler:
     def __init__(self, zarr_path, chunk_size):
+        # Configure Blosc for this instance
+        zarr.storage.default_compressor = zarr.Blosc(
+            cname='zstd', clevel=5, shuffle=zarr.Blosc.SHUFFLE
+        )
+
         self.zarr_array = zarr.open(zarr_path, mode='r')
         self.chunk_size = chunk_size
         self.total_length = self.zarr_array.shape[0]
