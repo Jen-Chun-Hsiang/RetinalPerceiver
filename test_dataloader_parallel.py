@@ -22,10 +22,10 @@ class DebugDataset(Dataset):
         return self.data[index]
 
 
-def test_dataloader(num_workers):
+def test_dataloader(num_workers, num_samples, batch_size):
     start_time = time.perf_counter()  # Record the start time
-    dataset = DebugDataset(size=10, start_time=start_time)
-    dataloader = DataLoader(dataset, batch_size=2, num_workers=num_workers)
+    dataset = DebugDataset(size=num_samples, start_time=start_time)
+    dataloader = DataLoader(dataset, batch_size=batch_size, num_workers=num_workers)
 
     print(f"Main process PID: {os.getpid()} - Starting DataLoader")
 
@@ -43,4 +43,6 @@ def test_dataloader(num_workers):
 if __name__ == "__main__":
     torch.multiprocessing.set_start_method('spawn', force=True)  # Use spawn method for compatibility
     num_workers = 2  # Test with more than 1 worker
-    test_dataloader(num_workers)
+    num_samples = 100
+    batch_size = 5
+    test_dataloader(num_workers, num_samples, batch_size)
