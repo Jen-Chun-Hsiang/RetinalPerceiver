@@ -42,7 +42,7 @@ def test_dataloader(num_workers, num_samples, batch_size):
 
 if __name__ == "__main__":
     torch.multiprocessing.set_start_method('spawn', force=True)  # Use spawn method for compatibility
-    num_workers = 2  # Test with more than 1 worker
+    num_workers = 3  # Test with more than 1 worker
     num_samples = 100
     batch_size = 5
     test_dataloader(num_workers, num_samples, batch_size)
