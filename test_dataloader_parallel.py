@@ -1,48 +1,34 @@
 import torch
 from torch.utils.data import Dataset, DataLoader
 import os
-import time
 
-
-class DebugDataset(Dataset):
-    """Dataset with simulated workload and logging for debugging."""
-
-    def __init__(self, size, start_time):
-        self.data = list(range(size))
-        self.start_time = start_time  # Store the initial perf_counter time
-
-    def __len__(self):
-        return len(self.data)
-
-    def __getitem__(self, index):
-        worker_id = torch.utils.data.get_worker_info().id if torch.utils.data.get_worker_info() else 0
-        elapsed_time = time.perf_counter() - self.start_time  # Calculate elapsed time
-        print(f"[{elapsed_time:.2f}s] Worker {worker_id} processing index {index}")
-        time.sleep(0.5)  # Simulate workload
-        return self.data[index]
-
-
-def test_dataloader(num_workers, num_samples, batch_size):
-    start_time = time.perf_counter()  # Record the start time
-    dataset = DebugDataset(size=num_samples, start_time=start_time)
-    dataloader = DataLoader(dataset, batch_size=batch_size, num_workers=num_workers)
-
-    print(f"Main process PID: {os.getpid()} - Starting DataLoader")
-
-    try:
-        for batch_idx, batch in enumerate(dataloader):
-            elapsed_time = time.perf_counter() - start_time  # Calculate elapsed time
-            print(f"[{elapsed_time:.2f}s] Main Process - Batch {batch_idx}: {batch}")
-    except Exception as e:
-        print(f"Error during DataLoader operation: {e}")
-
-    total_elapsed_time = time.perf_counter() - start_time  # Calculate total elapsed time
-    print(f"Total time taken: {total_elapsed_time:.2f} seconds")
+from utils.parallel_test import create_zarr_dataset, test_dataloader
 
 
 if __name__ == "__main__":
-    torch.multiprocessing.set_start_method('spawn', force=True)  # Use spawn method for compatibility
-    num_workers = 3  # Test with more than 1 worker
-    num_samples = 100
+    mode = 3
+    output_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Debugs/'
+    dataset_size = 100
+    num_workers = 3
     batch_size = 5
-    test_dataloader(num_workers, num_samples, batch_size)
+    pause_time = 0.2
+
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    zarr_path = os.path.join(output_dir, 'debug_dataset.zarr')
+
+    if mode == 1:
+        print("Running in mode 1: Generate Data Only")
+        create_zarr_dataset(output_dir, dataset_size)
+
+    elif mode == 2:
+        print("Running in mode 2: Test DataLoader Only")
+        if not os.path.exists(zarr_path):
+            raise FileNotFoundError(f"Zarr dataset not found at {zarr_path}. Please generate the dataset first.")
+        test_dataloader(zarr_path, num_workers=num_workers, batch_size=batch_size, pause_time=pause_time)
+
+    elif mode == 3:
+        print("Running in mode 3: Combine Data Generation and DataLoader Testing")
+        create_zarr_dataset(output_dir, dataset_size)
+        test_dataloader(zarr_path, num_workers=num_workers, batch_size=batch_size, pause_time=pause_time)
