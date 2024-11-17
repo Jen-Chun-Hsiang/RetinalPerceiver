@@ -139,6 +139,7 @@ def main():
     timestr = datetime.now().strftime('%Y%m%d_%H%M%S')
     if args.num_worker > 0:
         mp.set_start_method('spawn', force=True)
+        torch.multiprocessing.set_start_method('spawn', force=True)
 
     # Construct the full path for the log file
     log_filename = os.path.join(saveprint_dir, f'{filename_fixed}_training_log_{timestr}.txt')
