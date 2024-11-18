@@ -289,7 +289,7 @@ def main():
         validation_losses = []
         learning_rate_dynamics = []
 
-    start_time = time.time()  # Capture the start time
+    start_time = time.perf_counter()  # Capture the start time
 
     session_data_path = os.path.join(arr_bank_dir, construct_folder_name, 'session_data.zarr')
     session_fr_data_path = os.path.join(arr_bank_dir, construct_folder_name, 'session_fr.zarr')
