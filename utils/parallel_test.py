@@ -43,13 +43,18 @@ def create_zarr_dataset(output_dir, dataset_gb=1, chunk_size=10000):
     store = zarr.DirectoryStore(os.path.join(output_dir, 'debug_dataset.zarr'))
     root = zarr.group(store)
 
+    if 'data' in root:
+        print("Dataset 'data' already exists. Overwriting...")
+        del root['data']
+
     # Create a dataset with a specified chunk size for efficient access
     data = root.create_dataset(
         'data',
         shape=(total_elements,),
         chunks=(chunk_size,),
         dtype='int32',
-        compressor=zarr.Blosc(cname='zstd', clevel=3, shuffle=zarr.Blosc.BITSHUFFLE)  # Compression for efficiency
+        compressor=zarr.Blosc(cname='zstd', clevel=3, shuffle=zarr.Blosc.BITSHUFFLE),  # Compression for efficiency
+        overwrite=True  # Allow overwriting of the existing dataset
     )
 
     print(f"Creating Zarr dataset with {total_elements} elements (~{dataset_gb} GB) in chunks of {chunk_size}...")
