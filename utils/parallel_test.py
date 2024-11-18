@@ -28,7 +28,7 @@ class ZarrDebugDataset(Dataset):
         return self.data[index]
 
 
-def create_zarr_dataset(output_dir, dataset_gb=1, chunk_size=10_000):
+def create_zarr_dataset(output_dir, dataset_gb=1, chunk_size=10000):
     """
     Efficiently create a Zarr dataset that expands to the specified memory size.
     """
