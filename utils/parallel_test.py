@@ -73,7 +73,7 @@ def create_zarr_dataset(output_dir, dataset_gb=1, chunk_size=10000):
         start_idx = chunk_index * chunk_size
         end_idx = start_idx + len(chunk_data)
         data[start_idx:end_idx] = chunk_data
-        print(f"Chunk {chunk_index} written: [{start_idx}:{end_idx}]")
+        # print(f"Chunk {chunk_index} written: [{start_idx}:{end_idx}]")
 
     with ThreadPoolExecutor() as executor:
         futures = [
