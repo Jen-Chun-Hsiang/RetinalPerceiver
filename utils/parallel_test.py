@@ -92,7 +92,7 @@ def test_dataloader(zarr_path, num_workers=0, batch_size=1, pause_time=0.5, num_
     """
     start_time = time.perf_counter()  # Record the start time
     dataset = ZarrDebugDataset(zarr_path=zarr_path, start_time=start_time, pause_time=pause_time)
-    dataloader = DataLoader(dataset, batch_size=batch_size, num_workers=num_workers)
+    dataloader = DataLoader(dataset, batch_size=batch_size, num_workers=num_workers, shuffle=True)
 
     print(f"Main process PID: {os.getpid()} - Starting DataLoader")
     test_counter = 0
