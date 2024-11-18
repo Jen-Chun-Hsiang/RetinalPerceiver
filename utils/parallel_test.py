@@ -28,22 +28,56 @@ class ZarrDebugDataset(Dataset):
         return self.data[index]
 
 
-def create_zarr_dataset(output_dir, dataset_size=100):
+def create_zarr_dataset(output_dir, dataset_gb=1, chunk_size=10_000):
     """
-    Create a Zarr dataset for testing.
+    Efficiently create a Zarr dataset that expands to the specified memory size.
     """
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
+
+    # Calculate the number of elements needed to reach the specified size
+    element_size_bytes = np.dtype('int32').itemsize  # Each int32 is 4 bytes
+    total_elements = (dataset_gb * 1024 ** 3) // element_size_bytes
 
     # Create a Zarr group
     store = zarr.DirectoryStore(os.path.join(output_dir, 'debug_dataset.zarr'))
     root = zarr.group(store)
 
-    # Create a dataset with random integers
-    data = np.arange(dataset_size)
-    root.create_dataset('data', data=data, chunks=(10,), dtype='int32')
+    # Create a dataset with a specified chunk size for efficient access
+    data = root.create_dataset(
+        'data',
+        shape=(total_elements,),
+        chunks=(chunk_size,),
+        dtype='int32',
+        compressor=zarr.Blosc(cname='zstd', clevel=3, shuffle=Blosc.BITSHUFFLE)  # Compression for efficiency
+    )
 
-    print(f"Zarr dataset created at {output_dir}/debug_dataset.zarr")
+    print(f"Creating Zarr dataset with {total_elements} elements (~{dataset_gb} GB) in chunks of {chunk_size}...")
+
+    # Use a generator to populate the dataset in chunks efficiently
+    def data_generator():
+        for i in range(0, total_elements, chunk_size):
+            end = min(i + chunk_size, total_elements)
+            yield np.arange(i, end, dtype='int32')
+
+    # Write data in parallel using Zarr's array parallel writes
+    from concurrent.futures import ThreadPoolExecutor
+
+    def write_chunk(chunk_index, chunk_data):
+        start_idx = chunk_index * chunk_size
+        end_idx = start_idx + len(chunk_data)
+        data[start_idx:end_idx] = chunk_data
+        print(f"Chunk {chunk_index} written: [{start_idx}:{end_idx}]")
+
+    with ThreadPoolExecutor() as executor:
+        futures = [
+            executor.submit(write_chunk, i, chunk_data)
+            for i, chunk_data in enumerate(data_generator())
+        ]
+        for future in futures:
+            future.result()  # Ensure all tasks are completed
+
+    print(f"Zarr dataset created at {output_dir}/debug_dataset.zarr, size: {dataset_gb} GB")
 
 
 def test_dataloader(zarr_path, num_workers=0, batch_size=1, pause_time=0.5):

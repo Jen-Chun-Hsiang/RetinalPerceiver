@@ -20,7 +20,7 @@ if __name__ == "__main__":
 
     if mode == 1:
         print("Running in mode 1: Generate Data Only")
-        create_zarr_dataset(output_dir, dataset_size)
+        create_zarr_dataset(output_dir, dataset_gb=1)
 
     elif mode == 2:
         print("Running in mode 2: Test DataLoader Only")
@@ -30,5 +30,5 @@ if __name__ == "__main__":
 
     elif mode == 3:
         print("Running in mode 3: Combine Data Generation and DataLoader Testing")
-        create_zarr_dataset(output_dir, dataset_size)
+        create_zarr_dataset(output_dir, dataset_gb=1)
         test_dataloader(zarr_path, num_workers=num_workers, batch_size=batch_size, pause_time=pause_time)
