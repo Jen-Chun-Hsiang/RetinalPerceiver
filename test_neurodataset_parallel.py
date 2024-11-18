@@ -15,6 +15,7 @@ from io import StringIO
 import sys
 import pandas as pd
 import multiprocessing as mp
+import traceback
 from scipy.io import savemat
 # from torchinfo import summary
 # import torch.multiprocessing as mp
@@ -116,6 +117,7 @@ def parse_args():
     parser.add_argument('--num_cols', type=int, default=5, help='Number of columns in a figure')
     parser.add_argument('--add_sampler', action='store_true', help='Enable efficient sampler for dataset')
     parser.add_argument('--num_worker', type=int, default=0, help='Use to offline loading data in batch')
+    parser.add_argument('--num_test', type=int, default=100, help='Number of test for testing parallel loading')
 
     return parser.parse_args()
 
@@ -325,16 +327,16 @@ def main():
                 image_loading_method=args.image_loading_method
             )
             train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True,
-                                      num_workers=args.num_worker, pin_memory=True)
+                                      num_workers=args.num_worker, pin_memory=True, start_time=start_time)
 
             print(f"Main process PID: {os.getpid()} - Starting DataLoader")
             test_counter = 0
             try:
-                for batch_idx, batch in enumerate(dataloader):
+                for batch_idx, batch in enumerate(train_loader):
                     elapsed_time = time.perf_counter() - start_time  # Calculate elapsed time
-                    print(f"[{elapsed_time:.2f}s] Main Process - Batch {batch_idx}: {batch.tolist()}")
+                    print(f"[{elapsed_time:.2f}s] Main Process - Batch {batch_idx}")
                     test_counter += 1
-                    if test_counter > num_test:
+                    if test_counter > args.num_test:
                         break
             except Exception as e:
                 print(f"Error during DataLoader operation: {e}")
