@@ -49,7 +49,7 @@ def create_zarr_dataset(output_dir, dataset_gb=1, chunk_size=10_000):
         shape=(total_elements,),
         chunks=(chunk_size,),
         dtype='int32',
-        compressor=zarr.Blosc(cname='zstd', clevel=3, shuffle=Blosc.BITSHUFFLE)  # Compression for efficiency
+        compressor=zarr.Blosc(cname='zstd', clevel=3, shuffle=zarr.Blosc.BITSHUFFLE)  # Compression for efficiency
     )
 
     print(f"Creating Zarr dataset with {total_elements} elements (~{dataset_gb} GB) in chunks of {chunk_size}...")
