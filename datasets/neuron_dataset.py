@@ -9,6 +9,7 @@ from scipy.io import loadmat
 from collections import OrderedDict
 import h5py
 import zarr
+import time
 
 from utils.array_funcs import update_unique_array, find_matching_indices_in_arrays
 from utils.time_manager import TimeFunctionRun
@@ -61,7 +62,7 @@ def precompute_image_paths(data_array, root_dir):
 
 class RetinalDataset(Dataset):
     def __init__(self, data_array, query_series, firing_rate_array, root_dir, chunk_indices=None, chunk_size=None,
-                 device='cuda', cache_size=100, image_loading_method='hdf5'):
+                 device='cuda', cache_size=100, image_loading_method='hdf5', start_time=None):
         """
         Initializes the RetinalDataset.
 
@@ -85,6 +86,7 @@ class RetinalDataset(Dataset):
         self.image_tensor_cache = OrderedDict()
         self.query_series = query_series
         self.firing_rate_array = firing_rate_array
+        self.start_time = start_time
 
         assert len(data_array) == len(query_series), "data_array and query_series must be the same length"
 
@@ -142,6 +144,12 @@ class RetinalDataset(Dataset):
         images_3d = images_3d.unsqueeze(0)  # Adding an extra dimension to simulate batch size
 
         # print(f"Tensor device in __getitem__: {images_3d.device}")
+        # add additional information
+        if self.start_time is not None:
+            worker_id = torch.utils.data.get_worker_info().id if torch.utils.data.get_worker_info() else 0
+            elapsed_time = time.perf_counter() - self.start_time  # Calculate elapsed time
+            print(f"[{elapsed_time:.2f}s] Worker {worker_id} processing index {idx}")
+
         return images_3d, firing_rate, query_id  # output tensor in cpu
 
 
