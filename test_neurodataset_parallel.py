@@ -345,3 +345,7 @@ def main():
             break
         total_elapsed_time = time.perf_counter() - start_time  # Calculate total elapsed time
         print(f"Total time taken: {total_elapsed_time:.2f} seconds")
+
+
+if __name__ == '__main__':
+    main()
