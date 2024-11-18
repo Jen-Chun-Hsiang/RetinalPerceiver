@@ -4,6 +4,7 @@ import zarr
 import os
 import time
 import numpy as np
+import traceback
 
 
 class ZarrDebugDataset(Dataset):
@@ -85,7 +86,7 @@ def create_zarr_dataset(output_dir, dataset_gb=1, chunk_size=10000):
     print(f"Zarr dataset created at {output_dir}/debug_dataset.zarr, size: {dataset_gb} GB")
 
 
-def test_dataloader(zarr_path, num_workers=0, batch_size=1, pause_time=0.5):
+def test_dataloader(zarr_path, num_workers=0, batch_size=1, pause_time=0.5, num_test=10):
     """
     Test the DataLoader with the Zarr dataset.
     """
@@ -94,13 +95,17 @@ def test_dataloader(zarr_path, num_workers=0, batch_size=1, pause_time=0.5):
     dataloader = DataLoader(dataset, batch_size=batch_size, num_workers=num_workers)
 
     print(f"Main process PID: {os.getpid()} - Starting DataLoader")
-
+    test_counter = 0
     try:
         for batch_idx, batch in enumerate(dataloader):
             elapsed_time = time.perf_counter() - start_time  # Calculate elapsed time
             print(f"[{elapsed_time:.2f}s] Main Process - Batch {batch_idx}: {batch.tolist()}")
+            test_counter += 1
+            if test_counter > num_test:
+                break
     except Exception as e:
         print(f"Error during DataLoader operation: {e}")
+        traceback.print_exc()  # Print full exception traceback
 
     total_elapsed_time = time.perf_counter() - start_time  # Calculate total elapsed time
     print(f"Total time taken: {total_elapsed_time:.2f} seconds")
