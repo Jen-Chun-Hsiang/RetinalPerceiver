@@ -326,8 +326,9 @@ def main():
                 device=device, cache_size=args.cache_size,
                 image_loading_method=args.image_loading_method, start_time=start_time
             )
+
             train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True,
-                                      num_workers=args.num_worker, pin_memory=True)
+                                      num_workers=args.num_worker, pin_memory=True, persistent_workers=False)
 
             print(f"Main process PID: {os.getpid()} - Starting DataLoader")
             test_counter = 0
