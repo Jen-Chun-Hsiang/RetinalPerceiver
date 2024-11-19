@@ -13,6 +13,7 @@ import logging
 import time
 from io import StringIO
 import sys
+import gc
 import pandas as pd
 import multiprocessing as mp
 import traceback
@@ -320,7 +321,7 @@ def main():
             data_array = data_array_sampler.sample(train_indices)
             query_index = query_index_sampler.sample(train_indices)
             firing_rate_array = firing_rate_array_sampler.sample(train_indices)
-
+            gc.collect()
             train_dataset = RetinalDataset(
                 data_array, query_index, firing_rate_array, image_root_dir,
                 device=device, cache_size=args.cache_size,
