@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+import random
 
 
 class TargetMatrixGenerator:
@@ -98,11 +99,15 @@ class MultiTargetMatrixGenerator(TargetMatrixGenerator):
         return torch.cat(all_matrices, dim=0)  # Concatenating along the new dimension
 
 
-def create_hexagonal_centers(xlim, ylim, target_num_centers, max_iterations=100, noise_level=0.3):
+def create_hexagonal_centers(xlim, ylim, target_num_centers, max_iterations=100, noise_level=0.3, set_rand_seed=None):
     x_min, x_max = xlim
     y_min, y_max = ylim
     x_range = x_max - x_min
     y_range = y_max - y_min
+
+    # Set the random seed if specified
+    if set_rand_seed is not None:
+        np.random.seed(set_rand_seed)
 
     # Estimate initial side length based on target number of centers
     approximate_area = x_range * y_range
@@ -174,15 +179,16 @@ class CellLevel:
 
 
 class CellClassLevel:
-    def __init__(self, sf_cov_center, sf_cov_surround, sf_weight_surround, num_cells, xlim, ylim, class_level_id):
+    def __init__(self, sf_cov_center, sf_cov_surround, sf_weight_surround, num_cells, xlim, ylim, class_level_id,
+                 set_rand_seed):
         self.sf_cov_center = sf_cov_center
         self.sf_cov_surround = sf_cov_surround
         self.sf_weight_surround = sf_weight_surround
         self.class_level_id = class_level_id  # New: Unique identifier for the cell class level
-        self.cells = self.create_cells(num_cells, xlim, ylim)
+        self.cells = self.create_cells(num_cells, xlim, ylim, set_rand_seed)
 
-    def create_cells(self, num_cells, xlim, ylim):
-        centers = create_hexagonal_centers(xlim, ylim, num_cells)
+    def create_cells(self, num_cells, xlim, ylim, set_rand_seed):
+        centers = create_hexagonal_centers(xlim, ylim, num_cells, set_rand_seed=set_rand_seed)
         cells = []
         for center in centers:
             cell = CellLevel(sf_mean_center=center, sf_mean_surround=center)
@@ -259,13 +265,14 @@ class ExperimentalLevel:
 
 
 class IntegratedLevel:
-    def __init__(self, experimental_levels):
+    def __init__(self, experimental_levels, is_coordinates=False):
         """
         Initialize the integrated level with a list of ExperimentalLevel instances.
 
         :param experimental_levels: A list of ExperimentalLevel objects.
         """
         self.experimental_levels = experimental_levels
+        self.is_coordinates = is_coordinates
 
     def generate_combined_param_list(self):
         """
@@ -293,6 +300,416 @@ class IntegratedLevel:
                                                          'sf_weight_surround', 'sf_mean_center', 'sf_mean_surround']}
                 }
                 combined_param_list.append(combined_params)
-                series_ids.append((exp_level_id, class_params['class_level_id'], cell_params['cell_level_id']))
+                if self.is_coordinates:
+                    series_ids.append((exp_level_id, class_params['class_level_id'],
+                                       combined_params['sf_mean_center'][0], combined_params['sf_mean_center'][1]))
+                else:
+                    series_ids.append((exp_level_id, class_params['class_level_id'], cell_params['cell_level_id']))
 
         return combined_param_list, series_ids
+
+
+def generate_sf_parameters(row_id, sf_param_table):
+    row = sf_param_table.iloc[row_id]
+    sf_cov_center = np.array([[row['sf_cov_center_1'], row['sf_cov_center_2']],
+                              [row['sf_cov_center_3'], row['sf_cov_center_4']]])
+    sf_cov_surround = np.array([[row['sf_cov_surround_1'], row['sf_cov_surround_2']],
+                                [row['sf_cov_surround_3'], row['sf_cov_surround_4']]])
+    sf_weight_surround = row['sf_weight_surround']
+    max_sf_stretch_fac = row['max_sf_stretch_fac']
+    return sf_cov_center, sf_cov_surround, sf_weight_surround, max_sf_stretch_fac
+
+
+def generate_tf_parameters(row_id, tf_param_table):
+    row = tf_param_table.iloc[row_id]
+    tf_weight_center = row['tf_weight_center']
+    tf_weight_surround = row['tf_weight_surround']
+    tf_mean_center = row['tf_mean_center']
+    tf_mean_surround = row['tf_mean_surround']
+    tf_sigma_center = row['tf_sigma_center']
+    tf_sigma_surround = row['tf_sigma_surround']
+    max_tf_stretch_fac = row['max_tf_stretch_fac']
+    return tf_weight_center, tf_weight_surround, tf_mean_center, tf_mean_surround, tf_sigma_center, tf_sigma_surround, max_tf_stretch_fac
+
+
+def generate_coordinates(posi_id, posi_cache):
+    if posi_id not in posi_cache:
+        sf_mean_center = (random.uniform(-1, 1), random.uniform(-1, 1))
+        posi_cache[posi_id] = sf_mean_center
+    else:
+        sf_mean_center = posi_cache[posi_id]
+
+    sf_mean_surround = sf_mean_center
+    return sf_mean_center, sf_mean_surround
+
+
+def apply_batch_scaling(batch_value, tf_mean_center, tf_mean_surround, tf_sigma_center, tf_sigma_surround,
+                        max_stretch_fac):
+    scale_factor = 1 + (batch_value * (max_stretch_fac - 1))
+    tf_mean_center *= scale_factor
+    tf_mean_surround *= scale_factor
+    tf_sigma_center *= scale_factor
+    tf_sigma_surround *= scale_factor
+    return tf_mean_center, tf_mean_surround, tf_sigma_center, tf_sigma_surround
+
+
+def apply_eccentricity_scaling(eccentricity, sf_cov_center, sf_cov_surround, max_stretch_fac):
+    scale_factor = 1 + (eccentricity * (max_stretch_fac - 1))
+    sf_cov_center *= scale_factor
+    sf_cov_surround *= scale_factor
+    return sf_cov_center, sf_cov_surround
+
+
+def assign_row_ids_to_cell_ids(unique_cell_ids, num_sf_rows, num_tf_rows, random_state):
+    if len(unique_cell_ids) > num_sf_rows or len(unique_cell_ids) > num_tf_rows:
+        raise ValueError("Number of unique cell IDs exceeds available row IDs.")
+
+    # Shuffle unique_cell_ids to ensure random assignment
+    random_state.shuffle(unique_cell_ids)
+
+    sf_row_ids = random_state.sample(range(num_sf_rows), len(unique_cell_ids))
+    tf_row_ids = random_state.sample(range(num_tf_rows), len(unique_cell_ids))
+
+    cell_id_to_row_ids = {cell_id: (sf_row_ids[i], tf_row_ids[i]) for i, cell_id in enumerate(unique_cell_ids)}
+    return cell_id_to_row_ids
+
+
+import random
+
+class ParameterGenerator:
+    def __init__(self, sf_param_table, tf_param_table, seed=None):
+        self.sf_param_table = sf_param_table
+        self.tf_param_table = tf_param_table
+
+        # Initialize caches for batch values and eccentricities
+        self.batch_cache = {}
+        self.eccentricity_cache = {}
+
+        # Use a unique seed per instance to ensure different randomness across instances
+        if seed is None:
+            self.instance_seed = random.randint(0, int(1e9))
+        else:
+            self.instance_seed = seed
+        self.random_state = random.Random(self.instance_seed)
+
+        # Initialize other properties to None
+        self.unique_posi_ids = None
+        self.posi_id_to_center = None
+        self.unique_cell_ids = None
+        self.cell_id_to_row_ids = None
+        self.min_max_stretch_fac = None
+        self.eccentricity_exists = None
+
+    def generate_parameters(self, query_df):
+        param_list = []
+        query_list = []
+        self.unique_posi_ids = list(query_df['Posi_id'].unique())
+        hex_centers = create_hexagonal_centers(
+            xlim=(0, 1),
+            ylim=(0, 1),
+            target_num_centers=len(self.unique_posi_ids),
+            set_rand_seed=self.instance_seed  # Use instance-specific seed
+        )
+        self.posi_id_to_center = {posi_id: hex_centers[i] for i, posi_id in enumerate(self.unique_posi_ids)}
+
+        self.unique_cell_ids = list(query_df['Cell_id'].unique())
+        self.cell_id_to_row_ids = assign_row_ids_to_cell_ids(
+            self.unique_cell_ids, len(self.sf_param_table), len(self.tf_param_table), self.random_state
+        )
+
+        # Determine min value of 'max_tf_stretch_fac' for the selected tf_row_ids
+        self.min_max_stretch_fac = self.tf_param_table.loc[
+            [self.cell_id_to_row_ids[cell_id][1] for cell_id in self.unique_cell_ids],
+            'max_tf_stretch_fac'
+        ].min()
+
+        # Check if the "Eccentricity" column exists
+        self.eccentricity_exists = 'Eccentricity' in query_df.columns
+
+        # Precompute and store batch values
+        unique_batch_ids = query_df['Batch_id'].unique()
+        for batch_id in unique_batch_ids:
+            if batch_id not in self.batch_cache:
+                self.batch_cache[batch_id] = self.random_state.uniform(0, 1)
+
+        # Precompute and store eccentricity values if needed
+        if self.eccentricity_exists:
+            batch_ids_with_ecc_minus_one = query_df.loc[query_df['Eccentricity'] == -1, 'Batch_id'].unique()
+            for batch_id in batch_ids_with_ecc_minus_one:
+                if batch_id not in self.eccentricity_cache:
+                    self.eccentricity_cache[batch_id] = self.random_state.uniform(0, 1)
+
+        for _, row in query_df.iterrows():
+            batch_id = int(row['Batch_id'])
+            cell_id = int(row['Cell_id'])
+            posi_id = int(row['Posi_id'])
+
+            if self.eccentricity_exists:
+                eccentricity_code = float(row['Eccentricity'])
+
+            # Retrieve batch value from cache
+            batch_value = self.batch_cache[batch_id]
+
+            # Retrieve eccentricity from cache if needed
+            if self.eccentricity_exists:
+                if eccentricity_code == -1:
+                    eccentricity = self.eccentricity_cache[batch_id]
+                else:
+                    eccentricity = eccentricity_code
+
+            sf_row_id, tf_row_id = self.cell_id_to_row_ids[cell_id]
+
+            params = {
+                'tf_weight_surround': None,
+                'tf_sigma_center': None,
+                'tf_sigma_surround': None,
+                'tf_mean_center': None,
+                'tf_mean_surround': None,
+                'tf_weight_center': None,
+                'tf_offset': 0,
+                'sf_cov_center': None,
+                'sf_cov_surround': None,
+                'sf_weight_surround': None,
+                'sf_mean_center': None,
+                'sf_mean_surround': None
+            }
+
+            # Generate temporal and spatial frequency parameters
+            (params['tf_weight_center'], params['tf_weight_surround'],
+             tf_mean_center, tf_mean_surround,
+             tf_sigma_center, tf_sigma_surround, local_max_tf_stretch_fac) = generate_tf_parameters(
+                tf_row_id, self.tf_param_table)
+            (sf_cov_center, sf_cov_surround, params['sf_weight_surround'],
+             local_max_sf_stretch_fac) = generate_sf_parameters(
+                sf_row_id, self.sf_param_table)
+
+            # Assign position-based centers
+            params['sf_mean_center'] = self.posi_id_to_center[posi_id]
+
+            # Apply batch scaling for temporal frequency parameters
+            (tf_mean_center, tf_mean_surround,
+             tf_sigma_center, tf_sigma_surround) = apply_batch_scaling(
+                batch_value, tf_mean_center, tf_mean_surround,
+                tf_sigma_center, tf_sigma_surround, self.min_max_stretch_fac)
+
+            params['tf_mean_center'] = tf_mean_center
+            params['tf_mean_surround'] = tf_mean_surround
+            params['tf_sigma_center'] = tf_sigma_center
+            params['tf_sigma_surround'] = tf_sigma_surround
+
+            # If eccentricity exists, apply eccentricity scaling to spatial frequency parameters
+            if self.eccentricity_exists:
+                (sf_cov_center, sf_cov_surround) = apply_eccentricity_scaling(
+                    eccentricity, sf_cov_center, sf_cov_surround, local_max_sf_stretch_fac)
+
+            params['sf_cov_center'] = sf_cov_center
+            params['sf_cov_surround'] = sf_cov_surround
+
+            # Append to result lists
+            param_list.append(params)
+            if self.eccentricity_exists:
+                query_list.append((batch_id, cell_id, eccentricity_code,
+                                   params['sf_mean_center'][0], params['sf_mean_center'][1]))
+            else:
+                query_list.append((batch_id, cell_id,
+                                   params['sf_mean_center'][0], params['sf_mean_center'][1]))
+
+        return param_list, query_list
+
+    def generate_parameters_from_query_list(self, query_list):
+        param_list = []
+
+        if not query_list:
+            return param_list  # Return an empty list if query_list is empty
+
+        # Ensure that required attributes are available
+        required_attributes = ['cell_id_to_row_ids', 'min_max_stretch_fac',
+                               'eccentricity_exists', 'batch_cache', 'eccentricity_cache']
+        for attr in required_attributes:
+            if getattr(self, attr) is None:
+                raise ValueError(f"Attribute '{attr}' is not set. Please run 'generate_parameters' first.")
+
+        # Use the stored attributes
+        cell_id_to_row_ids = self.cell_id_to_row_ids
+        min_max_stretch_fac = self.min_max_stretch_fac
+        eccentricity_exists = self.eccentricity_exists
+
+        for item in query_list:
+            if eccentricity_exists:
+                batch_id, cell_id, eccentricity_code, sf_mean_center_x, sf_mean_center_y = item
+            else:
+                batch_id, cell_id, sf_mean_center_x, sf_mean_center_y = item
+
+            # Retrieve batch value from cache
+            if batch_id in self.batch_cache:
+                batch_value = self.batch_cache[batch_id]
+            else:
+                raise ValueError(f"Batch ID {batch_id} not found in batch cache.")
+
+            # Retrieve eccentricity from cache if needed
+            if eccentricity_exists:
+                if eccentricity_code == -1:
+                    if batch_id in self.eccentricity_cache:
+                        eccentricity = self.eccentricity_cache[batch_id]
+                    else:
+                        # Choose a random value from self.eccentricity_cache
+                        if self.eccentricity_cache:
+                            eccentricity = self.random_state.choice(list(self.eccentricity_cache.values()))
+                        else:
+                            # If the cache is empty, generate a new random value and store it
+                            eccentricity = self.random_state.uniform(0, 1)
+                            self.eccentricity_cache[batch_id] = eccentricity
+                else:
+                    eccentricity = eccentricity_code
+
+            sf_row_id, tf_row_id = cell_id_to_row_ids[cell_id]
+
+            params = {
+                'tf_weight_surround': None,
+                'tf_sigma_center': None,
+                'tf_sigma_surround': None,
+                'tf_mean_center': None,
+                'tf_mean_surround': None,
+                'tf_weight_center': None,
+                'tf_offset': 0,
+                'sf_cov_center': None,
+                'sf_cov_surround': None,
+                'sf_weight_surround': None,
+                'sf_mean_center': None,
+                'sf_mean_surround': None
+            }
+
+            # Generate temporal and spatial frequency parameters
+            (params['tf_weight_center'], params['tf_weight_surround'],
+             tf_mean_center, tf_mean_surround,
+             tf_sigma_center, tf_sigma_surround, local_max_tf_stretch_fac) = generate_tf_parameters(
+                tf_row_id, self.tf_param_table)
+            (sf_cov_center, sf_cov_surround, params['sf_weight_surround'],
+             local_max_sf_stretch_fac) = generate_sf_parameters(
+                sf_row_id, self.sf_param_table)
+
+            # Assign sf_mean_center from input
+            params['sf_mean_center'] = (sf_mean_center_x, sf_mean_center_y)
+
+            # Apply batch scaling for temporal frequency parameters
+            (tf_mean_center, tf_mean_surround,
+             tf_sigma_center, tf_sigma_surround) = apply_batch_scaling(
+                batch_value, tf_mean_center, tf_mean_surround,
+                tf_sigma_center, tf_sigma_surround, min_max_stretch_fac)
+
+            params['tf_mean_center'] = tf_mean_center
+            params['tf_mean_surround'] = tf_mean_surround
+            params['tf_sigma_center'] = tf_sigma_center
+            params['tf_sigma_surround'] = tf_sigma_surround
+
+            # If eccentricity exists, apply eccentricity scaling to spatial frequency parameters
+            if eccentricity_exists:
+                (sf_cov_center, sf_cov_surround) = apply_eccentricity_scaling(
+                    eccentricity, sf_cov_center, sf_cov_surround, local_max_sf_stretch_fac)
+
+            params['sf_cov_center'] = sf_cov_center
+            params['sf_cov_surround'] = sf_cov_surround
+
+            # Append to result list
+            param_list.append(params)
+
+        return param_list
+
+
+def generate_parameters(query_df, sf_param_table, tf_param_table):
+    param_list = []
+    query_list = []
+    batch_cache = {}
+    posi_cache = {}
+    eccentricity_cache = {}
+    set_rand_seed = 42
+
+    unique_posi_ids = list(query_df['Posi_id'].unique())
+    hex_centers = create_hexagonal_centers(xlim=(0, 1), ylim=(0, 1), target_num_centers=len(unique_posi_ids),
+                                           set_rand_seed=set_rand_seed)
+    posi_id_to_center = {posi_id: hex_centers[i] for i, posi_id in enumerate(unique_posi_ids)}
+
+    unique_cell_ids = list(query_df['Cell_id'].unique())
+    cell_id_to_row_ids = assign_row_ids_to_cell_ids(unique_cell_ids, len(sf_param_table), len(tf_param_table))
+
+    # Determine min value of 'max_tf_stretch_fac' for the selected tf_row_ids
+    min_max_stretch_fac = tf_param_table.loc[
+        [cell_id_to_row_ids[cell_id][1] for cell_id in unique_cell_ids], 'max_tf_stretch_fac'].min()
+
+    # Check if the "Eccentricity" column exists
+    eccentricity_exists = 'Eccentricity' in query_df.columns
+
+    for _, row in query_df.iterrows():
+        batch_id = int(row['Batch_id'])
+        cell_id = int(row['Cell_id'])
+        posi_id = int(row['Posi_id'])
+
+        if eccentricity_exists:
+            eccentricity = float(row['Eccentricity'])
+            eccentricity_code = eccentricity
+
+        # Handle batch value caching
+        if batch_id not in batch_cache:
+            batch_cache[batch_id] = random.uniform(0, 1)
+        batch_value = batch_cache[batch_id]
+
+        # If eccentricity exists and is -1, assign a batch-based random value
+        if eccentricity_exists and eccentricity_code == -1:
+            if batch_id not in eccentricity_cache:
+                eccentricity_cache[batch_id] = random.uniform(0, 1)
+            eccentricity = eccentricity_cache[batch_id]
+
+        sf_row_id, tf_row_id = cell_id_to_row_ids[cell_id]
+
+        params = {
+            'tf_weight_surround': None,
+            'tf_sigma_center': None,
+            'tf_sigma_surround': None,
+            'tf_mean_center': None,
+            'tf_mean_surround': None,
+            'tf_weight_center': None,
+            'tf_offset': 0,
+            'sf_cov_center': None,
+            'sf_cov_surround': None,
+            'sf_weight_surround': None,
+            'sf_mean_center': None,
+            'sf_mean_surround': None
+        }
+
+        # Generate temporal and spatial frequency parameters
+        params['tf_weight_center'], params[
+            'tf_weight_surround'], tf_mean_center, tf_mean_surround, tf_sigma_center, tf_sigma_surround, max_tf_stretch_fac = generate_tf_parameters(
+            tf_row_id, tf_param_table)
+        sf_cov_center, sf_cov_surround, params['sf_weight_surround'], max_sf_stretch_fac = generate_sf_parameters(
+            sf_row_id, sf_param_table)
+
+        # Assign position-based centers
+        params['sf_mean_center'] = posi_id_to_center[posi_id]
+        params['sf_mean_center'] = params['sf_mean_center']
+
+        # Apply batch scaling for temporal frequency parameters
+        tf_mean_center, tf_mean_surround, tf_sigma_center, tf_sigma_surround = apply_batch_scaling(
+            batch_value, tf_mean_center, tf_mean_surround, tf_sigma_center, tf_sigma_surround, min_max_stretch_fac)
+
+        params['tf_mean_center'] = tf_mean_center
+        params['tf_mean_surround'] = tf_mean_surround
+        params['tf_sigma_center'] = tf_sigma_center
+        params['tf_sigma_surround'] = tf_sigma_surround
+
+        # If eccentricity exists, apply eccentricity scaling to spatial frequency parameters
+        if eccentricity_exists:
+            sf_cov_center, sf_cov_surround = apply_eccentricity_scaling(eccentricity, sf_cov_center, sf_cov_surround,
+                                                                        max_sf_stretch_fac)
+
+        params['sf_cov_center'] = sf_cov_center
+        params['sf_cov_surround'] = sf_cov_surround
+
+        # Append to result lists
+        param_list.append(params)
+        if eccentricity_exists:
+            query_list.append((batch_id, cell_id, eccentricity_code, params['sf_mean_center'][0], params['sf_mean_center'][1]))
+        else:
+            query_list.append((batch_id, cell_id, params['sf_mean_center'][0], params['sf_mean_center'][1]))
+
+    return param_list, query_list
+

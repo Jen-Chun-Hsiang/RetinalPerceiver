@@ -48,7 +48,7 @@ class Trainer:
                  query_encoder=None, query_permutator=None, series_ids=None, is_feature_L1=False,
                  is_retinal_dataset=True,
                  margin=0.1, temperature=0.1, lambda_l1=0.01, contrastive_factor=0.01,
-                 l1_weight=0.01):
+                 l1_weight=0.01, masking_pos=None, masking_prob=0.5):
         self.model = model
         self.criterion = criterion
         self.optimizer = optimizer
@@ -59,6 +59,11 @@ class Trainer:
         self.data_loading_times = {'counter': 0, 'min': None, 'max': None, 'moving_avg': None}
         self.data_transfer_times = {'counter': 0, 'min': None, 'max': None, 'moving_avg': None}
         self.model_processing_times = {'counter': 0, 'min': None, 'max': None, 'moving_avg': None}
+        self.masking_pos = masking_pos
+        self.masking_prob = masking_prob
+        self.is_masking = False
+        if self.masking_pos is not None:
+            self.is_masking = True
 
         self.is_contrastive_learning = is_contrastive_learning
         if self.is_contrastive_learning:
@@ -102,7 +107,10 @@ class Trainer:
                 elif self.is_selective_layers:
                     loss = self._process_batch_with_query_selective(data)
                 else:
-                    loss = self._process_batch_with_query(data)
+                    if self.is_masking:
+                        loss = self._process_batch_with_query_masking(data)
+                    else:
+                        loss = self._process_batch_with_query(data)
             else:
                 loss = self._process_batch(data)
 
@@ -132,29 +140,56 @@ class Trainer:
         loss = self._compute_loss(outputs, targets)
         return loss
 
+    def _process_batch_with_query_masking(self, data):
+        input_matrices, targets, matrix_indices = data
+        query_vectors = self.query_array[matrix_indices]
+        num_batches = query_vectors.shape[0]
+        mask = torch.rand(num_batches) < self.masking_prob
+        # Apply the mask
+        selected_batches = mask.nonzero(as_tuple=True)[0]
+        if selected_batches.numel() > 0:
+            expanded_mask = selected_batches[:, None, None].expand(-1, query_vectors.shape[1], len(self.masking_pos))
+            query_vectors[expanded_mask, :, self.masking_pos] = -1
+        # print(f'self.masking_pos: {self.masking_pos}')
+        # print(f'mask: {mask}')
+        # print(f'query_vectors type: {type(query_vectors)}')
+        # print(f'query_vectors: {query_vectors}')
+        # print(f'query_vectors shape: {query_vectors.shape}')
+
+        query_vectors = query_vectors.float().to(self.device)
+        input_matrices, targets = input_matrices.to(self.device), targets.to(self.device)
+        outputs, _ = self.model(input_matrices, query_vectors)
+        outputs = outputs.squeeze()
+        # print(f'outputs shape: {outputs.shape}')
+        # print(f'outputs type: {type(outputs)}')
+        # print(f'targets shape: {targets.shape}')
+        # print(f'targets type: {type(targets)}')
+        # raise RuntimeError("check query vector.")
+        try:
+            assert outputs.shape == targets.shape
+        except Exception as e:
+            print(e)
+            print(f'outputs shape: {outputs.shape}')
+            print(f'targets shape: {targets.shape}')
+
+        loss = self._compute_loss(outputs, targets)
+
+        return loss
+
     def _process_batch_with_query(self, data):
         input_matrices, targets, matrix_indices = data
-        query_vectors = self.query_array[matrix_indices.squeeze(), :, :]
-        with timer(self.data_transfer_times):
-            query_vectors = query_vectors.float().to(self.device)
-            input_matrices, targets = input_matrices.to(self.device), targets.to(self.device)
+        query_vectors = self.query_array[matrix_indices]
+        query_vectors = query_vectors.float().to(self.device)
+        input_matrices, targets = input_matrices.to(self.device), targets.to(self.device)
+        outputs, _ = self.model(input_matrices, query_vectors)
+        # try:
+        #    assert outputs.shape == targets.shape
+        # except Exception as e:
+        #    print(e)
+        #    print(f'outputs shape: {outputs.shape}')
+        #    print(f'targets shape: {targets.shape}')
 
-        with timer(self.model_processing_times):
-            with autocast(device_type="cuda", dtype=torch.float16):
-                outputs, _ = self.model(input_matrices, query_vectors)
-                try:
-                    assert outputs.shape == targets.shape
-                except Exception as e:
-                    print(e)
-                    print(f'outputs shape: {outputs.shape}')
-                    print(f'targets shape: {targets.shape}')
-
-                loss = self._compute_loss(outputs, targets)
-                if torch.isnan(loss).any():
-                    print(f"loss: {loss} \n")
-                    print(f"outputs: {outputs} \n")
-                    print(f"targets: {targets} \n")
-                    raise RuntimeError("Output value contain nan")
+        loss = self._compute_loss(outputs, targets)
 
         return loss
 
@@ -173,8 +208,9 @@ class Trainer:
             query_vectors = torch.from_numpy(query_array).unsqueeze(1)
             query_vectors = query_vectors.float().to(self.device)
             _, perm_embedding = self.model(input_matrices, query_vectors)
-            contra_loss += self.contrastive_factor*torch.matmul(targets.T, self.neg_contra_loss_fn(perm_embedding.view(num_batch, -1),
-                                                                           outputs_embedding.view(num_batch, -1)))
+            contra_loss += self.contrastive_factor * torch.matmul(targets.T, self.neg_contra_loss_fn(
+                perm_embedding.view(num_batch, -1),
+                outputs_embedding.view(num_batch, -1)))
 
         return self._compute_loss(outputs_predict, targets) + contra_loss
 
@@ -187,8 +223,8 @@ class Trainer:
         neuron_ids = query_vectors[:, 3].to(self.device)
         if self.is_feature_L1:
             outputs_predict, feature_gamma, spatial_gamma = self.model(input_matrices, dataset_ids, neuron_ids)
-            l1_loss = self.l1_weight*(self._l1_regularization(feature_gamma, self.lambda_l1) +
-                                      self._l1_regularization(spatial_gamma, self.lambda_l1))
+            l1_loss = self.l1_weight * (self._l1_regularization(feature_gamma, self.lambda_l1) +
+                                        self._l1_regularization(spatial_gamma, self.lambda_l1))
         else:
             outputs_predict = self.model(input_matrices, dataset_ids, neuron_ids)
             raise ValueError(f"Temporal close {neuron_ids}.")
@@ -343,7 +379,6 @@ def save_checkpoint(epoch, model, optimizer, scheduler, args, training_losses,
         'epoch': epoch,
         'model_state_dict': model.state_dict(),
         'optimizer_state_dict': optimizer.state_dict(),
-        'scheduler_state_dict': scheduler.state_dict(),
         'args': args,
         'training_losses': training_losses,
         'validation_losses': validation_losses,
@@ -452,14 +487,15 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
                     is_adding = False
                     continue
                 if is_rescale_image:
-                    images = images*2-1
+                    images = images * 2 - 1
 
                 if use_matrix_index:
                     query_vectors = query_array_tensor[matrix_indices].to(images.device)
                     weights = model(images, query_vectors).squeeze()
+
                 if model_type == 'FiLMCNN':
                     query_vectors = query_array_tensor.repeat(batch_size, 1)
-                    #input_matrices = input_matrices.to(images.device)
+                    # input_matrices = input_matrices.to(images.device)
                     dataset_ids = query_vectors[:, 0].to(images.device)
                     neuron_ids = query_vectors[:, 3].to(images.device)
                     matrix_indices = matrix_indices.to(images.device)
@@ -489,12 +525,13 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
                     is_adding = True
 
                 else:
-                    query_vectors = query_array_tensor.repeat(batch_size, 1, 1).to(images.device)
-                    # print(f'query_vector shape: {query_vectors.shape}')
-                    # print(f'images shape: {images.shape}')
-                    if query_vectors.size(0) != images.size(0):
-                        query_vectors = query_vectors[:images.size(0), :, :]
-                    weights, _ = model(images, query_vectors)
+                    if is_weight_in_label is False:
+                        query_vectors = query_array_tensor.repeat(batch_size, 1, 1).to(images.device)
+                        # print(f'query_vector shape: {query_vectors.shape}')
+                        # print(f'images shape: {images.shape}')
+                        if query_vectors.size(0) != images.size(0):
+                            query_vectors = query_vectors[:images.size(0), :, :]
+                        weights, _ = model(images, query_vectors)
             else:
                 if is_retinal_dataset:
                     images, labels, _ = data
@@ -506,7 +543,8 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
             # images = images.to(next(model.parameters()).device)
             # print(f'weights type: {type(weights)}')
             # print(f'weights shape: {weights.shape}')
-            weights_list = weights.cpu().tolist()
+            if is_weight_in_label is False:
+                weights_list = weights.cpu().tolist()
 
             if is_adding:
                 within_idx_list = within_idx.cpu().tolist()
@@ -516,7 +554,9 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
                 batch_indices_tensor = torch.tensor(all_batch_idx)
                 within_batch_indices_tensor = torch.tensor(all_within_batch_idx)
 
-            all_weights.extend(weights_list)
+            if is_weight_in_label is False:
+                all_weights.extend(weights_list)
+
             all_labels.extend(labels.cpu().tolist() if torch.is_tensor(labels) else labels)
 
     if logger:
@@ -563,7 +603,7 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
         else:
             if is_retinal_dataset:
                 images, _, _ = data
-                #print(f'images size:{images.shape}')
+                # print(f'images size:{images.shape}')
             else:
                 images, _ = data
 
@@ -571,12 +611,12 @@ def forward_model(model, dataset, query_array=None, batch_size=16,
                 continue
             images = images.to(next(model.parameters()).device)
             weights_batch = normalized_weights[idx:idx + images.size(0)].to(images.device).view(-1, 1, 1, 1, 1)
-            #print(f'weights_batch size:{weights_batch.shape}')
+            # print(f'weights_batch size:{weights_batch.shape}')
             weighted_images = images * weights_batch
 
-        #print(f'weighted images size:{weighted_images.shape}')
+        # print(f'weighted images size:{weighted_images.shape}')
         batch_sum = weighted_images.sum(dim=0)  # Sum over the batch
-        #print(f'batch sum size:{batch_sum.shape}')
+        # print(f'batch sum size:{batch_sum.shape}')
 
         if weighted_sum is None:
             print(f'weighted sum size:{weighted_sum.shape}')

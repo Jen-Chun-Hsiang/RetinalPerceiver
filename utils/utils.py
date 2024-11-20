@@ -4,6 +4,8 @@ import numpy as np
 from datetime import datetime
 import matplotlib.pyplot as plt
 import hashlib
+import pandas as pd
+from itertools import product
 
 
 # Function to evaluate the model on validation data
@@ -240,7 +242,8 @@ class DataVisualizer:
 
 
 class SeriesEncoder:
-    def __init__(self, max_values, lengths, encoding_method='max_spacing', order=None, shuffle_components=None, seed=42):
+    def __init__(self, max_values, lengths, encoding_method='max_spacing', order=None, encoding_type=None,
+                 shuffle_components=None, seed=42):
         """
         Initialize the encoder with maximum values, lengths, and optional order and shuffle settings.
         max_values: Dictionary with keys specifying the maximum values for each component.
@@ -258,8 +261,10 @@ class SeriesEncoder:
         self.max_values = max_values
         self.lengths = lengths
         self.encoding_method = encoding_method
-        self.order = order if order is not None else list(max_values.keys())
+        self.order = order if order is not None else list(lengths.keys())
+        self.encoding_type = encoding_type if encoding_type is not None else {component: 'extend' for component in lengths}
         self.shuffle_components = shuffle_components if shuffle_components is not None else []
+
         np.random.seed(seed)
         self.bases = self._calculate_bases(max_values, lengths)
         self.shuffle_indices = {component: np.random.permutation(lengths[component]) for component in self.shuffle_components}
@@ -275,7 +280,7 @@ class SeriesEncoder:
 
     def encode_component_uniformly(self, id, length, component):
         """ Encode a component uniformly based on the input ID. """
-        seed = int(hashlib.sha256(f"{id}-{component}".encode()).hexdigest(), 16) % (2 ** 32)
+        seed = int(hashlib.sha256(f"{round(id)}-{component}".encode()).hexdigest(), 16) % (2 ** 32)
         rng = np.random.default_rng(seed)
         encoded = rng.uniform(-1, 1, size=length)
 
@@ -310,14 +315,16 @@ class SeriesEncoder:
         for input_values in input_tuples:
             encoded_vector = []
             for component, value in zip(self.order, input_values):
-                max_value = self.max_values[component]
                 length = self.lengths[component]
-
-                if self.encoding_method == 'uniform':
+                if self.encoding_type[component] == 'extend':
+                    encoded_vector.extend([value] * length)
+                elif self.encoding_type[component] == 'uniform':
                     encoded_vector.extend(self.encode_component_uniformly(value, length, component))
-                elif self.encoding_method == 'max_spacing':
+                elif self.encoding_type[component] == 'max_spacing':
+                    max_value = self.max_values[component]
                     base = self.bases[component]
                     encoded_vector.extend(self.encode_component_max_spacing(value, max_value, length, base, component))
+
             encoded_vectors.append(np.array(encoded_vector))
 
         # Concatenate along a new dimension
@@ -504,6 +511,84 @@ def series_ids_permutation(Ds, length):
                 syn_query[i, j] = cids[0]  # Python's 0-based indexing is maintained
 
     return Df, syn_query
+
+
+def series_ids_permutation_uni(Ds, perm_cols, repeat_samples=None, shuffle_mode='row', random_seed=42,
+                               rand_sample_cols=None, num_rand_sample=1):
+    np.random.seed(random_seed)  # Set the random seed for numpy operations
+    df = pd.DataFrame(Ds)  # Convert the input data to a DataFrame
+
+    # Calculate the columns that are not to be permuted or randomly sampled
+    include_columns = [col for col in df.columns if
+                       col not in perm_cols and (rand_sample_cols is None or col not in rand_sample_cols)]
+
+    # Create all possible combinations of values in the permutation columns
+    all_combinations = pd.MultiIndex.from_product([df[col].unique() for col in perm_cols], names=perm_cols)
+    # Current combinations present in the DataFrame
+    present_combinations = pd.MultiIndex.from_frame(df[perm_cols].drop_duplicates())
+    # Identify missing combinations
+    if rand_sample_cols is None:
+        missing_combinations = all_combinations.difference(present_combinations)
+    else:
+        missing_combinations = all_combinations
+
+    # Prepare a DataFrame to hold the result
+    result = pd.DataFrame()
+
+    if not missing_combinations.empty:
+        # Convert MultiIndex to DataFrame for easy handling
+        missing_df = missing_combinations.to_frame(index=False)
+
+        if repeat_samples is not None:
+            # Repeat each missing combination 'repeat_samples' times if needed
+            missing_df = pd.concat([missing_df] * repeat_samples, ignore_index=True)
+
+        if rand_sample_cols:
+            # Expand missing_df for random sampling
+            expanded_missing_df = pd.concat([missing_df] * num_rand_sample, ignore_index=True)
+            # Create random samples for specified columns
+            for col in rand_sample_cols:
+                random_samples = np.random.uniform(df[col].min(), df[col].max(), size=len(expanded_missing_df))
+                expanded_missing_df[col] = random_samples
+
+            missing_df = expanded_missing_df
+
+        # Prepare the DataFrame for included columns based on shuffle mode
+        if shuffle_mode == 'row':
+            # Calculate how many full duplicates of df are needed
+            num_duplicates = len(missing_df) // len(df)  # Floor division to get full duplicates
+            remaining_samples = len(missing_df) % len(df)  # Remaining rows to fill
+
+            # Concatenate full duplicates of df
+            duplicated_df = pd.concat([df[include_columns]] * num_duplicates, ignore_index=True)
+
+            # Sample the remaining rows from df to fill up the size of missing_df
+            if remaining_samples > 0:
+                remaining_df = df[include_columns].sample(n=remaining_samples, replace=False, random_state=random_seed)
+                # Concatenate the duplicated DataFrame with the remaining random sample
+                final_df = pd.concat([duplicated_df, remaining_df], ignore_index=True)
+            else:
+                final_df = duplicated_df
+
+            # Assign the final sampled values to missing_df
+            missing_df[include_columns] = final_df.values
+
+        elif shuffle_mode == 'independent':
+            # Shuffle each column independently and tile to match the length of missing_df
+            for col in include_columns:
+                shuffled_col = np.random.choice(df[col], size=len(missing_df), replace=True)
+                missing_df[col] = shuffled_col
+
+        missing_df = missing_df[sorted(missing_df.columns)]
+        result = missing_df.drop_duplicates()
+
+    for i, item in enumerate(Ds[0]):
+        result[i] = result[i].astype(type(item))
+    # Convert the final DataFrame back to a list of tuples
+
+    result_list = [tuple(x) for x in result.to_numpy()]
+
+    return result_list
 
 
 def array_to_list_of_tuples(arr):

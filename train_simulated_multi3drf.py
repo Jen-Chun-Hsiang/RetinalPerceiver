@@ -13,16 +13,17 @@ import logging
 import time
 from io import StringIO
 import sys
-from torchinfo import summary
+import random
 import torch.distributed as dist
-from scipy.io import savemat
-from torch.nn.parallel import DistributedDataParallel
-from utils.query_editor import get_unique_sets, QueryPermutator
+# from torchinfo import summary
+# from scipy.io import savemat
+# from torch.nn.parallel import DistributedDataParallel
+# from utils.query_editor import get_unique_sets, QueryPermutator
 
-
-from datasets.simulated_target_rf import MultiTargetMatrixGenerator, CellClassLevel, ExperimentalLevel, IntegratedLevel
+from datasets.simulated_target_rf import MultiTargetMatrixGenerator, ParameterGenerator
 from utils.utils import plot_and_save_3d_matrix_with_timestamp as plot3dmat
 from utils.utils import SeriesEncoder
+from utils.accessory import calculate_mask_positions
 from datasets.simulated_dataset import MultiMatrixDataset
 from models.perceiver3d import RetinalPerceiverIO
 from models.cnn3d import RetinalPerceiverIOWithCNN
@@ -50,6 +51,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Script for Model Training to get 3D RF in simulation")
     parser.add_argument('--config_name', type=str, default='sim_022822', help='Config file name for data generation')
     parser.add_argument('--experiment_name', type=str, default='new_experiment', help='Experiment name')
+    parser.add_argument('--rng_seed', type=int, default=None, help='assign a random seed')
     parser.add_argument('--model', type=str, choices=['RetinalPerceiver', 'RetinalCNN'], required=True,
                         help='Model to train')
     parser.add_argument('--input_depth', type=int, default=20, help='Number of time points')
@@ -70,10 +72,13 @@ def parse_args():
     parser.add_argument('--epochs', type=int, default=100, help='Number of training epochs')
     parser.add_argument('--batch_size', type=int, default=64, help='Batch size for training')
     parser.add_argument('--learning_rate', type=float, default=0.001, help='Learning rate')
+    parser.add_argument('--schedule_factor', type=float, default=0.2, help='Learning rate')
     parser.add_argument('--weight_decay', type=float, default=0.001, help='Weight decay')
     parser.add_argument('--checkpoint_path', type=str, default='./checkpoints/model.pth',
                         help='Path to save load model checkpoint')
     parser.add_argument('--load_checkpoint', action='store_true', help='Flag to load the model from checkpoint')
+    parser.add_argument('--masking_pos', type=int, nargs='+', default=None, help='masking positions, such as (0, 1, 2)')
+    parser.add_argument('--masking_prob', type=float, default=0.5, help='Probability of masking')
     # Target matrix specificity
     parser.add_argument('--sf_surround_weight', type=float, default=0.5, help='Strength of spatial surround')
     parser.add_argument('--tf_surround_weight', type=float, default=0.2, help='Strength of temporal surround')
@@ -144,7 +149,7 @@ def main():
     logging.basicConfig(filename=log_filename,
                         level=logging.INFO,
                         format='%(asctime)s %(levelname)s:%(message)s')
-
+    logging.info(f'start logging... \n')
     # Check if CUDA is available
     if not torch.cuda.is_available():
         raise RuntimeError("CUDA is not available. Please check your GPU and CUDA installation.")
@@ -152,29 +157,35 @@ def main():
     # If CUDA is available, continue with the rest of the script
     device = torch.device("cuda")
     torch.cuda.empty_cache()
+    logging.info(f'set up GPU operation \n')
 
-    # Create integrated level with experimental levels
-    integrated_list = IntegratedLevel([getattr(config, 'experimental', None),
-                                       getattr(config, 'experimental2', None),
-                                       getattr(config, 'experimental3', None),
-                                       getattr(config, 'experimental4', None),
-                                       getattr(config, 'experimental5', None)])
+    if args.rng_seed is None:
+        args.rng_seed = random.randint(0, int(1e9))
+
+    query_table = getattr(config, 'query_table', None)
+    sf_param_table = getattr(config, 'sf_param_table', None)
+    tf_param_table = getattr(config, 'tf_param_table', None)
+    logging.info(f'query_table: {query_table} \n')
     # Generate param_list
-    param_list, series_ids = integrated_list.generate_combined_param_list()
+    parameter_generator = ParameterGenerator(sf_param_table, tf_param_table, seed=args.rng_seed)
+    param_lists, series_ids = parameter_generator.generate_parameters(query_table)
+    # param_list, series_ids = integrated_list.generate_combined_param_list()
+    # logging.info(f'param_list: {param_list} \n')
+    # logging.info(f'series_ids: {series_ids} \n')
 
     # Encode series_ids into query arrays
-    max_values = {'Experiment': 100, 'Type': 100, 'Cell': 10000}
-    lengths = {'Experiment': 6, 'Type': 6, 'Cell': 24}
-    shuffle_components = ['Cell']
-    query_encoder = SeriesEncoder(max_values, lengths, encoding_method=args.encoding_method,
+    max_values = getattr(config, 'max_values', None)
+    # skip_encoding = getattr(config, 'skip_encoding', None)
+    encoding_type = getattr(config, 'encoding_type', None)
+    lengths = getattr(config, 'lengths', None)
+    shuffle_components = getattr(config, 'shuffle_components', None)
+    query_encoder = SeriesEncoder(max_values, lengths, encoding_method=args.encoding_method, encoding_type=encoding_type,
                                   shuffle_components=shuffle_components)
     query_array = query_encoder.encode(series_ids)
     logging.info(f'query_array size:{query_array.shape} \n')
+    logging.info(f'query_array:{query_array[:3]} \n')
 
-    query_input_struct = tuple(lengths.keys())
-    query_perm_set = get_unique_sets(series_ids, query_input_struct)
-    query_perm_list = [(1, 1, 0), (0, 1, 0), (0, 0, 1)]
-    query_permutator = QueryPermutator(query_perm_set, query_input_struct, query_perm_list)
+    query_permutator = None
     '''
     # Save to .mat file
     savemat(os.path.join(savemat_dir, 'sim_multi_list.mat'),
@@ -183,7 +194,7 @@ def main():
     '''
 
     # Use param_list in MultiTargetMatrixGenerator
-    multi_target_gen = MultiTargetMatrixGenerator(param_list)
+    multi_target_gen = MultiTargetMatrixGenerator(param_lists)
     target_matrix = multi_target_gen.create_3d_target_matrices(
         input_height=args.input_height, input_width=args.input_width, input_depth=args.input_depth)
 
@@ -255,11 +266,19 @@ def main():
 
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
+    # scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=args.schedule_factor, patience=5)
+    scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=10, T_mult=2, eta_min=1e-6)
+
     # Initialize the Trainer
+    if args.masking_pos is None:
+        masking_pos = None
+    else:
+        masking_pos = calculate_mask_positions(lengths, args.masking_pos)
     trainer = Trainer(model, criterion, optimizer, device, args.accumulation_steps,
                       query_array=query_array, is_contrastive_learning=args.is_contrastive_learning,
-                      series_ids=series_ids, query_permutator=query_permutator, query_encoder=query_encoder,
-                      margin=args.margin, temperature=args.temperature, contrastive_factor=args.contrastive_factor)
+                      series_ids=series_ids, query_encoder=query_encoder, query_permutator=query_permutator,
+                      margin=args.margin, temperature=args.temperature, contrastive_factor=args.contrastive_factor,
+                      masking_pos=masking_pos, masking_prob=args.masking_prob)
     # Initialize the Evaluator
     evaluator_contra = Evaluator(model, criterion, device, query_array=query_array,
                                  is_contrastive_learning=args.is_contrastive_learning,
@@ -274,10 +293,12 @@ def main():
         model, optimizer = checkpoint_loader.load_checkpoint(model, optimizer)
         start_epoch = checkpoint_loader.get_epoch()
         training_losses, validation_losses = checkpoint_loader.get_training_losses(), checkpoint_loader.get_validation_losses()
+        learning_rate_dynamics = checkpoint_loader.get_learning_rate_dynamics()
     else:
         start_epoch = 0
         training_losses = []
         validation_losses = []
+        learning_rate_dynamics = []
         validation_contra_losses = []
         start_time = time.time()  # Capture the start time
 
@@ -287,6 +308,9 @@ def main():
 
         # torch.cuda.empty_cache()
         avg_val_loss = evaluator.evaluate(val_loader)
+        # scheduler.step(avg_val_loss)
+        scheduler.step(epoch + (epoch / args.epochs))
+        learning_rate_dynamics.append(scheduler.get_last_lr())
         validation_losses.append(avg_val_loss)
         avg_val_loss = evaluator_contra.evaluate(val_loader)
         validation_contra_losses.append(avg_val_loss)
