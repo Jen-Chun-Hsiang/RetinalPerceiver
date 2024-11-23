@@ -178,18 +178,25 @@ class Trainer:
 
     def _process_batch_with_query(self, data):
         input_matrices, targets, matrix_indices = data
-        query_vectors = self.query_array[matrix_indices]
+        # query_vectors = self.query_array[matrix_indices]
+        query_vectors = self.query_array[matrix_indices.squeeze(), :, :]
         query_vectors = query_vectors.float().to(self.device)
         input_matrices, targets = input_matrices.to(self.device), targets.to(self.device)
-        outputs, _ = self.model(input_matrices, query_vectors)
-        # try:
-        #    assert outputs.shape == targets.shape
-        # except Exception as e:
-        #    print(e)
-        #    print(f'outputs shape: {outputs.shape}')
-        #    print(f'targets shape: {targets.shape}')
+        with autocast(device_type="cuda", dtype=torch.float16):
+            outputs, _ = self.model(input_matrices, query_vectors)
+            try:
+                assert outputs.shape == targets.shape
+            except Exception as e:
+                print(e)
+                print(f'outputs shape: {outputs.shape}')
+                print(f'targets shape: {targets.shape}')
 
-        loss = self._compute_loss(outputs, targets)
+            loss = self._compute_loss(outputs, targets)
+            if torch.isnan(loss).any():
+                print(f"loss: {loss} \n")
+                print(f"outputs: {outputs} \n")
+                print(f"targets: {targets} \n")
+                raise RuntimeError("Output value contain nan")
 
         return loss
 
