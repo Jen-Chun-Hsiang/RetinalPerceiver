@@ -200,6 +200,7 @@ def main():
     query_encoder = SeriesEncoder(getattr(config, 'query_max_values', None),
                                   getattr(config, 'query_lengths', None),
                                   encoding_method=args.encoding_method,
+                                  encoding_type= getattr(config, 'encoding_type', None),
                                   shuffle_components=getattr(config, 'query_shuffle_components', None))
     # query_encoder = SeriesEncoder(max_values, lengths, shuffle_components=shuffle_components)
     logging.info(f'(bef) query_array size:{query_array.shape} \n')
