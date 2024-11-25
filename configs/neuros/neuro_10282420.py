@@ -31,4 +31,5 @@ filtered_data = filter_and_merge_data(
 
 query_max_values = {'Experiment': 1000, 'Species': 9, 'Sex': 3, 'Neuron': 10000000}
 query_lengths = {'Experiment': 7, 'Species': 2, 'Sex': 1, 'Neuron': 15}
+encoding_type = {'Experiment': 'uniform', 'Species': 'uniform', 'Sex': 'uniform', 'Neuron': 'uniform'}
 shuffle_components = ['Neuron']
