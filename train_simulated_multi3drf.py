@@ -98,7 +98,7 @@ def parse_args():
     # Stimulus specificity
     parser.add_argument('--stimulus_type', type=int, default=4, help='Stimulus type')
     parser.add_argument('--stimulus_type_set', nargs='+', type=int, default=[1], help='Sets of stimulus type')
-    parser.add_argument('is_norm_matrix', action='store_true', help='Normalize the matrix for generating signal')
+    parser.add_argument('--is_norm_matrix', action='store_true', help='Normalize the matrix for generating signal')
     # Perceiver specificity
     parser.add_argument('--num_head', type=int, default=4, help='Number of heads in perceiver')
     parser.add_argument('--num_iter', type=int, default=1, help='Number of input reiteration')
