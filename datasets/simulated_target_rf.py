@@ -31,18 +31,25 @@ class TargetMatrixGenerator:
                       tf_weight_center, tf_weight_surround, tf_offset)
 
         if self.cov2 is None:
-            # Only use the first Gaussian
-            target_matrix = np.array(
-                [self.generate_2d_gaussian((input_width, input_height)) * time_point for time_point in
-                 freqf_t[:input_depth]])
+            gaussian = self.generate_2d_gaussian((input_width, input_height))
         else:
-            # Use the difference of two Gaussians
-            target_matrix = np.array(
-                [self.generate_difference_of_2d_gaussians((input_width, input_height),
-                                                          self.surround_weight) * time_point for time_point in
-                 freqf_t[:input_depth]])
+            gaussian = self.generate_difference_of_2d_gaussians((input_width, input_height), self.surround_weight)
 
-        return torch.tensor(target_matrix, dtype=torch.float32).to(self.device)
+        # normalize spatial filter
+        gaussian = gaussian - np.median(gaussian)
+        gaussian = gaussian / np.sum(np.abs(gaussian))
+        # normalize temporal filter
+        freqf_t = freqf_t / np.sum(np.abs(freqf_t))
+
+        # Convert to PyTorch tensors
+        gaussian = torch.tensor(gaussian.copy(), dtype=torch.float32).unsqueeze(-1)  # Shape [w, h]
+        freqf_t = torch.tensor(freqf_t.copy(), dtype=torch.float32).T  # Shape [t, 1]
+
+
+        # Broadcasting happens automatically for element-wise multiplication
+        target_matrix = gaussian * freqf_t  # Shape [w, h, t]
+
+        return target_matrix.to(self.device)
 
     def generate_difference_of_2d_gaussians(self, size, surround_weight):
         gaussian_matrix1 = self.generate_2d_gaussian(size, self.mean1, self.cov1)

@@ -307,7 +307,7 @@ def main():
         n = 5
         model.eval()  # Set the model to evaluation mode
         with torch.no_grad():  # Disable gradient computation
-            for batch_idx, (random_matrix, output_value, matrix_index) in enumerate(train_loader):
+            for batch_idx, (random_matrix, output_value, _) in enumerate(train_loader):
                 if batch_idx >= n:
                     break  # Exit after processing n batches
 
@@ -317,8 +317,6 @@ def main():
                 print(f'random_matrix max {torch.max(random_matrix)}')
                 print(f'output_value min {torch.min(output_value)}')
                 print(f'output_value max {torch.max(output_value)}')
-                print(f'matrix_index min {torch.min(matrix_index)}')
-                print(f'matrix_index max {torch.max(matrix_index)}')
 
                 # outputs = model(sequences)
                 # print(f"\nBatch {batch_idx + 1} Outputs:")
