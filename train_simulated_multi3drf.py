@@ -122,6 +122,7 @@ def parse_args():
     parser.add_argument('--parallel_processing', action='store_true', help='Enable parallel_processing')
     parser.add_argument('--accumulation_steps', type=int, default=1, help='Accumulate gradients')
     parser.add_argument('--is_contrastive_learning', action='store_true', help='Enable contrastive learning')
+    parser.add_argument('--do_not_train', action='store_true', help='Only present the values without training' )
 
     # Plot parameters
     parser.add_argument('--num_cols', type=int, default=5, help='Number of columns in a figure')
@@ -301,6 +302,29 @@ def main():
         learning_rate_dynamics = []
         validation_contra_losses = []
         start_time = time.time()  # Capture the start time
+
+    if args.do_not_train:
+        n = 5
+        model.eval()  # Set the model to evaluation mode
+        with torch.no_grad():  # Disable gradient computation
+            for batch_idx, (random_matrix, output_value, matrix_index) in enumerate(train_loader):
+                if batch_idx >= n:
+                    break  # Exit after processing n batches
+
+                # Print inputs and outputs for the current batch
+                print(f"Batch {batch_idx + 1} Inputs:")
+                print(f'random_matrix min {torch.min(random_matrix)}')
+                print(f'random_matrix max {torch.max(random_matrix)}')
+                print(f'output_value min {torch.min(output_value)}')
+                print(f'output_value max {torch.max(output_value)}')
+                print(f'matrix_index min {torch.min(matrix_index)}')
+                print(f'matrix_index max {torch.max(matrix_index)}')
+
+                # outputs = model(sequences)
+                # print(f"\nBatch {batch_idx + 1} Outputs:")
+                # print(f'output min {torch.min(outputs)}')
+                # print(f'output max {torch.max(outputs)}')
+                print("\n" + "-" * 50 + "\n")
 
     for epoch in range(start_epoch, args.epochs):
         avg_train_loss = trainer.train_one_epoch(train_loader)
