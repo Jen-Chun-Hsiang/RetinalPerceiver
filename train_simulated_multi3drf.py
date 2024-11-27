@@ -28,6 +28,7 @@ from datasets.simulated_dataset import MultiMatrixDataset
 from models.perceiver3d import RetinalPerceiverIO
 from models.cnn3d import RetinalPerceiverIOWithCNN
 from utils.training_procedure import Trainer, Evaluator, save_checkpoint, CheckpointLoader
+from utils.value_inspector import save_distributions
 
 
 def parse_covariance(string):
@@ -305,25 +306,30 @@ def main():
         start_time = time.time()  # Capture the start time
 
     if args.do_not_train:
-        n = 5
         model.eval()  # Set the model to evaluation mode
-        with torch.no_grad():  # Disable gradient computation
-            for batch_idx, (random_matrix, output_value, _) in enumerate(train_loader):
-                if batch_idx >= n:
-                    break  # Exit after processing n batches
+        n = 5
+        plot_file_name = f'{filename_fixed}value_distribution.png'
+        save_distributions(train_loader, n=n, folder_name=savefig_dir, file_name=plot_file_name)
 
-                # Print inputs and outputs for the current batch
-                print(f"Batch {batch_idx + 1} Inputs:")
-                print(f'random_matrix min {torch.min(random_matrix)}')
-                print(f'random_matrix max {torch.max(random_matrix)}')
-                print(f'output_value min {torch.min(output_value)}')
-                print(f'output_value max {torch.max(output_value)}')
 
-                # outputs = model(sequences)
-                # print(f"\nBatch {batch_idx + 1} Outputs:")
-                # print(f'output min {torch.min(outputs)}')
-                # print(f'output max {torch.max(outputs)}')
-                print("\n" + "-" * 50 + "\n")
+        # with torch.no_grad():  # Disable gradient computation
+        #     for batch_idx, (random_matrix, output_value, _) in enumerate(train_loader):
+        #         if batch_idx >= n:
+        #             break  # Exit after processing n batches
+        #
+        #         # Print inputs and outputs for the current batch
+        #         print(f"Batch {batch_idx + 1} Inputs:")
+        #         print(f'random_matrix min {torch.min(random_matrix)}')
+        #         print(f'random_matrix max {torch.max(random_matrix)}')
+        #         print(f'output_value min {torch.min(output_value)}')
+        #         print(f'output_value max {torch.max(output_value)}')
+        #
+        #         # outputs = model(sequences)
+        #         # print(f"\nBatch {batch_idx + 1} Outputs:")
+        #         # print(f'output min {torch.min(outputs)}')
+        #         # print(f'output max {torch.max(outputs)}')
+        #         print("\n" + "-" * 50 + "\n")
+
     else:
         for epoch in range(start_epoch, args.epochs):
             avg_train_loss = trainer.train_one_epoch(train_loader)
