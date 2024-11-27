@@ -325,40 +325,40 @@ def main():
                 # print(f'output min {torch.min(outputs)}')
                 # print(f'output max {torch.max(outputs)}')
                 print("\n" + "-" * 50 + "\n")
+    else:
+        for epoch in range(start_epoch, args.epochs):
+            avg_train_loss = trainer.train_one_epoch(train_loader)
+            training_losses.append(avg_train_loss)
 
-    for epoch in range(start_epoch, args.epochs):
-        avg_train_loss = trainer.train_one_epoch(train_loader)
-        training_losses.append(avg_train_loss)
+            # torch.cuda.empty_cache()
+            avg_val_loss = evaluator.evaluate(val_loader)
+            # scheduler.step(avg_val_loss)
+            scheduler.step(epoch + (epoch / args.epochs))
+            learning_rate_dynamics.append(scheduler.get_last_lr())
+            validation_losses.append(avg_val_loss)
+            avg_val_loss = evaluator_contra.evaluate(val_loader)
+            validation_contra_losses.append(avg_val_loss)
 
-        # torch.cuda.empty_cache()
-        avg_val_loss = evaluator.evaluate(val_loader)
-        # scheduler.step(avg_val_loss)
-        scheduler.step(epoch + (epoch / args.epochs))
-        learning_rate_dynamics.append(scheduler.get_last_lr())
-        validation_losses.append(avg_val_loss)
-        avg_val_loss = evaluator_contra.evaluate(val_loader)
-        validation_contra_losses.append(avg_val_loss)
+            # Print training status
+            if (epoch + 1) % 5 == 0:
+                elapsed_time = time.time() - start_time
+                # Log the epoch and elapsed time, and on a new indented line, log the losses
+                logging.info(
+                    f"{filename_fixed} Epoch [{epoch + 1}/{args.epochs}], Elapsed time: {elapsed_time:.2f} seconds \n"
+                    f"\tTraining Loss: {avg_train_loss:.4f}, Validation Loss: {avg_val_loss:.4f} \n")
 
-        # Print training status
-        if (epoch + 1) % 5 == 0:
-            elapsed_time = time.time() - start_time
-            # Log the epoch and elapsed time, and on a new indented line, log the losses
-            logging.info(
-                f"{filename_fixed} Epoch [{epoch + 1}/{args.epochs}], Elapsed time: {elapsed_time:.2f} seconds \n"
-                f"\tTraining Loss: {avg_train_loss:.4f}, Validation Loss: {avg_val_loss:.4f} \n")
+            # Save checkpoint
+            if (epoch + 1) % 10 == 0:  # Example: Save every 10 epochs
+                checkpoint_filename = f'{filename_fixed}_checkpoint_epoch_{epoch + 1}.pth'
+                logging.info(f"Allocated memory: {torch.cuda.memory_allocated() / 1e6} MB \n"
+                             f"Max memory allocated: {torch.cuda.max_memory_allocated() / 1e6} MB \n")
+                save_checkpoint(epoch, model, optimizer, scheduler, args, training_losses, validation_losses,
+                                validation_contra_losses,
+                                file_path=os.path.join(savemodel_dir, checkpoint_filename))
 
-        # Save checkpoint
-        if (epoch + 1) % 10 == 0:  # Example: Save every 10 epochs
-            checkpoint_filename = f'{filename_fixed}_checkpoint_epoch_{epoch + 1}.pth'
-            logging.info(f"Allocated memory: {torch.cuda.memory_allocated() / 1e6} MB \n"
-                         f"Max memory allocated: {torch.cuda.max_memory_allocated() / 1e6} MB \n")
-            save_checkpoint(epoch, model, optimizer, scheduler, args, training_losses, validation_losses,
-                            validation_contra_losses,
-                            file_path=os.path.join(savemodel_dir, checkpoint_filename))
-
-    if args.parallel_processing:
-        # Clean up
-        dist.destroy_process_group()
+        if args.parallel_processing:
+            # Clean up
+            dist.destroy_process_group()
 
 
 if __name__ == '__main__':
