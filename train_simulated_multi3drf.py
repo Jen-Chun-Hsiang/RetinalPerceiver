@@ -97,6 +97,7 @@ def parse_args():
     # Stimulus specificity
     parser.add_argument('--stimulus_type', type=int, default=4, help='Stimulus type')
     parser.add_argument('--stimulus_type_set', nargs='+', type=int, default=[1], help='Sets of stimulus type')
+    parser.add_argument('is_norm_matrix', action='store_true', help='Normalize the matrix for generating signal')
     # Perceiver specificity
     parser.add_argument('--num_head', type=int, default=4, help='Number of heads in perceiver')
     parser.add_argument('--num_iter', type=int, default=1, help='Number of input reiteration')
@@ -195,7 +196,7 @@ def main():
     '''
 
     # Use param_list in MultiTargetMatrixGenerator
-    multi_target_gen = MultiTargetMatrixGenerator(param_lists)
+    multi_target_gen = MultiTargetMatrixGenerator(param_lists, is_norm_matrix=args.is_norm_matrix)
     target_matrix = multi_target_gen.create_3d_target_matrices(
         input_height=args.input_height, input_width=args.input_width, input_depth=args.input_depth)
 

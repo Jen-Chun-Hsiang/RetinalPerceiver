@@ -4,13 +4,15 @@ import random
 
 
 class TargetMatrixGenerator:
-    def __init__(self, mean=(0, 0), cov=((1, 0), (0, 1)), mean2=None, cov2=None, surround_weight=0.5, device='cpu'):
+    def __init__(self, mean=(0, 0), cov=((1, 0), (0, 1)), mean2=None, cov2=None, surround_weight=0.5,
+                 is_norm_matrix=False, device='cpu'):
         self.mean1 = mean
         self.cov1 = cov
         self.mean2 = mean if mean2 is None else mean2
         self.cov2 = cov2
         self.surround_weight = surround_weight
         self.device = device
+        self.is_norm_matrix = is_norm_matrix
 
     def create_3d_target_matrix(self, input_height, input_width, input_depth, tf_weight_surround=0.2,
                                 tf_sigma_center=0.05, tf_sigma_surround=0.12, tf_mean_center=0.08,
@@ -35,11 +37,11 @@ class TargetMatrixGenerator:
         else:
             gaussian = self.generate_difference_of_2d_gaussians((input_width, input_height), self.surround_weight)
 
-        # normalize spatial filter
-        gaussian = gaussian - np.median(gaussian)
-        gaussian = gaussian / np.sum(np.abs(gaussian))
-        # normalize temporal filter
-        freqf_t = freqf_t / np.sum(np.abs(freqf_t))
+        if self.is_norm_matrix:
+            gaussian = gaussian - np.median(gaussian)
+            gaussian = gaussian / np.sum(np.abs(gaussian))
+            # normalize temporal filter
+            freqf_t = freqf_t / np.sum(np.abs(freqf_t))
 
         # Convert to PyTorch tensors
         gaussian = torch.tensor(gaussian.copy(), dtype=torch.float32).unsqueeze(-1)  # Shape [w, h]
@@ -73,8 +75,8 @@ class TargetMatrixGenerator:
 
 
 class MultiTargetMatrixGenerator(TargetMatrixGenerator):
-    def __init__(self, param_list, device='cpu'):
-        super().__init__(device=device)
+    def __init__(self, param_list, is_norm_matrix=False, device='cpu'):
+        super().__init__(is_norm_matrix=is_norm_matrix, device=device)
         self.param_list = param_list
 
     def create_3d_target_matrices(self, input_height, input_width, input_depth):
