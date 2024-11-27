@@ -328,9 +328,9 @@ def main():
             checkpoint_filename = f'{filename_fixed}_checkpoint_epoch_{epoch + 1}.pth'
             logging.info(f"Allocated memory: {torch.cuda.memory_allocated() / 1e6} MB \n"
                          f"Max memory allocated: {torch.cuda.max_memory_allocated() / 1e6} MB \n")
-            save_checkpoint(epoch, model, optimizer, args, training_losses, validation_losses,
+            save_checkpoint(epoch, model, optimizer, scheduler, args, training_losses, validation_losses,
                             validation_contra_losses,
-                            os.path.join(savemodel_dir, checkpoint_filename))
+                            file_path=os.path.join(savemodel_dir, checkpoint_filename))
 
     if args.parallel_processing:
         # Clean up

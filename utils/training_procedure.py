@@ -184,12 +184,12 @@ class Trainer:
         input_matrices, targets = input_matrices.to(self.device), targets.to(self.device)
         with autocast(device_type="cuda", dtype=torch.float16):
             outputs, _ = self.model(input_matrices, query_vectors)
-            try:
-                assert outputs.shape == targets.shape
-            except Exception as e:
-                print(e)
-                print(f'outputs shape: {outputs.shape}')
-                print(f'targets shape: {targets.shape}')
+            # try:
+            #     assert outputs.shape == targets.shape
+            # except Exception as e:
+            #     print(e)
+            #     print(f'outputs shape: {outputs.shape}')
+            #     print(f'targets shape: {targets.shape}')
 
             loss = self._compute_loss(outputs, targets)
             if torch.isnan(loss).any():
@@ -386,6 +386,7 @@ def save_checkpoint(epoch, model, optimizer, scheduler, args, training_losses,
         'epoch': epoch,
         'model_state_dict': model.state_dict(),
         'optimizer_state_dict': optimizer.state_dict(),
+        'scheduler_state_dict': scheduler.state_dict(),
         'args': args,
         'training_losses': training_losses,
         'validation_losses': validation_losses,
