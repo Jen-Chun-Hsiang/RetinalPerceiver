@@ -307,8 +307,8 @@ def main():
 
     if args.do_not_train:
         model.eval()  # Set the model to evaluation mode
-        n = 100
-        plot_file_name = f'{filename_fixed}value_distribution.png'
+        n = 1000
+        plot_file_name = f'{filename_fixed}value_distribution_n{n}.png'
         save_distributions(train_loader, n=n, folder_name=savefig_dir, file_name=plot_file_name)
 
 
