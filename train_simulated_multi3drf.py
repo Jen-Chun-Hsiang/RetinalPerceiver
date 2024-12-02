@@ -124,7 +124,7 @@ def parse_args():
     parser.add_argument('--parallel_processing', action='store_true', help='Enable parallel_processing')
     parser.add_argument('--accumulation_steps', type=int, default=1, help='Accumulate gradients')
     parser.add_argument('--is_contrastive_learning', action='store_true', help='Enable contrastive learning')
-    parser.add_argument('--do_not_train', action='store_true', help='Only present the values without training' )
+    parser.add_argument('--do_not_train', action='store_true', help='Only present the values without training')
 
     # Plot parameters
     parser.add_argument('--num_cols', type=int, default=5, help='Number of columns in a figure')

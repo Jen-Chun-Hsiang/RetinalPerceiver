@@ -31,6 +31,7 @@ from utils.training_procedure import Trainer, Evaluator, save_checkpoint, Checkp
 from utils.loss_function import loss_functions
 from utils.array_funcs import split_array, load_keyword_based_arrays, VirtualArraySampler, calculate_num_sets, ZarrSampler
 from utils.helper import convert_none_to_nan
+from utils.value_inspector import save_distributions
 
 
 def parse_covariance(string):
@@ -116,6 +117,7 @@ def parse_args():
     parser.add_argument('--num_cols', type=int, default=5, help='Number of columns in a figure')
     parser.add_argument('--add_sampler', action='store_true', help='Enable efficient sampler for dataset')
     parser.add_argument('--num_worker', type=int, default=0, help='Use to offline loading data in batch')
+    parser.add_argument('--do_not_train', action='store_true', help='Only present the values without training')
 
     return parser.parse_args()
 
@@ -312,81 +314,88 @@ def main():
     num_train_sets = len(train_indices_sets)
     num_val_sets = len(val_indices_sets)
 
-    for epoch in range(start_epoch, args.epochs):
-        total_train_loss = 0
-        total_val_loss = 0
-        for set_index, train_indices in enumerate(train_indices_sets):
-            data_array = data_array_sampler.sample(train_indices)
-            query_index = query_index_sampler.sample(train_indices)
-            firing_rate_array = firing_rate_array_sampler.sample(train_indices)
+    if args.do_not_train:
+        model.eval()  # Set the model to evaluation mode
+        n = 1000
+        plot_file_name = f'{filename_fixed}value_distribution_n{n}.png'
+        save_distributions(train_loader, n=n, folder_name=savefig_dir, file_name=plot_file_name)
 
-            train_dataset = RetinalDataset(
-                data_array, query_index, firing_rate_array, image_root_dir,
-                device=device, cache_size=args.cache_size,
-                image_loading_method=args.image_loading_method
-            )
-            train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True,
-                                      num_workers=args.num_worker, pin_memory=True)
-            avg_train_loss = trainer.train_one_epoch(train_loader)
-            total_train_loss += avg_train_loss
+    else:
+        for epoch in range(start_epoch, args.epochs):
+            total_train_loss = 0
+            total_val_loss = 0
+            for set_index, train_indices in enumerate(train_indices_sets):
+                data_array = data_array_sampler.sample(train_indices)
+                query_index = query_index_sampler.sample(train_indices)
+                firing_rate_array = firing_rate_array_sampler.sample(train_indices)
 
-        # Scheduler step
-        if args.schedule_method.lower() == 'rlrp':
-            scheduler.step(avg_train_loss)
-        elif args.schedule_method.lower() == 'cawr':
-            scheduler.step(epoch + (epoch / args.epochs))
-
-        training_losses.append(total_train_loss / num_train_sets)
-        learning_rate_dynamics.append(scheduler.get_last_lr())
-
-        for set_index, val_indices in enumerate(val_indices_sets):
-            data_array = data_array_sampler.sample(val_indices)
-            query_index = query_index_sampler.sample(val_indices)
-            firing_rate_array = firing_rate_array_sampler.sample(val_indices)
-
-            val_dataset = RetinalDataset(
-                data_array, query_index, firing_rate_array, image_root_dir,
-                device=device, cache_size=args.cache_size,
-                image_loading_method=args.image_loading_method
+                train_dataset = RetinalDataset(
+                    data_array, query_index, firing_rate_array, image_root_dir,
+                    device=device, cache_size=args.cache_size,
+                    image_loading_method=args.image_loading_method
                 )
-            val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False,
-                                    num_workers=args.num_worker, pin_memory=True)
-            avg_val_loss = evaluator.evaluate(val_loader)
-            total_val_loss += avg_val_loss
+                train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True,
+                                          num_workers=args.num_worker, pin_memory=True)
+                avg_train_loss = trainer.train_one_epoch(train_loader)
+                total_train_loss += avg_train_loss
 
-        validation_losses.append(total_val_loss / num_val_sets)
+            # Scheduler step
+            if args.schedule_method.lower() == 'rlrp':
+                scheduler.step(avg_train_loss)
+            elif args.schedule_method.lower() == 'cawr':
+                scheduler.step(epoch + (epoch / args.epochs))
 
-        # Print training status
-        if (epoch + 1) % 5 == 0:
-            elapsed_time = time.time() - start_time
-            # Log the epoch and elapsed time, and on a new indented line, log the losses
-            logging.info(
-                f"{filename_fixed} Epoch [{epoch + 1}/{args.epochs}], Elapsed time: {elapsed_time:.2f} seconds \n"
-                f"\tTraining Loss: {avg_train_loss:.4f}, Validation Loss: {avg_val_loss:.4f} \n")
+            training_losses.append(total_train_loss / num_train_sets)
+            learning_rate_dynamics.append(scheduler.get_last_lr())
 
-        # Save checkpoint
-        if (epoch + 1) % 10 == 0:  # Example: Save every 10 epochs
-            checkpoint_filename = f'{filename_fixed}_checkpoint_epoch_{epoch + 1}.pth'
-            logging.info(f"Allocated memory: {torch.cuda.memory_allocated() / 1e6} MB \n"
-                         f"Max memory allocated: {torch.cuda.max_memory_allocated() / 1e6} MB \n")
+            for set_index, val_indices in enumerate(val_indices_sets):
+                data_array = data_array_sampler.sample(val_indices)
+                query_index = query_index_sampler.sample(val_indices)
+                firing_rate_array = firing_rate_array_sampler.sample(val_indices)
 
-            # Assert statements to check that neither variable is None or undefined
-            assert training_losses is not None, "training_losses is None or undefined"
-            assert validation_losses is not None, "validation_losses is None or undefined"
+                val_dataset = RetinalDataset(
+                    data_array, query_index, firing_rate_array, image_root_dir,
+                    device=device, cache_size=args.cache_size,
+                    image_loading_method=args.image_loading_method
+                    )
+                val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False,
+                                        num_workers=args.num_worker, pin_memory=True)
+                avg_val_loss = evaluator.evaluate(val_loader)
+                total_val_loss += avg_val_loss
 
-            save_checkpoint(epoch, model, optimizer, scheduler, args, training_losses, validation_losses,
-                            learning_rate_dynamics=learning_rate_dynamics,
-                            file_path=os.path.join(savemodel_dir, checkpoint_filename))
+            validation_losses.append(total_val_loss / num_val_sets)
 
-            timing_data = trainer.get_timing_data()
-            timing_data_dict = {
-                "data_loading_times": convert_none_to_nan(timing_data["data_loading_times"]),
-                "data_transfer_times": convert_none_to_nan(timing_data["data_transfer_times"]),
-                "model_processing_times": convert_none_to_nan(timing_data["model_processing_times"])
-            }
-            file_path = os.path.join(save_timer_dir, f"{filename_fixed}_timing_data_epoch_{epoch + 1}.mat")
-            savemat(file_path, timing_data_dict)
-            trainer.reset_timing_data()
+            # Print training status
+            if (epoch + 1) % 5 == 0:
+                elapsed_time = time.time() - start_time
+                # Log the epoch and elapsed time, and on a new indented line, log the losses
+                logging.info(
+                    f"{filename_fixed} Epoch [{epoch + 1}/{args.epochs}], Elapsed time: {elapsed_time:.2f} seconds \n"
+                    f"\tTraining Loss: {avg_train_loss:.4f}, Validation Loss: {avg_val_loss:.4f} \n")
+
+            # Save checkpoint
+            if (epoch + 1) % 10 == 0:  # Example: Save every 10 epochs
+                checkpoint_filename = f'{filename_fixed}_checkpoint_epoch_{epoch + 1}.pth'
+                logging.info(f"Allocated memory: {torch.cuda.memory_allocated() / 1e6} MB \n"
+                             f"Max memory allocated: {torch.cuda.max_memory_allocated() / 1e6} MB \n")
+
+                # Assert statements to check that neither variable is None or undefined
+                assert training_losses is not None, "training_losses is None or undefined"
+                assert validation_losses is not None, "validation_losses is None or undefined"
+
+                save_checkpoint(epoch, model, optimizer, scheduler, args, training_losses, validation_losses,
+                                learning_rate_dynamics=learning_rate_dynamics,
+                                file_path=os.path.join(savemodel_dir, checkpoint_filename))
+
+                timing_data = trainer.get_timing_data()
+                timing_data_dict = {
+                    "data_loading_times": convert_none_to_nan(timing_data["data_loading_times"]),
+                    "data_transfer_times": convert_none_to_nan(timing_data["data_transfer_times"]),
+                    "model_processing_times": convert_none_to_nan(timing_data["model_processing_times"])
+                }
+                file_path = os.path.join(save_timer_dir, f"{filename_fixed}_timing_data_epoch_{epoch + 1}.mat")
+                savemat(file_path, timing_data_dict)
+                trainer.reset_timing_data()
 
 
 if __name__ == '__main__':
