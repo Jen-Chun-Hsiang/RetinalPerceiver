@@ -318,6 +318,16 @@ def main():
         model.eval()  # Set the model to evaluation mode
         n = 1000
         plot_file_name = f'{filename_fixed}value_distribution_n{n}.png'
+        set_index, train_indices = train_indices_sets[0]
+        data_array = data_array_sampler.sample(train_indices)
+        query_index = query_index_sampler.sample(train_indices)
+        firing_rate_array = firing_rate_array_sampler.sample(train_indices)
+        train_dataset = RetinalDataset(
+            data_array, query_index, firing_rate_array, image_root_dir,
+            device=device, cache_size=args.cache_size,
+            image_loading_method=args.image_loading_method
+        )
+        train_loader = DataLoader(train_dataset, batch_size=1, shuffle=True, num_workers=0)
         save_distributions(train_loader, n=n, folder_name=savefig_dir, file_name=plot_file_name)
 
     else:
