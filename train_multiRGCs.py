@@ -318,7 +318,8 @@ def main():
         model.eval()  # Set the model to evaluation mode
         n = 1000
         plot_file_name = f'{filename_fixed}value_distribution_n{n}.png'
-        set_index, train_indices = train_indices_sets[0]
+
+        train_indices = train_indices_sets[0]
         data_array = data_array_sampler.sample(train_indices)
         query_index = query_index_sampler.sample(train_indices)
         firing_rate_array = firing_rate_array_sampler.sample(train_indices)
