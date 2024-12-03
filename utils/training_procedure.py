@@ -98,9 +98,10 @@ class Trainer:
         if len(train_loader) == 0:
             raise ValueError("train_loader is empty. The training process requires a non-empty train_loader.")
 
+        data_iterator = iter(train_loader)
         for batch_idx in range(len(train_loader)):
             with timer(self.data_loading_times):
-                data = next(iter(train_loader))
+                data = next(data_iterator)
             if self.is_query_array:
                 if self.is_contrastive_learning:
                     loss = self._process_batch_with_query_contrast(data)
