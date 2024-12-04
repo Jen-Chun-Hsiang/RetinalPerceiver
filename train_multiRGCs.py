@@ -412,7 +412,8 @@ def main():
                 timing_data_dict = {
                     "data_loading_times": convert_none_to_nan(timing_data["data_loading_times"]),
                     "data_transfer_times": convert_none_to_nan(timing_data["data_transfer_times"]),
-                    "model_processing_times": convert_none_to_nan(timing_data["model_processing_times"])
+                    "model_processing_times": convert_none_to_nan(timing_data["model_processing_times"]),
+                    "model_backpropagate_times": convert_none_to_nan(timing_data["model_backpropagate_times"])
                 }
                 file_path = os.path.join(save_timer_dir, f"{filename_fixed}_timing_data_epoch_{epoch + 1}.mat")
                 savemat(file_path, timing_data_dict)

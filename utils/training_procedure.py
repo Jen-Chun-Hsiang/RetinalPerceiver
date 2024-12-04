@@ -3,43 +3,7 @@ from torch.utils.data import DataLoader
 from .loss_function import CosineNegativePairLoss
 from torch import GradScaler, autocast
 import os
-from contextlib import contextmanager
-import time
-import numpy as np
-from operator import itemgetter
-
-
-@contextmanager
-def timer(log_values, tau=0.99, n=100):
-    """Context manager to time a code block and update log values with min, max, and moving average."""
-
-    # Only update every nth iteration
-    log_values['counter'] += 1
-    if log_values['counter'] < n:
-        yield  # No timing needed for this iteration
-        return
-
-    # Start timing
-    start_time = time.perf_counter()
-    yield  # Run the block of code inside the `with` statement
-    end_time = time.perf_counter()
-
-    duration = end_time - start_time
-
-    # Handle the first-time setting of values
-    if log_values['min'] is None:
-        log_values['min'] = duration
-        log_values['max'] = duration
-        log_values['moving_avg'] = duration
-    else:
-        # Update minimum and maximum
-        log_values['min'] = min(log_values['min'], duration)
-        log_values['max'] = max(log_values['max'], duration)
-
-        # Update moving average with exponential weighting
-        log_values['moving_avg'] = tau * log_values['moving_avg'] + (1 - tau) * duration
-
-    log_values['counter'] = 0  # Reset the counter after the update
+from utils.helper import PersistentTimer
 
 
 class Trainer:
@@ -48,7 +12,7 @@ class Trainer:
                  query_encoder=None, query_permutator=None, series_ids=None, is_feature_L1=False,
                  is_retinal_dataset=True,
                  margin=0.1, temperature=0.1, lambda_l1=0.01, contrastive_factor=0.01,
-                 l1_weight=0.01, masking_pos=None, masking_prob=0.5):
+                 l1_weight=0.01, masking_pos=None, masking_prob=0.5, timer_tau=0.99, timer_n=100):
         self.model = model
         self.criterion = criterion
         self.optimizer = optimizer
@@ -59,6 +23,12 @@ class Trainer:
         self.data_loading_times = {'counter': 0, 'min': None, 'max': None, 'moving_avg': None}
         self.data_transfer_times = {'counter': 0, 'min': None, 'max': None, 'moving_avg': None}
         self.model_processing_times = {'counter': 0, 'min': None, 'max': None, 'moving_avg': None}
+        self.model_backpropagate_times = {'counter': 0, 'min': None, 'max': None, 'moving_avg': None}
+        self.timer_loading = PersistentTimer(self.data_loading_times, tau=timer_tau, n=timer_n)
+        self.timer_transfer = PersistentTimer(self.data_transfer_times, tau=timer_tau, n=timer_n)
+        self.timer_processing = PersistentTimer(self.model_processing_times, tau=timer_tau, n=timer_n)
+        self.timer_backpropagate = PersistentTimer(self.model_backpropagate_times, tau=timer_tau, n=timer_n)
+
         self.masking_pos = masking_pos
         self.masking_prob = masking_prob
         self.is_masking = False
@@ -100,7 +70,7 @@ class Trainer:
 
         data_iterator = iter(train_loader)
         for batch_idx in range(len(train_loader)):
-            with timer(self.data_loading_times):
+            with self.timer_loading(self.data_loading_times):
                 data = next(data_iterator)
             if self.is_query_array:
                 if self.is_contrastive_learning:
@@ -115,17 +85,18 @@ class Trainer:
             else:
                 loss = self._process_batch(data)
 
-            if loss is not None:
-                self._update_parameters(loss)
-                total_train_loss += loss.item()
-            else:
-                raise ValueError(f"Loss is None for batch {batch_idx}. Check your model's output and loss function.")
+            with self.timer_backpropagate:
+                if loss is not None:
+                    self._update_parameters(loss)
+                    total_train_loss += loss.item()
+                else:
+                    raise ValueError(f"Loss is None for batch {batch_idx}. Check your model's output and loss function.")
 
-            if (batch_idx + 1) % self.accumulation_steps == 0 or (batch_idx + 1) == len(train_loader):
-                # self.optimizer.step()  # Perform optimization step
-                self.scaler.step(self.optimizer)
-                self.optimizer.zero_grad()  # Zero gradients for the next accumulation
-                self.scaler.update()
+                if (batch_idx + 1) % self.accumulation_steps == 0 or (batch_idx + 1) == len(train_loader):
+                    # self.optimizer.step()  # Perform optimization step
+                    self.scaler.step(self.optimizer)
+                    self.optimizer.zero_grad()  # Zero gradients for the next accumulation
+                    self.scaler.update()
 
         avg_train_loss = total_train_loss / len(train_loader)
         return avg_train_loss
@@ -181,23 +152,25 @@ class Trainer:
         input_matrices, targets, matrix_indices = data
         # query_vectors = self.query_array[matrix_indices]
         query_vectors = self.query_array[matrix_indices.squeeze(), :, :]
-        query_vectors = query_vectors.float().to(self.device)
-        input_matrices, targets = input_matrices.to(self.device), targets.to(self.device)
-        with autocast(device_type="cuda", dtype=torch.float16):
-            outputs, _ = self.model(input_matrices, query_vectors)
-            # try:
-            #     assert outputs.shape == targets.shape
-            # except Exception as e:
-            #     print(e)
-            #     print(f'outputs shape: {outputs.shape}')
-            #     print(f'targets shape: {targets.shape}')
+        with self.timer_transfer:
+            query_vectors = query_vectors.float().to(self.device)
+            input_matrices, targets = input_matrices.to(self.device), targets.to(self.device)
+        with self.timer_processing:
+            with autocast(device_type="cuda", dtype=torch.float16):
+                outputs, _ = self.model(input_matrices, query_vectors)
+                # try:
+                #     assert outputs.shape == targets.shape
+                # except Exception as e:
+                #     print(e)
+                #     print(f'outputs shape: {outputs.shape}')
+                #     print(f'targets shape: {targets.shape}')
 
-            loss = self._compute_loss(outputs, targets)
-            if torch.isnan(loss).any():
-                print(f"loss: {loss} \n")
-                print(f"outputs: {outputs} \n")
-                print(f"targets: {targets} \n")
-                raise RuntimeError("Output value contain nan")
+                loss = self._compute_loss(outputs, targets)
+                if torch.isnan(loss).any():
+                    print(f"loss: {loss} \n")
+                    print(f"outputs: {outputs} \n")
+                    print(f"targets: {targets} \n")
+                    raise RuntimeError("Output value contain nan")
 
         return loss
 
@@ -256,7 +229,8 @@ class Trainer:
         return {
             "data_loading_times": self.data_loading_times,
             "data_transfer_times": self.data_transfer_times,
-            "model_processing_times": self.model_processing_times
+            "model_processing_times": self.model_processing_times,
+            "model_backpropagate_times": self.model_backpropagate_times
         }
 
     def reset_timing_data(self):
@@ -264,6 +238,7 @@ class Trainer:
         self.data_loading_times = {'counter': 0, 'min': None, 'max': None, 'moving_avg': None}
         self.data_transfer_times = {'counter': 0, 'min': None, 'max': None, 'moving_avg': None}
         self.model_processing_times = {'counter': 0, 'min': None, 'max': None, 'moving_avg': None}
+        self.model_backpropagate_times = {'counter': 0, 'min': None, 'max': None, 'moving_avg': None}
 
 
 
