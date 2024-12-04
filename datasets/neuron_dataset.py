@@ -62,7 +62,7 @@ def precompute_image_paths(data_array, root_dir):
 
 class RetinalDataset(Dataset):
     def __init__(self, data_array, query_series, firing_rate_array, root_dir, chunk_indices=None, chunk_size=None,
-                 device='cuda', cache_size=100, image_loading_method='hdf5', start_time=None):
+                 cache_size=100, image_loading_method='hdf5', start_time=None):
         """
         Initializes the RetinalDataset.
 
@@ -80,7 +80,6 @@ class RetinalDataset(Dataset):
         self.root_dir = root_dir
         self.chunk_indices = chunk_indices
         self.chunk_size = chunk_size
-        self.device = device
         self.cache_size = cache_size
         self.image_loading_method = image_loading_method
         self.image_tensor_cache = OrderedDict()
