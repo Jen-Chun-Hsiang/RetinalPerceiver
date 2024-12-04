@@ -29,7 +29,8 @@ from models.perceiver3d import RetinalPerceiverIO
 from models.cnn3d import RetinalPerceiverIOWithCNN
 from utils.training_procedure import Trainer, Evaluator, save_checkpoint, CheckpointLoader
 from utils.loss_function import loss_functions
-from utils.array_funcs import split_array, load_keyword_based_arrays, VirtualArraySampler, calculate_num_sets, ZarrSampler
+from utils.array_funcs import split_array, load_keyword_based_arrays, VirtualArraySampler, calculate_num_sets, \
+    ZarrSampler
 from utils.helper import convert_none_to_nan
 from utils.value_inspector import save_distributions
 
@@ -118,6 +119,7 @@ def parse_args():
     parser.add_argument('--add_sampler', action='store_true', help='Enable efficient sampler for dataset')
     parser.add_argument('--num_worker', type=int, default=0, help='Use to offline loading data in batch')
     parser.add_argument('--do_not_train', action='store_true', help='Only present the values without training')
+    parser.add_argument('--is_GPU', action='store_true', help='Using GPUs for accelaration')
 
     return parser.parse_args()
 
@@ -152,13 +154,14 @@ def main():
                         level=logging.INFO,
                         format='%(asctime)s %(levelname)s:%(message)s')
 
-    # Check if CUDA is available
-    if not torch.cuda.is_available():
-        raise RuntimeError("CUDA is not available. Please check your GPU and CUDA installation.")
-
-    # If CUDA is available, continue with the rest of the script
-    device = torch.device("cuda")
-    torch.cuda.empty_cache()
+    if args.is_GPU:
+        # Check if CUDA is available
+        if not torch.cuda.is_available():
+            raise RuntimeError("CUDA is not available. Please check your GPU and CUDA installation.")
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        torch.cuda.empty_cache()
+    else:
+        device = 'cpu'
 
     # num_workers = os.cpu_count()
     # mp.set_start_method('spawn', force=True)
@@ -203,7 +206,7 @@ def main():
     query_encoder = SeriesEncoder(getattr(config, 'query_max_values', None),
                                   getattr(config, 'query_lengths', None),
                                   encoding_method=args.encoding_method,
-                                  encoding_type= getattr(config, 'encoding_type', None),
+                                  encoding_type=getattr(config, 'encoding_type', None),
                                   shuffle_components=getattr(config, 'query_shuffle_components', None))
     # query_encoder = SeriesEncoder(max_values, lengths, shuffle_components=shuffle_components)
     logging.info(f'(bef) query_array size:{query_array.shape} \n')
@@ -326,8 +329,7 @@ def main():
         firing_rate_array = firing_rate_array_sampler.sample(train_indices)
         train_dataset = RetinalDataset(
             data_array, query_index, firing_rate_array, image_root_dir,
-            device=device, cache_size=args.cache_size,
-            image_loading_method=args.image_loading_method
+            cache_size=args.cache_size, image_loading_method=args.image_loading_method
         )
         train_loader = DataLoader(train_dataset, batch_size=1, shuffle=True, num_workers=0)
         save_distributions(train_loader, n=n, folder_name=savefig_dir, file_name=plot_file_name)
@@ -343,8 +345,7 @@ def main():
 
                 train_dataset = RetinalDataset(
                     data_array, query_index, firing_rate_array, image_root_dir,
-                    device=device, cache_size=args.cache_size,
-                    image_loading_method=args.image_loading_method
+                    cache_size=args.cache_size, image_loading_method=args.image_loading_method
                 )
                 train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True,
                                           num_workers=args.num_worker, pin_memory=True)
@@ -367,9 +368,8 @@ def main():
 
                 val_dataset = RetinalDataset(
                     data_array, query_index, firing_rate_array, image_root_dir,
-                    device=device, cache_size=args.cache_size,
-                    image_loading_method=args.image_loading_method
-                    )
+                    cache_size=args.cache_size, image_loading_method=args.image_loading_method
+                )
                 val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False,
                                         num_workers=args.num_worker, pin_memory=True)
                 avg_val_loss = evaluator.evaluate(val_loader)
