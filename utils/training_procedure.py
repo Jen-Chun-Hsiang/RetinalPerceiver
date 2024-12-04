@@ -71,7 +71,7 @@ class Trainer:
 
         data_iterator = iter(train_loader)
         for batch_idx in range(len(train_loader)):
-            with self.timer_loading(self.data_loading_times):
+            with self.timer_loading:
                 data = next(data_iterator)
             if self.is_query_array:
                 if self.is_contrastive_learning:
