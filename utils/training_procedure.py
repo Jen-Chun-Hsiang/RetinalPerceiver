@@ -65,7 +65,7 @@ class Trainer:
         self.model.train()  # Set the model to training mode
         total_train_loss = 0
         self.optimizer.zero_grad()  # Zero gradients at the start of the epoch
-
+        print(f'length of train_loader: {len(train_loader)}')
         if len(train_loader) == 0:
             raise ValueError("train_loader is empty. The training process requires a non-empty train_loader.")
 
@@ -99,8 +99,8 @@ class Trainer:
                     self.optimizer.zero_grad()  # Zero gradients for the next accumulation
                     self.scaler.update()
 
-            print(f'exam_batch_idx: {self.exam_batch_idx}')
-            print(f'batch_idx: {batch_idx}')
+            #print(f'exam_batch_idx: {self.exam_batch_idx}')
+            #print(f'batch_idx: {batch_idx}')
             if self.exam_batch_idx is not None:
                 if batch_idx == self.exam_batch_idx:
                     print(f"Batch {batch_idx}:")
