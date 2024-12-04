@@ -10,7 +10,7 @@ class Trainer:
     def __init__(self, model, criterion, optimizer, device, accumulation_steps=1,
                  query_array=None, is_contrastive_learning=False, is_selective_layers=False,
                  query_encoder=None, query_permutator=None, series_ids=None, is_feature_L1=False,
-                 is_retinal_dataset=True,
+                 is_retinal_dataset=True, exam_batch_idx=None,
                  margin=0.1, temperature=0.1, lambda_l1=0.01, contrastive_factor=0.01,
                  l1_weight=0.01, masking_pos=None, masking_prob=0.5, timer_tau=0.99, timer_n=100):
         self.model = model
@@ -24,6 +24,7 @@ class Trainer:
         self.data_transfer_times = {'counter': 0, 'min': None, 'max': None, 'moving_avg': None}
         self.model_processing_times = {'counter': 0, 'min': None, 'max': None, 'moving_avg': None}
         self.model_backpropagate_times = {'counter': 0, 'min': None, 'max': None, 'moving_avg': None}
+        self.exam_batch_idx = exam_batch_idx
         self.timer_loading = PersistentTimer(self.data_loading_times, tau=timer_tau, n=timer_n)
         self.timer_transfer = PersistentTimer(self.data_transfer_times, tau=timer_tau, n=timer_n)
         self.timer_processing = PersistentTimer(self.model_processing_times, tau=timer_tau, n=timer_n)
@@ -97,6 +98,15 @@ class Trainer:
                     self.scaler.step(self.optimizer)
                     self.optimizer.zero_grad()  # Zero gradients for the next accumulation
                     self.scaler.update()
+
+            if self.exam_batch_idx is not None:
+                if batch_idx == self.exam_batch_idx:
+                    print(f"Batch {batch_idx}:")
+                    print(f"Data Loading: {self.data_loading_times}")
+                    print(f"Data Transfer: {self.data_transfer_times}")
+                    print(f"Processing: {self.model_processing_times}")
+                    print(f"Backpropagation: {self.model_backpropagate_times}")
+                    break
 
         avg_train_loss = total_train_loss / len(train_loader)
         return avg_train_loss

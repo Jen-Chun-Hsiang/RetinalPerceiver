@@ -120,6 +120,10 @@ def parse_args():
     parser.add_argument('--num_worker', type=int, default=0, help='Use to offline loading data in batch')
     parser.add_argument('--do_not_train', action='store_true', help='Only present the values without training')
     parser.add_argument('--is_GPU', action='store_true', help='Using GPUs for accelaration')
+    parser.add_argument('--exam_batch_idx', type=int, default=None, help='examine the timer and stop code in the middle')
+    parser.add_argument('--timer_tau', type=float, default=0.99, help='Set timer tau')
+    parser.add_argument('--timer_n', type=int, default=200, help='Set timer n')
+
 
     return parser.parse_args()
 
@@ -277,7 +281,8 @@ def main():
         scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=5, T_mult=2, eta_min=1e-6)
     # Initialize the Trainer
     trainer = Trainer(model, criterion, optimizer, device, args.accumulation_steps,
-                      query_array=query_array)
+                      query_array=query_array, exam_batch_idx=args.exam_batch_idx, timer_tau=args.timer_tau,
+                      timer_n=args.timer_n)
     # Initialize the Evaluator
     evaluator = Evaluator(model, criterion, device, query_array=query_array)
 
@@ -356,6 +361,11 @@ def main():
                                               num_workers=args.num_worker, pin_memory=True, persistent_workers=False)
                 avg_train_loss = trainer.train_one_epoch(train_loader)
                 total_train_loss += avg_train_loss
+
+                if args.exam_batch_idx is not None:
+                    break
+            if args.exam_batch_idx is not None:
+                break
 
             # Scheduler step
             if args.schedule_method.lower() == 'rlrp':
