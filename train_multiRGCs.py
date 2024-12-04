@@ -363,8 +363,10 @@ def main():
                 total_train_loss += avg_train_loss
 
                 if args.exam_batch_idx is not None:
+                    logging.info(f'end at set_index: {set_index} \n')
                     break
             if args.exam_batch_idx is not None:
+                logging.info(f'end at epoch: {epoch} \n')
                 break
 
             # Scheduler step
