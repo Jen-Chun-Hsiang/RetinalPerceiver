@@ -347,8 +347,11 @@ def main():
                     data_array, query_index, firing_rate_array, image_root_dir,
                     cache_size=args.cache_size, image_loading_method=args.image_loading_method
                 )
-                train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True,
-                                          num_workers=args.num_worker, pin_memory=True)
+                if args.num_worker == 0:
+                    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
+                else:
+                    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True,
+                                              num_workers=args.num_worker, pin_memory=True, persistent_workers=False)
                 avg_train_loss = trainer.train_one_epoch(train_loader)
                 total_train_loss += avg_train_loss
 
@@ -370,8 +373,12 @@ def main():
                     data_array, query_index, firing_rate_array, image_root_dir,
                     cache_size=args.cache_size, image_loading_method=args.image_loading_method
                 )
-                val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False,
-                                        num_workers=args.num_worker, pin_memory=True)
+                if args.num_worker == 0:
+                    val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=True)
+                else:
+                    val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=True,
+                                            num_workers=args.num_worker, pin_memory=True, persistent_workers=False)
+
                 avg_val_loss = evaluator.evaluate(val_loader)
                 total_val_loss += avg_val_loss
 
