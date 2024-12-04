@@ -320,7 +320,7 @@ def main():
 
     if args.do_not_train:
         model.eval()  # Set the model to evaluation mode
-        n = 1000
+        n = 100
         plot_file_name = f'{filename_fixed}value_distribution_n{n}.png'
 
         train_indices = train_indices_sets[0]
