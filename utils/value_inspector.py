@@ -4,7 +4,7 @@ import torch
 import numpy as np
 
 
-def save_distributions(train_loader, n, folder_name, file_name):
+def save_distributions(train_loader, n, folder_name, file_name, logging=None):
     """
     Accumulates values from batches, plots 1D distributions, and saves the plots.
 
@@ -30,6 +30,8 @@ def save_distributions(train_loader, n, folder_name, file_name):
             # Flatten tensors and accumulate
             all_random_matrix.append(random_matrix.view(-1).cpu().numpy())
             all_output_value.append(output_value.view(-1).cpu().numpy())
+            if logging is not None:
+                logging.info(f'batch_idx: {batch_idx} \n')
 
     # Concatenate accumulated values
     all_random_matrix = np.concatenate(all_random_matrix)

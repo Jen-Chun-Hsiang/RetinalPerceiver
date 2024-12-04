@@ -331,8 +331,10 @@ def main():
             data_array, query_index, firing_rate_array, image_root_dir,
             cache_size=args.cache_size, image_loading_method=args.image_loading_method
         )
+        logging.info(f'Initiate dataset... \n')
         train_loader = DataLoader(train_dataset, batch_size=1, shuffle=True)
-        save_distributions(train_loader, n=n, folder_name=savefig_dir, file_name=plot_file_name)
+        logging.info(f'Initiate dataloader... \n')
+        save_distributions(train_loader, n=n, folder_name=savefig_dir, file_name=plot_file_name, logging=logging)
 
     else:
         for epoch in range(start_epoch, args.epochs):

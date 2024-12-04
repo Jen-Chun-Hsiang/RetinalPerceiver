@@ -15,8 +15,6 @@ from utils.array_funcs import update_unique_array, find_matching_indices_in_arra
 from utils.time_manager import TimeFunctionRun
 
 
-
-
 def get_frames_by_indices(hdf5_file, frame_indices, image_size=(800, 600)):
     """
     Retrieve specific frames from an HDF5 file based on a set of indices with pre-allocation.
@@ -150,7 +148,6 @@ class RetinalDataset(Dataset):
             print(f"[{elapsed_time:.2f}s] Worker {worker_id} processing index {idx}")
 
         return images_3d, firing_rate, query_id  # output tensor in cpu
-
 
     def load_data(self, experiment_id, session_id, frame_ids):
         images_3d = torch.empty((len(frame_ids),) + self.image_shape[-2:], dtype=torch.float32)
@@ -295,7 +292,8 @@ def filter_and_merge_data(exp_session_table, exp_neuron_table, selected_experime
     # Include sessions if included_session_table is provided
     if included_session_table is not None:
         included_sessions = included_session_table[['experiment_id', 'session_id']]
-        exp_session_table = pd.merge(exp_session_table, included_sessions, on=['experiment_id', 'session_id'], how='inner')
+        exp_session_table = pd.merge(exp_session_table, included_sessions, on=['experiment_id', 'session_id'],
+                                     how='inner')
 
     # Include neurons if included_neuron_table is provided before merging
     if included_neuron_table is not None:
@@ -309,7 +307,8 @@ def filter_and_merge_data(exp_session_table, exp_neuron_table, selected_experime
     if excluded_session_table is not None:
         excluded_sessions = excluded_session_table.copy()
         excluded_sessions['exclude'] = True
-        merged_df = pd.merge(merged_df, excluded_sessions[['experiment_id', 'session_id', 'exclude']], on=['experiment_id', 'session_id'], how='left')
+        merged_df = pd.merge(merged_df, excluded_sessions[['experiment_id', 'session_id', 'exclude']],
+                             on=['experiment_id', 'session_id'], how='left')
         merged_df = merged_df[merged_df['exclude'] != True]
         merged_df.drop(columns=['exclude'], inplace=True)
 
@@ -317,7 +316,8 @@ def filter_and_merge_data(exp_session_table, exp_neuron_table, selected_experime
     if excluded_neuron_table is not None:
         excluded_neurons = excluded_neuron_table.copy()
         excluded_neurons['exclude'] = True
-        merged_df = pd.merge(merged_df, excluded_neurons[['experiment_id', 'neuron_id', 'exclude']], on=['experiment_id', 'neuron_id'], how='left')
+        merged_df = pd.merge(merged_df, excluded_neurons[['experiment_id', 'neuron_id', 'exclude']],
+                             on=['experiment_id', 'neuron_id'], how='left')
         merged_df = merged_df[merged_df['exclude'] != True]
         merged_df.drop(columns=['exclude'], inplace=True)
 
@@ -421,7 +421,7 @@ class DataConstructor:
                 session_data[start_row:end_row, :3] = [experiment_id, session_id, neuron_id]
 
                 # Firing rate data as the fourth column (Get the id correct by -1)
-                firing_rate_data = firing_rate_array[firing_rate_index[:, 0], neuron_id-1]
+                firing_rate_data = firing_rate_array[firing_rate_index[:, 0], neuron_id - 1]
 
                 session_fr_data[start_row:end_row, 0] = firing_rate_data
 
@@ -495,13 +495,16 @@ class DataConstructor:
 
             if session_index == 0:
                 z_session_data_saved = zarr.open(session_data_path, mode='w', shape=session_data.shape, dtype='int32',
-                                    chunks=(self.chunk_size, session_data.shape[1]))
+                                                 chunks=(self.chunk_size, session_data.shape[1]))
                 z_session_data_saved[:] = session_data
-                z_session_fr_data_saved = zarr.open(session_fr_path, mode='w', shape=session_fr_data.shape, dtype='float32',
-                                                 chunks=(self.chunk_size, session_fr_data.shape[1]))
+                z_session_fr_data_saved = zarr.open(session_fr_path, mode='w', shape=session_fr_data.shape,
+                                                    dtype='float32',
+                                                    chunks=(self.chunk_size, session_fr_data.shape[1]))
                 z_session_fr_data_saved[:] = session_fr_data
-                z_session_query_index_saved = zarr.open(session_query_index_path, mode='w', shape=session_query_index.shape,
-                                                        dtype='int32', chunks=(self.chunk_size, session_query_index.shape[1]))
+                z_session_query_index_saved = zarr.open(session_query_index_path, mode='w',
+                                                        shape=session_query_index.shape,
+                                                        dtype='int32',
+                                                        chunks=(self.chunk_size, session_query_index.shape[1]))
                 z_session_query_index_saved[:] = session_query_index
             else:
                 z_session_data_saved.append(session_data, axis=0)
@@ -515,7 +518,7 @@ class DataConstructor:
             # z_opened = zarr.open(session_data_path, mode='r', object_codec=numcodecs.Pickle())
             # z_opened = zarr.open(session_data_path, mode='r')
             # array = z_opened[:]
-            #array = np.memmap(session_data_path, dtype=np.int32, mode='r', shape=session_data.shape)
+            # array = np.memmap(session_data_path, dtype=np.int32, mode='r', shape=session_data.shape)
 
             # Display the shape of the memmap array
             # print("Shape of the array:", array.shape)
@@ -523,8 +526,6 @@ class DataConstructor:
             # Print the first 10 rows and first 5 columns
             # print("First 10 rows and first 5 columns of the array:")
             # print(array[:10, :5])
-
-
 
             # Display the shape of the memmap array
             # print("Shape of the session_fr_data:", session_query_index.shape)
@@ -566,7 +567,7 @@ class DatasetSampler:
 
     def __getitem__(self, global_index):
         index = self.indices[global_index]  # Map shuffled index to actual data index
-        file_index = next(i-1 for i in range(1, len(self.offsets)) if index < self.offsets[i])
+        file_index = next(i - 1 for i in range(1, len(self.offsets)) if index < self.offsets[i])
         local_index = index - self.offsets[file_index]
         data = np.load(self.file_paths[file_index], mmap_mode='r')
         return data[local_index]
@@ -579,6 +580,7 @@ class DatasetSampler:
         data = np.array([self[i] for i in range(start_index, end_index)])
         self.current_bin += 1  # Move to the next bin
         return data
+
 
 '''
 # Example usage
@@ -594,6 +596,7 @@ try:
 except ValueError:
     print("All bins have been retrieved.")
 '''
+
 
 class GroupedSampler(Sampler):
     def __init__(self, data_source, neuron_links, batch_size):
@@ -630,6 +633,3 @@ class GroupedSampler(Sampler):
 
     def __len__(self):
         return len(self.batches)
-
-
-
