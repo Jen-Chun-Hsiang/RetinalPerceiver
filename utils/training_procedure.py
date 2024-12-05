@@ -99,8 +99,8 @@ class Trainer:
                     self.optimizer.zero_grad()  # Zero gradients for the next accumulation
                     self.scaler.update()
 
-            print(f'exam_batch_idx: {self.exam_batch_idx}')
-            print(f'batch_idx: {batch_idx}')
+            # print(f'exam_batch_idx: {self.exam_batch_idx}')
+            # print(f'batch_idx: {batch_idx}')
             if self.exam_batch_idx is not None:
                 if batch_idx == self.exam_batch_idx:
                     print(f"Batch {batch_idx}:")
