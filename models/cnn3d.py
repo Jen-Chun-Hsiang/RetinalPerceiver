@@ -216,8 +216,8 @@ class RetinalPerceiverIOWithCNN(nn.Module):
         # Apply positional encoding
         pos_encoding = self.positional_encoding().unsqueeze(0).repeat(cnn_output.size(0), 1, 1, 1)
         # Concatenate the CNN output with the positional encoding
-        print(f"cnn_output device: {cnn_output.device}")
-        print(f"pos_encoding device: {pos_encoding.device}")
+        # print(f"cnn_output device: {cnn_output.device}")
+        # print(f"pos_encoding device: {pos_encoding.device}")
         cnn_output_with_pos = torch.cat([cnn_output, pos_encoding], dim=1)
 
         # Reshape and project the spatial dimensions to num_latents
