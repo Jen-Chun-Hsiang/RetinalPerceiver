@@ -164,7 +164,7 @@ def main():
         # Check if CUDA is available
         if not torch.cuda.is_available():
             raise RuntimeError("CUDA is not available. Please check your GPU and CUDA installation.")
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        device = torch.device('cuda')
         torch.cuda.empty_cache()
         logging.info(f'set up GPU operation \n')
     else:
@@ -298,11 +298,11 @@ def main():
                       masking_pos=masking_pos, masking_prob=args.masking_prob, exam_batch_idx=args.exam_batch_idx,
                       timer_tau=args.timer_tau, timer_n=args.timer_n)
     # Initialize the Evaluator
-    evaluator_contra = Evaluator(model, criterion, device, query_array=query_array,
-                                 is_contrastive_learning=args.is_contrastive_learning,
-                                 series_ids=series_ids, query_permutator=query_permutator, query_encoder=query_encoder,
-                                 margin=args.margin, temperature=args.temperature,
-                                 contrastive_factor=args.contrastive_factor)
+    # evaluator_contra = Evaluator(model, criterion, device, query_array=query_array,
+    #                              is_contrastive_learning=args.is_contrastive_learning,
+    #                              series_ids=series_ids, query_permutator=query_permutator, query_encoder=query_encoder,
+    #                              margin=args.margin, temperature=args.temperature,
+    #                              contrastive_factor=args.contrastive_factor)
     evaluator = Evaluator(model, criterion, device, query_array=query_array)
 
     # Optionally, load from checkpoint
@@ -360,8 +360,8 @@ def main():
             scheduler.step(epoch + (epoch / args.epochs))
             learning_rate_dynamics.append(scheduler.get_last_lr())
             validation_losses.append(avg_val_loss)
-            avg_val_loss = evaluator_contra.evaluate(val_loader)
-            validation_contra_losses.append(avg_val_loss)
+            # avg_val_loss = evaluator_contra.evaluate(val_loader)
+            # validation_contra_losses.append(avg_val_loss)
 
             # Print training status
             if (epoch + 1) % 5 == 0:
@@ -377,8 +377,7 @@ def main():
                 logging.info(f"Allocated memory: {torch.cuda.memory_allocated() / 1e6} MB \n"
                              f"Max memory allocated: {torch.cuda.max_memory_allocated() / 1e6} MB \n")
                 save_checkpoint(epoch, model, optimizer, scheduler, args, training_losses, validation_losses,
-                                validation_contra_losses,
-                                file_path=os.path.join(savemodel_dir, checkpoint_filename))
+                                validation_contra_losses, file_path=os.path.join(savemodel_dir, checkpoint_filename))
 
         if args.parallel_processing:
             # Clean up
