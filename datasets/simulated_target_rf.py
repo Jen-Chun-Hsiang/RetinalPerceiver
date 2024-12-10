@@ -25,7 +25,7 @@ class TargetMatrixGenerator:
             gauss2 = gaussian(T, tf_sigma_surround, tf_mean_surround) * tf_weight_surround
             return (gauss1 - gauss2) + tf_offset
 
-        SamplingRate = 40
+        SamplingRate = 2*input_depth
         T = np.arange(-1, 3, 1 / SamplingRate)
         T_positive = T[(T >= 0) & (T < 0.5)]
         freqf_t = Ypf(T_positive, tf_sigma_center, tf_sigma_surround, tf_mean_center, tf_mean_surround,
@@ -49,9 +49,7 @@ class TargetMatrixGenerator:
 
         # Broadcasting happens automatically for element-wise multiplication
         target_matrix = gaussian * freqf_t  # Shape [w, h, t]
-        print(f'target_matrix size (bef): {target_matrix.shape}')
         target_matrix = target_matrix.permute(2, 0, 1)
-        print(f'target_matrix size (aft): {target_matrix.shape}')
         return target_matrix
 
     def generate_difference_of_2d_gaussians(self, size, surround_weight):
