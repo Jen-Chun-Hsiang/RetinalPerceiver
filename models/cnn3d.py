@@ -164,7 +164,6 @@ class RetinalPerceiverIOWithCNN(nn.Module):
         # Get the output dimensions of FrontEndRetinalCNN
         cnn_output_height, cnn_output_width = self.front_end_cnn.get_output_dimensions(input_depth, input_height,
                                                                                        input_width)
-
         # Initialize Fourier Feature Positional Encoding with the correct dimensions
         self.positional_encoding = FourierFeaturePositionalEncoding2D(cnn_output_height, cnn_output_width, num_bands)
 
@@ -191,9 +190,11 @@ class RetinalPerceiverIOWithCNN(nn.Module):
     # @TimeFunctionRun
     def forward(self, input_array, query_array):
         # Pass input through the Front End CNN
+        print(f"Size of query_array (s) {query_array.size()}")
         query_array = query_array
         query_array = query_array.repeat(1, self.num_latents, 1)
         query_array = add_gradient(query_array, dim=1, start=-1, end=1)
+        print(f"Size of query_array (e): {query_array.size()}")
 
         cnn_output = self.front_end_cnn(input_array)
         print(f"Size of cnn_output: {cnn_output.size()}")
