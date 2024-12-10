@@ -49,8 +49,8 @@ class TargetMatrixGenerator:
 
         # Broadcasting happens automatically for element-wise multiplication
         target_matrix = gaussian * freqf_t  # Shape [w, h, t]
+        target_matrix = target_matrix.permute(2, 0, 1)
 
-        # print(f'target_matrix shape; {target_matrix.size()}')
         return target_matrix
 
     def generate_difference_of_2d_gaussians(self, size, surround_weight):
