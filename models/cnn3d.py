@@ -194,7 +194,6 @@ class RetinalPerceiverIOWithCNN(nn.Module):
         query_array = query_array
         query_array = query_array.repeat(1, self.num_latents, 1)
         query_array = add_gradient(query_array, dim=1, start=-1, end=1)
-        print(f'input array size: {input_array.size()}')
         cnn_output = self.front_end_cnn(input_array)
         # Apply positional encoding
         pos_encoding = self.positional_encoding().unsqueeze(0).repeat(cnn_output.size(0), 1, 1, 1)
