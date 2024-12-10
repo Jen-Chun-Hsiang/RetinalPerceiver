@@ -93,7 +93,7 @@ class FourierFeaturePositionalEncoding2D(nn.Module):
         fourier_basis = torch.cat([torch.sin(coord * frequencies), torch.cos(coord * frequencies)], dim=0)
 
         return fourier_basis
-
+c
     def forward(self):
         spatial_features_height = self.get_fourier_features(self.height)  # Shape: [2*num_bands, height]
         spatial_features_width = self.get_fourier_features(self.width)  # Shape: [2*num_bands, width]
