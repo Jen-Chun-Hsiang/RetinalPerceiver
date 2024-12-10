@@ -196,8 +196,10 @@ class RetinalPerceiverIOWithCNN(nn.Module):
         query_array = add_gradient(query_array, dim=1, start=-1, end=1)
 
         cnn_output = self.front_end_cnn(input_array)
+        print(f"Size of cnn_output: {cnn_output.size()}")
         # Apply positional encoding
         pos_encoding = self.positional_encoding().unsqueeze(0).repeat(cnn_output.size(0), 1, 1, 1)
+        print(f"Size of pos_encoding: {pos_encoding.size()}")
         # Concatenate the CNN output with the positional encoding
         cnn_output_with_pos = torch.cat([cnn_output, pos_encoding], dim=1)
 
