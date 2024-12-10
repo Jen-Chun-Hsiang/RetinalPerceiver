@@ -8,8 +8,8 @@ from utils.time_manager import TimeFunctionRun
 
 
 class RetinalCNN(nn.Module):
-    def __init__(self, input_depth, input_height, input_width, output_size=1, hidden_size=128, conv3d_out_channels=10, conv2_out_channels=64, conv2_1st_layer_kernel=4,
-                 conv2_2nd_layer_kernel=5):
+    def __init__(self, input_depth, input_height, input_width, output_size=1, hidden_size=128, conv3d_out_channels=10,
+                 conv2_out_channels=64, conv2_1st_layer_kernel=4, conv2_2nd_layer_kernel=5):
         super().__init__()
         self.input_depth = input_depth
         self.input_height = input_height
@@ -84,6 +84,10 @@ class FourierFeaturePositionalEncoding2D(nn.Module):
         self.width = width
         self.num_bands = num_bands
 
+        # Precompute the positional encoding and register it as a buffer
+        encoding = self.compute_positional_encoding(height, width, num_bands)
+        self.register_buffer('positional_encoding', encoding)
+
     def get_fourier_features(self, dimension_size):
         coord = torch.linspace(-1, 1, dimension_size)
         coord = coord.unsqueeze(0)  # Shape: [1, dimension_size]
@@ -94,17 +98,31 @@ class FourierFeaturePositionalEncoding2D(nn.Module):
 
         return fourier_basis
 
-    def forward(self):
-        spatial_features_height = self.get_fourier_features(self.height)  # Shape: [2*num_bands, height]
-        spatial_features_width = self.get_fourier_features(self.width)  # Shape: [2*num_bands, width]
+    def compute_positional_encoding(self, height, width, num_bands):
+        spatial_features_height = self.get_fourier_features(height)  # Shape: [2*num_bands, height]
+        spatial_features_width = self.get_fourier_features(width)  # Shape: [2*num_bands, width]
 
-        spatial_features_height = spatial_features_height.unsqueeze(-1).repeat(1, 1, self.width)
-        spatial_features_width = spatial_features_width.unsqueeze(-2).repeat(1, self.height, 1)
+        spatial_features_height = spatial_features_height.unsqueeze(-1).repeat(1, 1,
+                                                                               width)  # Shape: [2*num_bands, height, width]
+        spatial_features_width = spatial_features_width.unsqueeze(-2).repeat(1, height,
+                                                                             1)  # Shape: [2*num_bands, height, width]
 
         spatial_features = torch.cat([spatial_features_height, spatial_features_width], dim=0)
         # Shape: [4*num_bands, height, width]
 
         return spatial_features
+
+    def forward(self):
+        # spatial_features_height = self.get_fourier_features(self.height)  # Shape: [2*num_bands, height]
+        # spatial_features_width = self.get_fourier_features(self.width)  # Shape: [2*num_bands, width]
+        #
+        # spatial_features_height = spatial_features_height.unsqueeze(-1).repeat(1, 1, self.width)
+        # spatial_features_width = spatial_features_width.unsqueeze(-2).repeat(1, self.height, 1)
+        #
+        # spatial_features = torch.cat([spatial_features_height, spatial_features_width], dim=0)
+        # # Shape: [4*num_bands, height, width]
+
+        return self.positional_encoding
 
 
 class FrontEndRetinalCNN(RetinalCNN):
