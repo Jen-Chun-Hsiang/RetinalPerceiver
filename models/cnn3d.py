@@ -190,11 +190,11 @@ class RetinalPerceiverIOWithCNN(nn.Module):
     # @TimeFunctionRun
     def forward(self, input_array, query_array):
         # Pass input through the Front End CNN
-        print(f"Size of query_array (s) {query_array.size()}")
+        # print(f"Size of query_array (s) {query_array.size()}")
         query_array = query_array
         query_array = query_array.repeat(1, self.num_latents, 1)
         query_array = add_gradient(query_array, dim=1, start=-1, end=1)
-        print(f"Size of query_array (e): {query_array.size()}")
+        # print(f"Size of query_array (e): {query_array.size()}")
 
         cnn_output = self.front_end_cnn(input_array)
         print(f"Size of cnn_output: {cnn_output.size()}")
