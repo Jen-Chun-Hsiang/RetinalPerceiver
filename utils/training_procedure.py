@@ -100,9 +100,9 @@ class Trainer:
                     self.scaler.update()
 
             # print(f'exam_batch_idx: {self.exam_batch_idx}')
-            # print(f'batch_idx: {batch_idx}')
+            print(f'batch_idx: {batch_idx}')
             if self.exam_batch_idx is not None:
-                if batch_idx == self.exam_batch_idx:
+                if batch_idx > self.exam_batch_idx:
                     print(f"Batch {batch_idx}:")
                     print(f"Data Loading: {self.data_loading_times}")
                     print(f"Data Transfer: {self.data_transfer_times}")
