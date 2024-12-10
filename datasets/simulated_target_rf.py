@@ -43,9 +43,9 @@ class TargetMatrixGenerator:
             freqf_t = freqf_t / np.sum(np.abs(freqf_t))
 
         # Convert to PyTorch tensors
+        print(f'input_depth: {input_depth}')
         gaussian = torch.tensor(gaussian.copy(), dtype=torch.float32).unsqueeze(-1)  # Shape [w, h]
         freqf_t = torch.tensor(freqf_t[:input_depth], dtype=torch.float32)
-
 
         # Broadcasting happens automatically for element-wise multiplication
         target_matrix = gaussian * freqf_t  # Shape [w, h, t]
