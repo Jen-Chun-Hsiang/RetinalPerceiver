@@ -307,7 +307,7 @@ def main():
 
     # Optionally, load from checkpoint
     if args.load_checkpoint:
-        checkpoint_loader = CheckpointLoader(checkpoint_path=args.checkpoint_path, device=device)
+        checkpoint_loader = CheckpointLoader(checkpoint_path=args.checkpoint_path)
         model, optimizer = checkpoint_loader.load_checkpoint(model, optimizer)
         start_epoch = checkpoint_loader.get_epoch()
         training_losses, validation_losses = checkpoint_loader.get_training_losses(), checkpoint_loader.get_validation_losses()
