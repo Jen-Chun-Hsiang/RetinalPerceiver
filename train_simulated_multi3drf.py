@@ -72,6 +72,7 @@ def parse_args():
     # Training procedure
     parser.add_argument('--epochs', type=int, default=100, help='Number of training epochs')
     parser.add_argument('--batch_size', type=int, default=64, help='Batch size for training')
+    parser.add_argument('--schedule_method', type=str, default='RLRP', help='Method used for scheduler')
     parser.add_argument('--learning_rate', type=float, default=0.001, help='Learning rate')
     parser.add_argument('--schedule_factor', type=float, default=0.2, help='Learning rate')
     parser.add_argument('--weight_decay', type=float, default=0.001, help='Weight decay')
@@ -124,8 +125,13 @@ def parse_args():
     parser.add_argument('--parallel_processing', action='store_true', help='Enable parallel_processing')
     parser.add_argument('--accumulation_steps', type=int, default=1, help='Accumulate gradients')
     parser.add_argument('--is_contrastive_learning', action='store_true', help='Enable contrastive learning')
+    parser.add_argument('--num_worker', type=int, default=0, help='Use to offline loading data in batch')
     parser.add_argument('--do_not_train', action='store_true', help='Only present the values without training')
-
+    parser.add_argument('--is_GPU', action='store_true', help='Using GPUs for accelaration')
+    parser.add_argument('--exam_batch_idx', type=int, default=None,
+                        help='examine the timer and stop code in the middle')
+    parser.add_argument('--timer_tau', type=float, default=0.99, help='Set timer tau')
+    parser.add_argument('--timer_n', type=int, default=200, help='Set timer n')
     # Plot parameters
     parser.add_argument('--num_cols', type=int, default=5, help='Number of columns in a figure')
 
@@ -153,9 +159,15 @@ def main():
                         level=logging.INFO,
                         format='%(asctime)s %(levelname)s:%(message)s')
     logging.info(f'start logging... \n')
-    # Check if CUDA is available
-    if not torch.cuda.is_available():
-        raise RuntimeError("CUDA is not available. Please check your GPU and CUDA installation.")
+
+    if args.is_GPU:
+        # Check if CUDA is available
+        if not torch.cuda.is_available():
+            raise RuntimeError("CUDA is not available. Please check your GPU and CUDA installation.")
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        torch.cuda.empty_cache()
+    else:
+        device = 'cpu'
 
     # If CUDA is available, continue with the rest of the script
     device = torch.device("cuda")
@@ -215,8 +227,14 @@ def main():
     val_length = args.total_length - train_length  # 20% for validation
 
     train_dataset, val_dataset = random_split(dataset, [train_length, val_length])
-    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
+    if args.num_worker == 0:
+        train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
+        val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
+    else:
+        train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True,
+                                  num_workers=args.num_worker, pin_memory=True, persistent_workers=False)
+        val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=True,
+                                num_workers=args.num_worker, pin_memory=True, persistent_workers=False)
 
     check_loader = DataLoader(train_dataset, batch_size=2, shuffle=True)
     dataiter = iter(check_loader)
@@ -269,8 +287,11 @@ def main():
 
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
-    # scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=args.schedule_factor, patience=5)
-    scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=10, T_mult=2, eta_min=1e-6)
+
+    if args.schedule_method.lower() == 'rlrp':
+        scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=args.schedule_factor, patience=5)
+    elif args.schedule_method.lower() == 'cawr':
+        scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=5, T_mult=2, eta_min=1e-6)
 
     # Initialize the Trainer
     if args.masking_pos is None:
@@ -281,7 +302,8 @@ def main():
                       query_array=query_array, is_contrastive_learning=args.is_contrastive_learning,
                       series_ids=series_ids, query_encoder=query_encoder, query_permutator=query_permutator,
                       margin=args.margin, temperature=args.temperature, contrastive_factor=args.contrastive_factor,
-                      masking_pos=masking_pos, masking_prob=args.masking_prob)
+                      masking_pos=masking_pos, masking_prob=args.masking_prob, timer_tau=args.timer_tau,
+                      timer_n=args.timer_n)
     # Initialize the Evaluator
     evaluator_contra = Evaluator(model, criterion, device, query_array=query_array,
                                  is_contrastive_learning=args.is_contrastive_learning,
@@ -334,6 +356,10 @@ def main():
         for epoch in range(start_epoch, args.epochs):
             avg_train_loss = trainer.train_one_epoch(train_loader)
             training_losses.append(avg_train_loss)
+
+            if args.exam_batch_idx is not None:
+                logging.info(f'end at epoch: {epoch} \n')
+                break
 
             # torch.cuda.empty_cache()
             avg_val_loss = evaluator.evaluate(val_loader)
