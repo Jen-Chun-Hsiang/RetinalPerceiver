@@ -166,13 +166,10 @@ def main():
             raise RuntimeError("CUDA is not available. Please check your GPU and CUDA installation.")
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         torch.cuda.empty_cache()
+        logging.info(f'set up GPU operation \n')
     else:
         device = 'cpu'
-
-    # If CUDA is available, continue with the rest of the script
-    device = torch.device("cuda")
-    torch.cuda.empty_cache()
-    logging.info(f'set up GPU operation \n')
+        logging.info(f'set up CPU operation \n')
 
     if args.rng_seed is None:
         args.rng_seed = random.randint(0, int(1e9))
@@ -217,10 +214,10 @@ def main():
     # plot and save the target_matrix figure
     plot3dmat(target_matrix[0, :, :, :], args.num_cols, savefig_dir, file_prefix='plot_3D_matrix')
 
-    # Initialize the dataset with the device
-    dataset = MultiMatrixDataset(target_matrix, length=args.total_length, device=device,
-                                 combination_set=args.stimulus_type_set, add_noise=args.add_noise,
-                                 noise_level=args.noise_level, use_relu=args.use_relu, output_offset=args.output_offset)
+    # Initialize the dataset
+    dataset = MultiMatrixDataset(target_matrix, length=args.total_length, combination_set=args.stimulus_type_set,
+                                 add_noise=args.add_noise, noise_level=args.noise_level, use_relu=args.use_relu,
+                                 output_offset=args.output_offset)
 
     # Splitting the dataset into training and validation sets
     train_length = int(0.8 * args.total_length)  # 80% for training
@@ -246,27 +243,23 @@ def main():
     # Model, Loss, and Optimizer
     if args.model == 'RetinalPerceiver':
         model = RetinalPerceiverIO(input_dim=args.input_channels, latent_dim=args.hidden_size,
-                                   output_dim=args.output_size,
-                                   num_latents=args.num_latent, heads=args.num_head, depth=args.num_iter,
-                                   query_dim=query_array.shape[1],
-                                   depth_dim=args.input_depth, height=args.input_height, width=args.input_width,
-                                   num_bands=args.num_band, device=device, use_layer_norm=args.use_layer_norm,
-                                   kernel_size=args.kernel_size,
-                                   stride=args.stride,
+                                   output_dim=args.output_size, num_latents=args.num_latent, heads=args.num_head,
+                                   depth=args.num_iter, query_dim=query_array.shape[1], depth_dim=args.input_depth,
+                                   height=args.input_height, width=args.input_width, num_bands=args.num_band,
+                                   use_layer_norm=args.use_layer_norm, kernel_size=args.kernel_size, stride=args.stride,
                                    concatenate_positional_encoding=args.concatenate_positional_encoding,
-                                   use_phase_shift=args.use_phase_shift, use_dense_frequency=args.use_dense_frequency)
+                                   use_phase_shift=args.use_phase_shift,
+                                   use_dense_frequency=args.use_dense_frequency).to(device)
     elif args.model == 'RetinalCNN':
         model = RetinalPerceiverIOWithCNN(input_depth=args.input_depth, input_height=args.input_height,
                                           input_width=args.input_width, output_dim=args.output_size,
-                                          latent_dim=args.hidden_size,
-                                          query_dim=query_array.shape[1], num_latents=args.num_latent,
-                                          heads=args.num_head,
+                                          latent_dim=args.hidden_size, query_dim=query_array.shape[1],
+                                          num_latents=args.num_latent, heads=args.num_head,
                                           use_layer_norm=args.use_layer_norm, num_bands=args.num_band,
                                           conv3d_out_channels=args.conv3d_out_channels,
                                           conv2_out_channels=args.conv2_out_channels,
                                           conv2_1st_layer_kernel=args.conv2_1st_layer_kernel,
-                                          conv2_2nd_layer_kernel=args.conv2_2nd_layer_kernel,
-                                          device=device).to(device)
+                                          conv2_2nd_layer_kernel=args.conv2_2nd_layer_kernel).to(device)
 
     if args.parallel_processing:
         model = nn.DataParallel(model)

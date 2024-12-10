@@ -5,13 +5,12 @@ import random
 
 class TargetMatrixGenerator:
     def __init__(self, mean=(0, 0), cov=((1, 0), (0, 1)), mean2=None, cov2=None, surround_weight=0.5,
-                 is_norm_matrix=False, device='cpu'):
+                 is_norm_matrix=False):
         self.mean1 = mean
         self.cov1 = cov
         self.mean2 = mean if mean2 is None else mean2
         self.cov2 = cov2
         self.surround_weight = surround_weight
-        self.device = device
         self.is_norm_matrix = is_norm_matrix
 
     def create_3d_target_matrix(self, input_height, input_width, input_depth, tf_weight_surround=0.2,
@@ -51,7 +50,7 @@ class TargetMatrixGenerator:
         # Broadcasting happens automatically for element-wise multiplication
         target_matrix = gaussian * freqf_t  # Shape [w, h, t]
 
-        return target_matrix.to(self.device)
+        return target_matrix
 
     def generate_difference_of_2d_gaussians(self, size, surround_weight):
         gaussian_matrix1 = self.generate_2d_gaussian(size, self.mean1, self.cov1)
@@ -75,8 +74,8 @@ class TargetMatrixGenerator:
 
 
 class MultiTargetMatrixGenerator(TargetMatrixGenerator):
-    def __init__(self, param_list, is_norm_matrix=False, device='cpu'):
-        super().__init__(is_norm_matrix=is_norm_matrix, device=device)
+    def __init__(self, param_list, is_norm_matrix=False):
+        super().__init__(is_norm_matrix=is_norm_matrix)
         self.param_list = param_list
 
     def create_3d_target_matrices(self, input_height, input_width, input_depth):

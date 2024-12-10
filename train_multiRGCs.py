@@ -232,28 +232,23 @@ def main():
     # Model, Loss, and Optimizer
     if args.model == 'RetinalPerceiver':
         model = RetinalPerceiverIO(input_dim=args.input_channels, latent_dim=args.hidden_size,
-                                   output_dim=args.output_size,
-                                   num_latents=args.num_latent, heads=args.num_head, depth=args.num_iter,
-                                   query_dim=query_array.shape[1],
-                                   depth_dim=args.input_depth, height=args.input_height, width=args.input_width,
-                                   num_bands=args.num_band, use_layer_norm=args.use_layer_norm,
-                                   kernel_size=args.kernel_size,
-                                   stride=args.stride,
+                                   output_dim=args.output_size, num_latents=args.num_latent, heads=args.num_head,
+                                   depth=args.num_iter, query_dim=query_array.shape[1], depth_dim=args.input_depth,
+                                   height=args.input_height, width=args.input_width, num_bands=args.num_band,
+                                   use_layer_norm=args.use_layer_norm, kernel_size=args.kernel_size, stride=args.stride,
                                    concatenate_positional_encoding=args.concatenate_positional_encoding,
                                    use_phase_shift=args.use_phase_shift,
                                    use_dense_frequency=args.use_dense_frequency).to(device)
     elif args.model == 'RetinalCNN':
         model = RetinalPerceiverIOWithCNN(input_depth=args.input_depth, input_height=args.input_height,
                                           input_width=args.input_width, output_dim=args.output_size,
-                                          latent_dim=args.hidden_size,
-                                          query_dim=query_array.shape[1], num_latents=args.num_latent,
-                                          heads=args.num_head,
+                                          latent_dim=args.hidden_size, query_dim=query_array.shape[1],
+                                          num_latents=args.num_latent, heads=args.num_head,
                                           use_layer_norm=args.use_layer_norm, num_bands=args.num_band,
                                           conv3d_out_channels=args.conv3d_out_channels,
                                           conv2_out_channels=args.conv2_out_channels,
                                           conv2_1st_layer_kernel=args.conv2_1st_layer_kernel,
-                                          conv2_2nd_layer_kernel=args.conv2_2nd_layer_kernel,
-                                          device=device).to(device)
+                                          conv2_2nd_layer_kernel=args.conv2_2nd_layer_kernel).to(device)
 
     if args.parallel_processing:
         model = nn.DataParallel(model)
