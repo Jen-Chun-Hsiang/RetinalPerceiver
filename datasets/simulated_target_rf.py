@@ -43,14 +43,15 @@ class TargetMatrixGenerator:
             freqf_t = freqf_t / np.sum(np.abs(freqf_t))
 
         # Convert to PyTorch tensors
-        print(f'input_depth: {input_depth}')
+
         gaussian = torch.tensor(gaussian.copy(), dtype=torch.float32).unsqueeze(-1)  # Shape [w, h]
         freqf_t = torch.tensor(freqf_t[:input_depth], dtype=torch.float32)
 
         # Broadcasting happens automatically for element-wise multiplication
         target_matrix = gaussian * freqf_t  # Shape [w, h, t]
+        print(f'target_matrix size (bef): {target_matrix.shape}')
         target_matrix = target_matrix.permute(2, 0, 1)
-
+        print(f'target_matrix size (aft): {target_matrix.shape}')
         return target_matrix
 
     def generate_difference_of_2d_gaussians(self, size, surround_weight):
