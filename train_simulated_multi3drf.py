@@ -193,8 +193,9 @@ def main():
     query_encoder = SeriesEncoder(max_values, lengths, encoding_method=args.encoding_method, encoding_type=encoding_type,
                                   shuffle_components=shuffle_components)
     logging.info(f'series_ids type:{type(series_ids)} \n')
-    logging.info(f'series_ids size:{series_ids.size()} \n')
     logging.info(f'series_ids:{series_ids} \n')
+    logging.info(f'series_ids size:{len(series_ids.)} \n')
+
     query_array = query_encoder.encode(series_ids)
     logging.info(f'query_array size:{query_array.shape} \n')
     logging.info(f'query_array:{query_array[:3]} \n')
