@@ -162,8 +162,7 @@ class FrontEndRetinalCNN(RetinalCNN):
 class RetinalPerceiverIOWithCNN(nn.Module):
     def __init__(self, input_depth, input_height, input_width, latent_dim=128, output_dim=1, query_dim=6,
                  num_latents=16, heads=4, use_layer_norm=False, num_bands=10, conv3d_out_channels=10,
-                 conv2_out_channels=64, conv2_1st_layer_kernel=4, conv2_2nd_layer_kernel=5, num_masking=None,
-                 masking_pos=None, masking_type="continuous"):
+                 conv2_out_channels=64, conv2_1st_layer_kernel=4, conv2_2nd_layer_kernel=5):
         super().__init__()
         self.latent_dim = latent_dim
         self.query_dim = query_dim
@@ -208,8 +207,6 @@ class RetinalPerceiverIOWithCNN(nn.Module):
 
     # @TimeFunctionRun
     def forward(self, input_array, query_array):
-        # Pass input through the Front End CNN
-        # print(f"Size of query_array (s) {query_array.size()}")
         query_array = query_array
         query_array = query_array.repeat(1, self.num_latents, 1)
         query_array = add_gradient(query_array, dim=1, start=-1, end=1)
@@ -233,6 +230,32 @@ class RetinalPerceiverIOWithCNN(nn.Module):
         predictions, embeddings = self.decoder(latents_projected, query_array)
         return F.softplus(self.fc(predictions.flatten(start_dim=1))), embeddings
         # return F.relu(predictions.mean(dim=1)), embeddings
+
+
+class qNAPmask(RetinalPerceiverIOWithCNN):
+    def __init__(self, input_depth, input_height, input_width, num_masking, masking_pos, masking_type="continuous",
+                 **kwargs):
+        super().__init__(input_depth, input_height, input_width, **kwargs)
+        self.masking_pos = torch.tensor(masking_pos)
+        self.masking_type = masking_type
+        self.query_embeddings = nn.Embedding(num_masking, len(masking_pos))
+
+    def forward(self, input_array, query_array, masking_ids):
+        # Generate embeddings for the masking_ids
+        embeddings = self.query_embeddings(masking_ids)
+
+        # Create a mask for valid masking_ids
+        valid_mask = (masking_ids != -1).unsqueeze(-1)
+
+        # Replace values in query_array at masking_pos with embeddings
+        query_array[:, self.masking_pos] = torch.where(
+            valid_mask,
+            embeddings,
+            query_array[:, self.masking_pos]
+        )
+
+        # Pass the modified query_array through the parent forward method
+        return super().forward(input_array, query_array)
 
 
 class QueryEmbeddingCNN(nn.Module):
