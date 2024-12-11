@@ -162,7 +162,8 @@ class FrontEndRetinalCNN(RetinalCNN):
 class RetinalPerceiverIOWithCNN(nn.Module):
     def __init__(self, input_depth, input_height, input_width, latent_dim=128, output_dim=1, query_dim=6,
                  num_latents=16, heads=4, use_layer_norm=False, num_bands=10, conv3d_out_channels=10,
-                 conv2_out_channels=64, conv2_1st_layer_kernel=4, conv2_2nd_layer_kernel=5):
+                 conv2_out_channels=64, conv2_1st_layer_kernel=4, conv2_2nd_layer_kernel=5, num_masking=None,
+                 masking_pos=None, masking_type="continuous"):
         super().__init__()
         self.latent_dim = latent_dim
         self.query_dim = query_dim

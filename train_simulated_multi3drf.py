@@ -15,6 +15,7 @@ from io import StringIO
 import sys
 import random
 import torch.distributed as dist
+from scipy.io import savemat
 # from torchinfo import summary
 # from scipy.io import savemat
 # from torch.nn.parallel import DistributedDataParallel
@@ -29,6 +30,7 @@ from models.perceiver3d import RetinalPerceiverIO
 from models.cnn3d import RetinalPerceiverIOWithCNN
 from utils.training_procedure import Trainer, Evaluator, save_checkpoint, CheckpointLoader
 from utils.value_inspector import save_distributions
+from utils.helper import convert_none_to_nan
 
 
 def parse_covariance(string):
@@ -148,6 +150,7 @@ def main():
     saveprint_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Prints/'
     savefig_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Figures/'
     savemat_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Matfiles/'
+    save_timer_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Timers/'
     # Generate a timestamp
     timestr = datetime.now().strftime('%Y%m%d_%H%M%S')
 
@@ -181,10 +184,6 @@ def main():
     # Generate param_list
     parameter_generator = ParameterGenerator(sf_param_table, tf_param_table, seed=args.rng_seed)
     param_lists, series_ids = parameter_generator.generate_parameters(query_table)
-    # param_list, series_ids = integrated_list.generate_combined_param_list()
-    # logging.info(f'param_list: {param_list} \n')
-    # logging.info(f'series_ids: {series_ids} \n')
-
     # Encode series_ids into query arrays
     max_values = getattr(config, 'max_values', None)
     # skip_encoding = getattr(config, 'skip_encoding', None)
@@ -297,12 +296,6 @@ def main():
                       margin=args.margin, temperature=args.temperature, contrastive_factor=args.contrastive_factor,
                       masking_pos=masking_pos, masking_prob=args.masking_prob, exam_batch_idx=args.exam_batch_idx,
                       timer_tau=args.timer_tau, timer_n=args.timer_n)
-    # Initialize the Evaluator
-    # evaluator_contra = Evaluator(model, criterion, device, query_array=query_array,
-    #                              is_contrastive_learning=args.is_contrastive_learning,
-    #                              series_ids=series_ids, query_permutator=query_permutator, query_encoder=query_encoder,
-    #                              margin=args.margin, temperature=args.temperature,
-    #                              contrastive_factor=args.contrastive_factor)
     evaluator = Evaluator(model, criterion, device, query_array=query_array)
 
     # Optionally, load from checkpoint
@@ -326,25 +319,6 @@ def main():
         plot_file_name = f'{filename_fixed}value_distribution_n{n}.png'
         save_distributions(train_loader, n=n, folder_name=savefig_dir, file_name=plot_file_name)
 
-
-        # with torch.no_grad():  # Disable gradient computation
-        #     for batch_idx, (random_matrix, output_value, _) in enumerate(train_loader):
-        #         if batch_idx >= n:
-        #             break  # Exit after processing n batches
-        #
-        #         # Print inputs and outputs for the current batch
-        #         print(f"Batch {batch_idx + 1} Inputs:")
-        #         print(f'random_matrix min {torch.min(random_matrix)}')
-        #         print(f'random_matrix max {torch.max(random_matrix)}')
-        #         print(f'output_value min {torch.min(output_value)}')
-        #         print(f'output_value max {torch.max(output_value)}')
-        #
-        #         # outputs = model(sequences)
-        #         # print(f"\nBatch {batch_idx + 1} Outputs:")
-        #         # print(f'output min {torch.min(outputs)}')
-        #         # print(f'output max {torch.max(outputs)}')
-        #         print("\n" + "-" * 50 + "\n")
-
     else:
         for epoch in range(start_epoch, args.epochs):
             avg_train_loss = trainer.train_one_epoch(train_loader)
@@ -353,15 +327,16 @@ def main():
             if args.exam_batch_idx is not None:
                 logging.info(f'end at epoch: {epoch} \n')
                 break
+            # Scheduler step
+            if args.schedule_method.lower() == 'rlrp':
+                scheduler.step(avg_train_loss)
+            elif args.schedule_method.lower() == 'cawr':
+                scheduler.step(epoch + (epoch / args.epochs))
 
+            learning_rate_dynamics.append(scheduler.get_last_lr())
             # torch.cuda.empty_cache()
             avg_val_loss = evaluator.evaluate(val_loader)
-            # scheduler.step(avg_val_loss)
-            scheduler.step(epoch + (epoch / args.epochs))
-            learning_rate_dynamics.append(scheduler.get_last_lr())
             validation_losses.append(avg_val_loss)
-            # avg_val_loss = evaluator_contra.evaluate(val_loader)
-            # validation_contra_losses.append(avg_val_loss)
 
             # Print training status
             if (epoch + 1) % 5 == 0:
@@ -378,6 +353,17 @@ def main():
                              f"Max memory allocated: {torch.cuda.max_memory_allocated() / 1e6} MB \n")
                 save_checkpoint(epoch, model, optimizer, scheduler, args, training_losses, validation_losses,
                                 validation_contra_losses, file_path=os.path.join(savemodel_dir, checkpoint_filename))
+
+                timing_data = trainer.get_timing_data()
+                timing_data_dict = {
+                    "data_loading_times": convert_none_to_nan(timing_data["data_loading_times"]),
+                    "data_transfer_times": convert_none_to_nan(timing_data["data_transfer_times"]),
+                    "model_processing_times": convert_none_to_nan(timing_data["model_processing_times"]),
+                    "model_backpropagate_times": convert_none_to_nan(timing_data["model_backpropagate_times"])
+                }
+                file_path = os.path.join(save_timer_dir, f"{filename_fixed}_timing_data_epoch_{epoch + 1}.mat")
+                savemat(file_path, timing_data_dict)
+                trainer.reset_timing_data()
 
         if args.parallel_processing:
             # Clean up
