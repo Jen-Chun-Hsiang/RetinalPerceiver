@@ -194,7 +194,7 @@ def main():
                                   shuffle_components=shuffle_components)
     logging.info(f'series_ids type:{type(series_ids)} \n')
     logging.info(f'series_ids:{series_ids} \n')
-    logging.info(f'series_ids size:{len(series_ids.)} \n')
+    logging.info(f'series_ids size:{len(series_ids)} \n')
 
     query_array = query_encoder.encode(series_ids)
     logging.info(f'query_array size:{query_array.shape} \n')
