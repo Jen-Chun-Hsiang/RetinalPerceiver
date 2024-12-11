@@ -65,7 +65,7 @@ class Trainer:
         self.model.train()  # Set the model to training mode
         total_train_loss = 0
         self.optimizer.zero_grad()  # Zero gradients at the start of the epoch
-        print(f'length of train_loader: {len(train_loader)}')
+        # print(f'length of train_loader: {len(train_loader)}')
         if len(train_loader) == 0:
             raise ValueError("train_loader is empty. The training process requires a non-empty train_loader.")
 
