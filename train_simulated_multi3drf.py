@@ -334,9 +334,15 @@ def main():
                 scheduler.step(epoch + (epoch / args.epochs))
 
             learning_rate_dynamics.append(scheduler.get_last_lr())
+            elapsed_time = time.time() - start_time
+            logging.info(
+                f"Epoch [Training: {epoch + 1}/{args.epochs}], Elapsed time: {elapsed_time:.2f} seconds \n")
             # torch.cuda.empty_cache()
             avg_val_loss = evaluator.evaluate(val_loader)
             validation_losses.append(avg_val_loss)
+            elapsed_time = time.time() - start_time
+            logging.info(
+                f"Epoch [Validation: {epoch + 1}/{args.epochs}], Elapsed time: {elapsed_time:.2f} seconds \n")
 
             # Print training status
             if (epoch + 1) % 5 == 0:
