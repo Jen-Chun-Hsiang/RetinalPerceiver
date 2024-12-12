@@ -79,9 +79,6 @@ def run_configuration(stimulus_type, epoch_end, perm_cols, is_full_figure_draw, 
     savedata_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Data/'
     savemat_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Matfiles/'
 
-    # Construct the full path for the checkpoint file
-    checkpoint_path = os.path.join(checkpoint_folder, f'{checkpoint_filename}.pth')
-
     # Generate a timestamp
     timestr = datetime.now().strftime('%Y%m%d_%H%M%S')
     log_name = 'visualize_model'
@@ -93,7 +90,7 @@ def run_configuration(stimulus_type, epoch_end, perm_cols, is_full_figure_draw, 
                         level=logging.INFO,
                         format='%(asctime)s %(levelname)s:%(message)s')
 
-    checkpoint_loader = CheckpointLoader(checkpoint_path=checkpoint_path)
+    checkpoint_loader = CheckpointLoader(checkpoint_path=f'{checkpoint_filename}.pth', savemodel_dir=checkpoint_folder)
     args = checkpoint_loader.load_args()
 
     if args.is_GPU:
