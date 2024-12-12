@@ -27,7 +27,7 @@ from utils.utils import SeriesEncoder
 from utils.accessory import calculate_mask_positions
 from datasets.simulated_dataset import MultiMatrixDataset
 from models.perceiver3d import RetinalPerceiverIO
-from models.cnn3d import RetinalPerceiverIOWithCNN
+from models.cnn3d import RetinalPerceiverIOWithCNN, qNAPmask
 from utils.training_procedure import Trainer, Evaluator, save_checkpoint, CheckpointLoader
 from utils.value_inspector import save_distributions
 from utils.helper import convert_none_to_nan
@@ -263,6 +263,14 @@ def main():
                                           conv2_out_channels=args.conv2_out_channels,
                                           conv2_1st_layer_kernel=args.conv2_1st_layer_kernel,
                                           conv2_2nd_layer_kernel=args.conv2_2nd_layer_kernel).to(device)
+    elif args.model == 'qNAPmask':
+        model = qNAPmask(args.input_depth, args.input_height, args.input_width, num_masking, masking_pos,
+                         masking_type=masking_type,output_dim=args.output_size, latent_dim=args.hidden_size,
+                         query_dim=query_array.shape[1], num_latents=args.num_latent, heads=args.num_head,
+                         use_layer_norm=args.use_layer_norm, num_bands=args.num_band,
+                         conv3d_out_channels=args.conv3d_out_channels, conv2_out_channels=args.conv2_out_channels,
+                         conv2_1st_layer_kernel=args.conv2_1st_layer_kernel,
+                         conv2_2nd_layer_kernel=args.conv2_2nd_layer_kernel).to(device)
 
     if args.parallel_processing:
         model = nn.DataParallel(model)
