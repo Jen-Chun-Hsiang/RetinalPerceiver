@@ -93,17 +93,22 @@ def run_configuration(stimulus_type, epoch_end, perm_cols, is_full_figure_draw, 
                         level=logging.INFO,
                         format='%(asctime)s %(levelname)s:%(message)s')
 
-    # Check if CUDA is available
-    if not torch.cuda.is_available():
-        raise RuntimeError("CUDA is not available. Please check your GPU and CUDA installation.")
-    device = torch.device("cuda")
-    torch.cuda.empty_cache()
+    checkpoint_loader = CheckpointLoader(checkpoint_path=checkpoint_path)
+    args = checkpoint_loader.load_args()
 
-    #
+    if args.is_GPU:
+        # Check if CUDA is available
+        if not torch.cuda.is_available():
+            raise RuntimeError("CUDA is not available. Please check your GPU and CUDA installation.")
+        device = torch.device('cuda')
+        torch.cuda.empty_cache()
+        logging.info(f'set up GPU operation \n')
+    else:
+        device = 'cpu'
+        logging.info(f'set up CPU operation \n')
+
     visualizer_prog = DataVisualizer(savefig_dir, file_prefix=f'{stimulus_type}_Training_progress')
-
     # Load the training and model parameters
-    checkpoint_loader = CheckpointLoader(checkpoint_path=checkpoint_path, device=device)
     training_losses = checkpoint_loader.load_training_losses()
     validation_losses = checkpoint_loader.load_validation_losses()
     validation_contra_losses = checkpoint_loader.load_validation_contra_losses()
@@ -113,7 +118,7 @@ def run_configuration(stimulus_type, epoch_end, perm_cols, is_full_figure_draw, 
     ValueError(f"Temporal stop {timestr}! (remove after use)")
     visualizer_prog.plot_and_save(None, plot_type='line', line1=training_losses, line2=validation_losses,
                                   xlabel='Epochs', ylabel='Loss')
-    args = checkpoint_loader.load_args()
+
     config_module = f"configs.sims.{args.config_name}"
     config = __import__(config_module, fromlist=[''])
 
@@ -171,7 +176,7 @@ def run_configuration(stimulus_type, epoch_end, perm_cols, is_full_figure_draw, 
                                    output_dim=args.output_size, num_latents=args.num_latent, heads=args.num_head,
                                    depth=args.num_iter, query_dim=query_arrays.shape[1], depth_dim=args.input_depth,
                                    height=args.input_height, width=args.input_width, num_bands=args.num_band,
-                                   device=device, use_layer_norm=args.use_layer_norm, kernel_size=args.kernel_size,
+                                   use_layer_norm=args.use_layer_norm, kernel_size=args.kernel_size,
                                    stride=args.stride, concatenate_positional_encoding=args.concatenate_positional_encoding,
                                    use_phase_shift=args.use_phase_shift, use_dense_frequency=args.use_dense_frequency)
 
@@ -185,7 +190,7 @@ def run_configuration(stimulus_type, epoch_end, perm_cols, is_full_figure_draw, 
                                            conv2_out_channels=args.conv2_out_channels,
                                            conv2_1st_layer_kernel=args.conv2_1st_layer_kernel,
                                            conv2_2nd_layer_kernel=args.conv2_2nd_layer_kernel,
-                                           device=device,).to(device)
+                                           ).to(device)
 
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     model, optimizer = checkpoint_loader.load_checkpoint(model, optimizer)
@@ -241,7 +246,7 @@ def run_configuration(stimulus_type, epoch_end, perm_cols, is_full_figure_draw, 
 
         # Initialize the dataset with the device
         # plot3dmat(target_matrix[0, :, :, :], num_cols, savefig_dir, file_prefix=f'plot_3D_matrix_{cross_level_flag}_{presented_cell_id}')
-        dataset_test = MultiMatrixDataset(target_matrix, length=total_length, device=device, combination_set=[1],
+        dataset_test = MultiMatrixDataset(target_matrix, length=total_length, combination_set=[1],
                                      add_noise=args.add_noise, noise_level=args.noise_level, use_relu=args.use_relu,
                                      output_offset=args.output_offset)
 
