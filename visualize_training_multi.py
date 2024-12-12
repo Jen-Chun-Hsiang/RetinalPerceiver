@@ -6,6 +6,7 @@ import numpy as np
 import logging
 from datetime import datetime
 from scipy.io import savemat
+from torch.utils.data import DataLoader
 
 from datasets.simulated_target_rf import MultiTargetMatrixGenerator, ParameterGenerator
 from datasets.simulated_dataset import MultiMatrixDataset
@@ -14,6 +15,7 @@ from models.cnn3d import RetinalPerceiverIOWithCNN
 from utils.training_procedure import CheckpointLoader, forward_model
 from utils.utils import DataVisualizer, SeriesEncoder, rearrange_array, calculate_correlation, series_ids_permutation
 from utils.utils import series_ids_permutation_uni
+from utils.result_analysis import STAmodelEvaluator
 from utils.utils import array_to_list_of_tuples
 from utils.utils import plot_and_save_3d_matrix_with_timestamp as plot3dmat
 from utils.result_analysis import find_connected_center, pairwise_mult_sum
@@ -247,8 +249,15 @@ def run_configuration(stimulus_type, epoch_end, perm_cols, is_full_figure_draw, 
                                      add_noise=args.add_noise, noise_level=args.noise_level, use_relu=args.use_relu,
                                      output_offset=args.output_offset)
 
-        output_image, weights, labels = forward_model(model, dataset_test, query_array=query_array, batch_size=batch_size,
-                                                      use_matrix_index=False, is_weight_in_label=is_weight_in_label)
+        # output_image, weights, labels = forward_model(model, dataset_test, query_array=query_array, batch_size=batch_size,
+        #                                               use_matrix_index=False, is_weight_in_label=is_weight_in_label)
+        dataloader = DataLoader(dataset_test, batch_size=args.batch_size, shuffle=False)
+        evaluator = STAmodelEvaluator(model, device, logger=logging)
+        output_image, weights, labels = evaluator.evaluate(
+            dataloader=dataloader, query_array=query_array, use_matrix_index=False,
+            is_weight_in_label=is_weight_in_label, model_type=None, is_retinal_dataset=False,
+            is_rescale_image=False, presented_cell_id=None
+        )
         # raise RuntimeError("Script stopped after saving outputs.")
         output_image_np = output_image.squeeze().cpu().numpy()
         output_image_np_std = np.std(output_image_np, axis=0)
