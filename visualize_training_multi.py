@@ -190,7 +190,7 @@ def run_configuration(stimulus_type, epoch_end, perm_cols, is_full_figure_draw, 
                                            ).to(device)
 
     optimizer = optim.Adam(model.parameters(), lr=0.001)
-    model, optimizer = checkpoint_loader.load_checkpoint(model, optimizer)
+    model, optimizer, _ = checkpoint_loader.load_checkpoint(model, optimizer)
 
     if is_cross_level:
         logging.info(f'series_ids example 1:{series_ids[0]} \n')
