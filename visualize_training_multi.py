@@ -254,10 +254,7 @@ def run_configuration(stimulus_type, epoch_end, perm_cols, is_full_figure_draw, 
         dataloader = DataLoader(dataset_test, batch_size=args.batch_size, shuffle=False)
         evaluator = STAmodelEvaluator(model, device, logger=logging)
         output_image, weights, labels = evaluator.evaluate(
-            dataloader=dataloader, query_array=query_array, use_matrix_index=False,
-            is_weight_in_label=is_weight_in_label, model_type=None, is_retinal_dataset=False,
-            is_rescale_image=False, presented_cell_id=None
-        )
+            dataloader=dataloader, query_array=query_array, is_weight_in_label=is_weight_in_label)
         # raise RuntimeError("Script stopped after saving outputs.")
         output_image_np = output_image.squeeze().cpu().numpy()
         output_image_np_std = np.std(output_image_np, axis=0)
