@@ -255,7 +255,9 @@ def run_configuration(stimulus_type, epoch_end, perm_cols, is_full_figure_draw, 
         evaluator = STAmodelEvaluator(model, device, logger=logging)
         output_image, weights, labels = evaluator.evaluate(
             dataloader=dataloader, query_array=query_array, is_weight_in_label=is_weight_in_label)
-
+        print(f'output_image type: {type(output_image)}')
+        print(f'weights type: {type(weights)}')
+        print(f'labels type: {type(labels)}')
         output_image = output_image.squeeze().cpu().numpy()
         weights = weights.squeeze().cpu().numpy()
         labels = labels.squeeze().cpu().numpy()
