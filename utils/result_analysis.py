@@ -108,8 +108,7 @@ class STAmodelEvaluator:
             raise ValueError("DataLoader must have a defined batch_size.")
 
         # First pass: collect weights & labels
-        all_weights, all_labels, batch_indices_tensor, within_batch_indices_tensor = self._collect_weights_and_labels(
-            dataloader, query_array_tensor)
+        all_weights, all_labels = self._collect_weights_and_labels(dataloader, query_array_tensor)
 
         if self.logger:
             self.logger.info('Finished collecting weights and labels.')
