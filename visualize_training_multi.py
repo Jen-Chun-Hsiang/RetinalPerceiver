@@ -255,7 +255,13 @@ def run_configuration(stimulus_type, epoch_end, perm_cols, is_full_figure_draw, 
         evaluator = STAmodelEvaluator(model, device, logger=logging)
         output_image, weights, labels = evaluator.evaluate(
             dataloader=dataloader, query_array=query_array, is_weight_in_label=is_weight_in_label)
-        # raise RuntimeError("Script stopped after saving outputs.")
+
+        output_image = output_image.squeeze().cpu().numpy()
+        weights = weights.squeeze().cpu().numpy()
+        labels = labels.squeeze().cpu().numpy()
+        savemat(os.path.join(savemat_dir, f'{checkpoint_filename}.mat'),
+               {"output_image": output_image, "weights": weights, "labels": labels})
+        raise RuntimeError("Script stopped after saving outputs.")
         output_image_np = output_image.squeeze().cpu().numpy()
         output_image_np_std = np.std(output_image_np, axis=0)
         output_image_np_std = output_image_np_std / output_image_np_std.sum()
