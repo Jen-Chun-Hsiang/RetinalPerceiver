@@ -118,7 +118,7 @@ class STAmodelEvaluator:
 
         # Determine sample shape from dataset
         sample_shape = dataloader.dataset[0][0].shape
-        weighted_sum = self._compute_weighted_sum(dataloader, normalized_weights)
+        weighted_sum = self._compute_weighted_sum(dataloader, normalized_weights, sample_shape)
 
         return weighted_sum, all_weights, all_labels
 
