@@ -157,6 +157,7 @@ def main():
     logging.basicConfig(filename=log_filename,
                         level=logging.INFO,
                         format='%(asctime)s %(levelname)s:%(message)s')
+    logging.info(f'start logging... \n')
 
     if args.is_GPU:
         # Check if CUDA is available
@@ -164,13 +165,15 @@ def main():
             raise RuntimeError("CUDA is not available. Please check your GPU and CUDA installation.")
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         torch.cuda.empty_cache()
+        logging.info(f'set up GPU operation \n')
     else:
         device = 'cpu'
+        logging.info(f'set up CPU operation \n')
 
     # num_workers = os.cpu_count()
     # mp.set_start_method('spawn', force=True)
     # logging.info(f'Number of workers: {num_workers} \n')
-    logging.info(f'CUDA counts: {torch.cuda.device_count} \n')
+    # logging.info(f'CUDA counts: {torch.cuda.device_count} \n')
 
     experiment_info_table = getattr(config, 'experiment_info_table', None)
     filtered_data = getattr(config, 'filtered_data', None)

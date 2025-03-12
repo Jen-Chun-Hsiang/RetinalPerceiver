@@ -238,7 +238,7 @@ class qNAPmask(RetinalPerceiverIOWithCNN):
         super().__init__(input_depth, input_height, input_width, **kwargs)
         self.masking_pos = torch.tensor(masking_pos)
         self.masking_type = masking_type
-        self.query_embeddings = nn.Embedding(num_masking, len(masking_pos))
+        self.query_embeddings bjob= nn.Embedding(num_masking, len(masking_pos))
 
     def forward(self, input_array, query_array, masking_ids):
         # Generate embeddings for the masking_ids
