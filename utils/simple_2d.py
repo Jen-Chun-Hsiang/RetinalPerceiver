@@ -2,6 +2,7 @@ import torch
 import numpy as np
 import random
 import torch.nn as nn
+import pandas as pd
 import torch.nn.functional as F
 import seaborn as sns
 import matplotlib.pyplot as plt
