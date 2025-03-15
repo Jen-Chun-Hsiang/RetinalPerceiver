@@ -12,8 +12,6 @@ from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 import math
 import os
 import json
-from google.colab import drive
-drive.mount('/content/drive')
 
 ##############################
 # Helper: 2D Sinusoidal Positional Encoding
