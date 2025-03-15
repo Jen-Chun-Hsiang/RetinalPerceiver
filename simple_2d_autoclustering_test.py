@@ -1,8 +1,5 @@
 import numpy as np
 import torch
-import random
-import matplotlib.pyplot as plt
-import seaborn as sns
 import pandas as pd
 import torch.nn as nn
 import torch.nn.functional as F
@@ -12,13 +9,9 @@ from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 import math
 import os
 import json
+import matplotlib.pyplot as plt
 
-
-
-
-
-
-
+from utils.simple_2d import GaussianDataset, CrossAttentionNet
 
 ##############################
 # Example Training Loop
@@ -162,9 +155,6 @@ np.savez(loss_save_path_npz,
 print(f"Loss results saved in NumPy format at {loss_save_path_npz}")
 
 
-import os
-import numpy as np
-import matplotlib.pyplot as plt
 
 exp_name = 'MaxDiff03112501'
 # Construct the path to the losses NPZ file using an f-string to insert exp_name.
