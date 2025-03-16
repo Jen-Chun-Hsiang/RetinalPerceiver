@@ -6,6 +6,8 @@ import pandas as pd
 import torch.nn.functional as F
 import seaborn as sns
 import matplotlib.pyplot as plt
+import logging
+import os
 
 ##############################
 # Model: CNN + Cross-Attention with Type Learning via Gumbel Softmax
@@ -320,7 +322,7 @@ class GaussianDataset(Dataset):
             'cell_idx': cell_idx
         }
 
-    def plot_sample(self, index=None):
+    def plot_sample(self, index=None, save_folder=None, save_name=None):
         if index is None:
             index = random.randint(0, self.num_cells - 1)
         pdf_tensor = self.pdf_tensors[index].numpy()
@@ -334,7 +336,11 @@ class GaussianDataset(Dataset):
         axes[1].imshow(noise_image, cmap="gray")
         axes[1].set_title("Random Noise Image")
         plt.tight_layout()
-        plt.show()
+        if save_folder is not None:
+            filepath = os.path.join(save_folder, f"{index}_{save_name}")
+            plt.savefig(filepath, dpi=300, bbox_inches="tight")
+        else:
+            plt.show()
 
     def print_cell_table(self):
         data = []
@@ -355,4 +361,4 @@ class GaussianDataset(Dataset):
             }
             data.append(row)
         df = pd.DataFrame(data)
-        print(df)
+        logging.info(f'df: {df} \n')
