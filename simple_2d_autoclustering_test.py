@@ -63,7 +63,6 @@ def main():
                               specific_known_cells=specific_known, num_total_types=num_total_types, num_known_types=num_known_types,
                               boundary=boundary)
 
-    filepath = os.path.join(folder, filename)
     dataset.plot_sample(0, save_folder=savefig_dir, save_name=f'{filename_fixed}_plot_cell_RF.png')
     dataset.plot_sample(1, save_folder=savefig_dir, save_name=f'{filename_fixed}_plot_cell_RF.png')
     dataset.print_cell_table()
