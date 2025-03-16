@@ -253,7 +253,8 @@ def main():
 
     # Create a DataFrame to display the results
     df = pd.DataFrame(cells_info)
-    logging.info(f'df: {df} \n')
+    selected_columns = ["Cell ID", "Target Type", "Type Known", "Predicted Type"]
+    logging.info(f'df: {df[selected_columns]} \n')
 
     # Convert DataFrame to a dictionary suitable for MATLAB
     matlab_data = {
