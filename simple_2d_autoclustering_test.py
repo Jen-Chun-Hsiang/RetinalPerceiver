@@ -42,7 +42,7 @@ def main():
     saveprint_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Prints/'
     savefig_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Figures/'
     savemodel_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/CheckPoints/'
-    folder_path = '/content/drive/MyDrive/Colab/PreyCapture/'
+
 
     os.makedirs(saveprint_dir, exist_ok=True)  # Ensure folder exists
     model_save_name = os.path.join(savemodel_dir, f"{filename_fixed}_model_final.pth")
@@ -64,8 +64,8 @@ def main():
                               boundary=boundary)
 
     filepath = os.path.join(folder, filename)
-    dataset.plot_sample(0, save_folder=savefig_dir, save_name=f'{filename_fixed}_plot_cell_RF')
-    dataset.plot_sample(1, save_folder=savefig_dir, save_name=f'{filename_fixed}_plot_cell_RF')
+    dataset.plot_sample(0, save_folder=savefig_dir, save_name=f'{filename_fixed}_plot_cell_RF.png')
+    dataset.plot_sample(1, save_folder=savefig_dir, save_name=f'{filename_fixed}_plot_cell_RF.png')
     dataset.print_cell_table()
     exp_name = "MaxDiff03142501" # 0305
 
@@ -148,7 +148,7 @@ def main():
 
         # Save a checkpoint every 'checkpoint_interval' epochs
         if (epoch + 1) % checkpoint_interval == 0:
-            checkpoint_path = os.path.join(folder_path, f"{exp_name}_checkpoint_epoch_{epoch+1}.pth")
+            checkpoint_path = os.path.join(savemodel_dir, f"{filename_fixed}_checkpoint_epoch_{epoch+1}.pth")
             torch.save({
                 'epoch': epoch + 1,
                 'model_state_dict': model.state_dict(),
@@ -156,27 +156,6 @@ def main():
                 'losses': losses_dict
             }, checkpoint_path)
             logging.info(f"Checkpoint saved at {checkpoint_path}\n")
-
-    # Save the final model
-
-    torch.save(model.state_dict(), model_save_path)
-    logging.info(f"Final model saved at {model_save_path} \n")
-
-    # Save loss values to JSON.
-    loss_save_path_json = os.path.join(folder_path, f"{exp_name}_losses.json")
-    with open(loss_save_path_json, "w") as f:
-        json.dump(losses_dict, f, indent=4)
-    logging.info(f"Loss results saved at {loss_save_path_json} \n")
-
-    # Save loss values in NumPy format.
-    loss_save_path_npz = os.path.join(folder_path, f"{exp_name}_losses.npz")
-    np.savez(loss_save_path_npz,
-             epochs=np.array(losses_dict["epochs"]),
-             total_loss=np.array(losses_dict["total_loss"]),
-             reg_loss=np.array(losses_dict["reg_loss"]),
-             cluster_loss=np.array(losses_dict["cluster_loss"]))
-    logging.info(f"Loss results saved in NumPy format at {loss_save_path_npz} \n")
-
 
     # Retrieve the losses stored during training.
     epochs = np.array(losses_dict["epochs"])
@@ -204,7 +183,9 @@ def main():
     plt.legend()
 
     # Show the plot.
-    plt.show()
+    save_name = f'{filename_fixed}_losses.png'
+    filepath = os.path.join(save_folder, f"{save_name}")
+    plt.savefig(savefig_dir, dpi=300, bbox_inches="tight")
 
     # Assume 'dataset' is your GaussianDataset instance
     # and 'model' is your trained CrossAttentionNet instance.
