@@ -183,8 +183,8 @@ def main():
 
     # Show the plot.
     save_name = f'{filename_fixed}_losses.png'
-    filepath = os.path.join(save_folder, f"{save_name}")
-    plt.savefig(savefig_dir, dpi=300, bbox_inches="tight")
+    save_name = os.path.join(savefig_dir, f"{save_name}")
+    plt.savefig(save_name, dpi=300, bbox_inches="tight")
 
     # Assume 'dataset' is your GaussianDataset instance
     # and 'model' is your trained CrossAttentionNet instance.
