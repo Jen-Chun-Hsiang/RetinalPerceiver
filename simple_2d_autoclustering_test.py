@@ -69,7 +69,7 @@ def main():
     exp_name = "MaxDiff03142501" # 0305
 
     loader = DataLoader(dataset, batch_size=256, shuffle=True)
-    num_epochs = 150
+    num_epochs = 200
     checkpoint_interval = 50
 
     cluster_weight = 0.001  # adjustable weight for cluster loss on unknown types
