@@ -64,21 +64,20 @@ def main():
                         format='%(asctime)s %(levelname)s:%(message)s')
     logging.info(f'start logging... \n')
 
+    # randomization initiate
     np.random.seed(seed)
     torch.manual_seed(seed)
+
     dataset = GaussianDataset(A=20, B=4, num_samples=20000, image_size=image_size, is_unknown_center_new=is_unknown_center_new,
                               specific_known_cells=specific_known, num_total_types=num_total_types, num_known_types=num_known_types,
                               boundary=boundary)
-
     dataset.plot_sample(0, save_folder=savefig_dir, save_name=f'{filename_fixed}_plot_cell_RF.png')
     dataset.plot_sample(1, save_folder=savefig_dir, save_name=f'{filename_fixed}_plot_cell_RF.png')
     dataset.print_cell_table()
-    exp_name = "MaxDiff03142501" # 0305
 
     loader = DataLoader(dataset, batch_size=256, shuffle=True)
 
-
-    model = CrossAttentionNet(d_model=32, hidden_dim=32, center_B=10, num_total_types=5, type_embed_dim=type_embed_dim)
+    model = CrossAttentionNet(d_model=32, hidden_dim=32, center_B=10, num_total_types=num_total_types, type_embed_dim=type_embed_dim)
     optimizer = optim.Adam(model.parameters(), lr=1e-3)
     scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=5, T_mult=2, eta_min=1e-6)
     mse_loss = nn.MSELoss()

@@ -16,7 +16,8 @@ import os
 ##############################
 
 class CrossAttentionNet(nn.Module):
-    def __init__(self, d_model=32, hidden_dim=32, center_B=10, num_total_types=5, type_embed_dim=2):
+    def __init__(self, d_model=32, hidden_dim=32, center_B=10, num_total_types=5, type_embed_dim=2,
+                 init_type_num=24):
         """
         d_model: transformer embedding dimension.
         hidden_dim: hidden layer dimension.
@@ -42,13 +43,20 @@ class CrossAttentionNet(nn.Module):
         self.unknown_embedding = nn.Embedding(center_B, 2)
         # Fixed type embedding table (each row corresponds to a discrete type).
         # We will freeze this embedding so it remains fixed.
-        self.type_embedding = nn.Embedding(12, type_embed_dim)
+
+        self.init_type_num = init_type_num
+        self.type_embedding = nn.Embedding(self.init_type_num, type_embed_dim)
         self.type_embedding.weight.requires_grad = False  # freeze type embedding
 
         # For unknown type queries, we have a learnable lookup table that produces
         # a continuous logits vector for each cell. These logits (of length num_total_types)
         # are then transformed via Gumbel-Softmax to get a nearly one-hot distribution.
-        self.cell_type_logits = nn.Embedding(24, 12)
+        self.cell_type_logits = nn.Embedding(self.init_type_num, self.init_type_num)
+        # Initialize with identity matrix
+        with torch.no_grad():
+            identity_matrix = torch.eye(self.init_type_num)  # Identity matrix
+            noise = torch.rand(self.init_type_num, self.init_type_num) * 0.2
+            self.cell_type_logits.weight.copy_(identity_matrix + noise)
 
         pos_encoding = get_2d_sincos_positional_encoding(8, 8, d_model)
         self.register_buffer('positional_encoding', pos_encoding)
