@@ -74,8 +74,8 @@ def main():
     dataset = GaussianDataset(A=20, B=4, num_samples=20000, image_size=image_size, is_unknown_center_new=is_unknown_center_new,
                               specific_known_cells=specific_known, num_total_types=num_total_types, num_known_types=num_known_types,
                               boundary=boundary)
-    dataset.plot_sample(0, save_folder=savefig_dir, save_name=f'{filename_fixed}_plot_cell_RF.png')
-    dataset.plot_sample(1, save_folder=savefig_dir, save_name=f'{filename_fixed}_plot_cell_RF.png')
+    for i in range(5):
+        dataset.plot_sample(i, save_folder=savefig_dir, save_name=f'{filename_fixed}_plot_cell_RF.png')
     dataset.print_cell_table()
 
     loader = DataLoader(dataset, batch_size=256, shuffle=True)
@@ -119,8 +119,10 @@ def main():
 
             if (epoch + 1) > 100:
               total_loss = loss_reg + loss_cluster
+              model.gumbel_tau.fill_(0.0001)  # my_var becomes 0.0001 after epoch 100.
             else:
               total_loss = loss_reg
+              model.gumbel_tau.fill_(0.0)  # my_var is close to zero.
 
             total_loss.backward()
             optimizer.step()
