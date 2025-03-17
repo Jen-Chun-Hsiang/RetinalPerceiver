@@ -30,6 +30,9 @@ def main():
     specific_known = [
         {"center": [16, 16], "theta": 1.0, "eig1": 10, "eig2": 2, "type_id": 0},
         {"center": [16, 16],  "theta": 1.0+math.pi/2, "eig1": 10, "eig2": 2, "type_id": 1},
+        {"center": [16, 16], "theta": 1.0 + math.pi / 2, "eig1": 2, "eig2": 2, "type_id": 2},
+        {"center": [16, 16], "theta": 1.0 + math.pi / 2, "eig1": 6, "eig2": 6, "type_id": 3},
+        {"center": [16, 16], "theta": 1.0 + math.pi / 4, "eig1": 10, "eig2": 2, "type_id": 4},
         # add more as needed...
     ]  # MaxDiff03102502
     seed = 47
