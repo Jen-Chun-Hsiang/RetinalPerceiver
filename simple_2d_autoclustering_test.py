@@ -40,18 +40,19 @@ def main():
     boundary = 4
     num_epochs = 200
     checkpoint_interval = 50
-
     cluster_weight = 0.000000001  # adjustable weight for cluster loss on unknown types
     tau = 1.0  # temperature for Gumbel softmax
     type_embed_dim = 5  # original is 2
 
+
+    # Folders
     saveprint_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Prints/'
     savefig_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Figures/'
     savemodel_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/CheckPoints/'
 
-
     os.makedirs(saveprint_dir, exist_ok=True)  # Ensure folder exists
-    model_save_name = os.path.join(savemodel_dir, f"{filename_fixed}_model_final.pth")
+    os.makedirs(savefig_dir, exist_ok=True)  # Ensure folder exists
+    os.makedirs(savemodel_dir, exist_ok=True)  # Ensure folder exists
     timestr = datetime.now().strftime('%Y%m%d_%H%M%S')
 
     # Construct the full path for the log file
