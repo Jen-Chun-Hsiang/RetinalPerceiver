@@ -113,7 +113,7 @@ def main():
 
             loss_cluster = cluster_weight * global_entropy
 
-            if (epoch + 1) < 100:
+            if (epoch + 1) > 100:
               total_loss = loss_reg + loss_cluster
             else:
               total_loss = loss_reg
