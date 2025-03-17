@@ -60,7 +60,7 @@ class CrossAttentionNet(nn.Module):
 
         pos_encoding = get_2d_sincos_positional_encoding(8, 8, d_model)
         self.register_buffer('positional_encoding', pos_encoding)
-        self.register_buffer('gumbel_tau', torch.tensor(0.0))
+        # self.register_buffer('gumbel_tau', torch.tensor(0.0))
 
     def forward(self, x, query_center, is_center_known, unknown_center_id,
                 type_gt, is_type_known, cell_idx, tau=1.0):
@@ -105,7 +105,7 @@ class CrossAttentionNet(nn.Module):
                 # Unknown: look up the logits vector for this cell.
                 logits = self.cell_type_logits(cell_idx[i].long())  # shape: [num_total_types]
                 # Apply Gumbel-Softmax to get a nearly one-hot distribution.
-                one_hot = F.gumbel_softmax(logits, tau=self.gumbel_tau, hard=True)
+                one_hot = F.gumbel_softmax(logits, tau=tau, hard=True)
                 # Save the distribution for global entropy regularization.
                 unknown_probs_list.append(one_hot)
                 # Retrieve type embedding.

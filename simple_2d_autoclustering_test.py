@@ -108,6 +108,11 @@ def main():
             cell_idx = batch['cell_idx']                  # [B] long
 
 
+            if (epoch + 1) > 100:
+                tau = 0.0001
+            else:
+                tau = 0.0
+
             # Forward pass: returns regression predictions, type logits, and discrete predictions (for unknown samples)
             target_pred, global_entropy = model(images, query_center, is_center_known,
                                                         unknown_center_id, type_gt, is_type_known, cell_idx, tau=tau)
@@ -119,10 +124,8 @@ def main():
 
             if (epoch + 1) > 100:
               total_loss = loss_reg + loss_cluster
-              model.gumbel_tau.fill_(0.0001)  # my_var becomes 0.0001 after epoch 100.
             else:
               total_loss = loss_reg
-              model.gumbel_tau.fill_(0.0)  # my_var is close to zero.
 
             total_loss.backward()
             optimizer.step()
