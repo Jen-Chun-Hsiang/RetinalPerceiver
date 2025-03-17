@@ -335,7 +335,6 @@ class GaussianDataset(Dataset):
         pdf = center_pdf - surround_strength * surround_pdf
         return torch.tensor(pdf, dtype=torch.float32)
 
-
     def __len__(self):
         return self.num_samples
 
@@ -396,22 +395,32 @@ class GaussianDataset(Dataset):
         else:
             plt.show()
 
-    def print_cell_table(self):
+    def print_cell_table(self, is_shorter=True):
         data = []
         for idx, cell in enumerate(self.cell_properties):
             center = cell["center"]
-            cov = cell["cov"]
+            if is_shorter:
+                row = {
+                    "Cell ID": idx,
+                    "Type ID": cell["type_id"],
+                    "is_type_known": self.type_known_flags[idx],
+                    "is_center_known": idx < self.A,
+                    "Center X": center[0],
+                    "Center Y": center[1],
+                    "Theta": cell["theta"],
+                    "Eig1": cell["eig1"],
+                    "Eig2": cell["eig2"],
+                    "Stretching Factor": cell["stretching_factor"],
+                    "Surround Strength": cell["surround_strength"],
+                }
+        else:
             row = {
                 "Cell ID": idx,
                 "Type ID": cell["type_id"],
                 "is_type_known": self.type_known_flags[idx],
-                "is_center_known" : idx < self.A,
+                "is_center_known": idx < self.A,
                 "Center X": center[0],
-                "Center Y": center[1],
-                "Cov_00": cov[0, 0],
-                "Cov_01": cov[0, 1],
-                "Cov_10": cov[1, 0],
-                "Cov_11": cov[1, 1],
+                "Center Y": center[1]
             }
             data.append(row)
         df = pd.DataFrame(data)
