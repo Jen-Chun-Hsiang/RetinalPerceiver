@@ -168,12 +168,14 @@ def get_2d_sincos_positional_encoding(H, W, d_model):
 ##############################
 class GaussianDataset(Dataset):
     def __init__(self, A=22, B=10, image_size=32, num_samples=1000, num_total_types=5, num_known_types=3,
-                 boundary=4, is_unknown_center_new=False, specific_known_cells=None, masked_type_perc = 0.33):
+                 boundary=4, is_unknown_center_new=False, specific_known_cells=None, masked_type_perc=0.33):
         """
-        Creates A known cells and B unknown cells, each with a fixed Gaussian and an assigned type.
+        Creates A known cells and B unknown cells, each with a differential Gaussian defined by a center and a surround.
         num_total_types: total number of type_ids (e.g., 5). Types are indexed from 0.
         num_known_types: for cells with type in [0, num_known_types-1] the type info is provided with 80% chance.
         For cells with type >= num_known_types, type info is always masked.
+        The differential Gaussian consists of a center Gaussian (fixed weight) and a surround Gaussian
+        whose eigenvalues are the center's multiplied by a stretching factor (default 2) and weighted by surround_strength (default 0.5).
         """
         self.image_size = image_size
         self.num_samples = num_samples
@@ -190,7 +192,8 @@ class GaussianDataset(Dataset):
         self.cell_properties = []
         self.pdf_tensors = []
         known_centers = []
-        type_covs = {}
+        # Use type_params to reuse the same parameters for cells of a given type.
+        type_params = {}
 
         num_specific = 0
         if specific_known_cells is not None:
@@ -202,20 +205,30 @@ class GaussianDataset(Dataset):
                 theta = cell["theta"]
                 eig1 = cell["eig1"]
                 eig2 = cell["eig2"]
+                # Use provided stretching_factor and surround_strength if available, otherwise default.
+                stretching_factor = cell.get("stretching_factor", 2)
+                surround_strength = cell.get("surround_strength", 0.5)
                 type_id = cell["type_id"]  # assumed to be in [0, num_total_types-1]
-                R = np.array([[np.cos(theta), -np.sin(theta)],
-                              [np.sin(theta),  np.cos(theta)]])
-                cov = R @ np.diag([eig1, eig2]) @ R.T
-                if type_id not in type_covs:
-                    type_covs[type_id] = cov
+                # Save parameters for later use if needed
+                type_params[type_id] = {
+                    "theta": theta,
+                    "eig1": eig1,
+                    "eig2": eig2,
+                    "stretching_factor": stretching_factor,
+                    "surround_strength": surround_strength
+                }
 
                 self.cell_properties.append({
                     "center": center,
-                    "cov": cov,
+                    "theta": theta,
+                    "eig1": eig1,
+                    "eig2": eig2,
+                    "stretching_factor": stretching_factor,
+                    "surround_strength": surround_strength,
                     "type_id": type_id
                 })
                 known_centers.append(center)
-                pdf_tensor = self._compute_gaussian_pdf(grid, center, cov)
+                pdf_tensor = self._compute_gaussian_pdf(grid, center, theta, eig1, eig2, stretching_factor, surround_strength)
                 self.pdf_tensors.append(pdf_tensor)
 
         # Generate remaining known cells randomly
@@ -224,30 +237,40 @@ class GaussianDataset(Dataset):
         if remaining_known > 0:
             known_type_ids = np.repeat(np.arange(num_total_types), remaining_known // num_total_types)
             known_type_ids = np.concatenate((known_type_ids, np.random.choice(num_total_types, remaining_known % num_total_types, replace=False)))
-            # np.random.shuffle(known_type_ids)
-            # known_type_ids = np.random.choice(range(num_total_types), size=remaining_known, replace=True)
             for i in range(remaining_known):
                 center = np.random.uniform(boundary, image_size-boundary, size=2)
                 type_id = int(known_type_ids[i])
-                if type_id in type_covs:
-                    cov = type_covs[type_id]
+                if type_id in type_params:
+                    params = type_params[type_id]
+                    theta = params["theta"]
+                    eig1 = params["eig1"]
+                    eig2 = params["eig2"]
+                    stretching_factor = params["stretching_factor"]
+                    surround_strength = params["surround_strength"]
                 else:
                     theta = np.random.uniform(0, 2 * np.pi)
                     eig1, eig2 = np.random.uniform(2, 5, size=2)
-                    R = np.array([[np.cos(theta), -np.sin(theta)],
-                                  [np.sin(theta),  np.cos(theta)]])
-                    cov = R @ np.diag([eig1, eig2]) @ R.T
-                    type_covs[type_id] = cov
+                    stretching_factor = 2  # default stretching factor for surround
+                    surround_strength = 0.5  # default surround strength
+                    type_params[type_id] = {
+                        "theta": theta,
+                        "eig1": eig1,
+                        "eig2": eig2,
+                        "stretching_factor": stretching_factor,
+                        "surround_strength": surround_strength
+                    }
                 self.cell_properties.append({
                     "center": center,
-                    "cov": cov,
+                    "theta": theta,
+                    "eig1": eig1,
+                    "eig2": eig2,
+                    "stretching_factor": stretching_factor,
+                    "surround_strength": surround_strength,
                     "type_id": type_id
                 })
                 known_centers.append(center)
-                pdf_tensor = self._compute_gaussian_pdf(grid, center, cov)
+                pdf_tensor = self._compute_gaussian_pdf(grid, center, theta, eig1, eig2, stretching_factor, surround_strength)
                 self.pdf_tensors.append(pdf_tensor)
-
-
 
         # Unknown cells: for these, we assign types from [num_known_types, num_total_types-1]
         self.A = A
@@ -261,15 +284,18 @@ class GaussianDataset(Dataset):
             type_id = int(np.random.choice(unknown_possible))
             theta = np.random.uniform(0, 2 * np.pi)
             eig1, eig2 = np.random.uniform(2, 5, size=2)
-            R = np.array([[np.cos(theta), -np.sin(theta)],
-                          [np.sin(theta),  np.cos(theta)]])
-            cov = R @ np.diag([eig1, eig2]) @ R.T
+            stretching_factor = 2  # default
+            surround_strength = 0.5  # default; can be randomized if needed (e.g., np.random.uniform(0, 2))
             self.cell_properties.append({
                 "center": center,
-                "cov": cov,
+                "theta": theta,
+                "eig1": eig1,
+                "eig2": eig2,
+                "stretching_factor": stretching_factor,
+                "surround_strength": surround_strength,
                 "type_id": type_id
             })
-            pdf_tensor = self._compute_gaussian_pdf(grid, center, cov)
+            pdf_tensor = self._compute_gaussian_pdf(grid, center, theta, eig1, eig2, stretching_factor, surround_strength)
             self.pdf_tensors.append(pdf_tensor)
 
         self.num_cells = self.A + self.B
@@ -284,13 +310,31 @@ class GaussianDataset(Dataset):
             else:
                 self.type_known_flags.append(False)
 
-    def _compute_gaussian_pdf(self, grid, center, cov):
+    def _compute_gaussian_pdf(self, grid, center, theta, eig1, eig2, stretching_factor, surround_strength):
+        # Compute rotation matrix based on theta.
+        R = np.array([[np.cos(theta), -np.sin(theta)],
+                      [np.sin(theta),  np.cos(theta)]])
+        # Center Gaussian covariance and PDF.
+        cov_center = R @ np.diag([eig1, eig2]) @ R.T
+        norm_factor_center = 1.0 / (2 * np.pi * np.sqrt(np.linalg.det(cov_center)))
         diff = grid - center
-        inv_cov = np.linalg.inv(cov)
-        exponent = -0.5 * np.einsum('...i,ij,...j', diff, inv_cov, diff)
-        norm_factor = 1.0 / (2 * np.pi * np.sqrt(np.linalg.det(cov)))
-        pdf = norm_factor * np.exp(exponent)
+        inv_cov_center = np.linalg.inv(cov_center)
+        exponent_center = -0.5 * np.einsum('...i,ij,...j', diff, inv_cov_center, diff)
+        center_pdf = norm_factor_center * np.exp(exponent_center)
+
+        # Surround Gaussian: use the same theta but stretch the eigenvalues.
+        eig1_surround = eig1 * stretching_factor
+        eig2_surround = eig2 * stretching_factor
+        cov_surround = R @ np.diag([eig1_surround, eig2_surround]) @ R.T
+        norm_factor_surround = 1.0 / (2 * np.pi * np.sqrt(np.linalg.det(cov_surround)))
+        inv_cov_surround = np.linalg.inv(cov_surround)
+        exponent_surround = -0.5 * np.einsum('...i,ij,...j', diff, inv_cov_surround, diff)
+        surround_pdf = norm_factor_surround * np.exp(exponent_surround)
+
+        # Differential Gaussian: center minus weighted surround.
+        pdf = center_pdf - surround_strength * surround_pdf
         return torch.tensor(pdf, dtype=torch.float32)
+
 
     def __len__(self):
         return self.num_samples
