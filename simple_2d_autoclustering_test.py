@@ -38,6 +38,12 @@ def main():
     num_total_types = 5
     num_known_types = 3
     boundary = 4
+    num_epochs = 200
+    checkpoint_interval = 50
+
+    cluster_weight = 0.0002  # adjustable weight for cluster loss on unknown types
+    tau = 1.0  # temperature for Gumbel softmax
+    type_embed_dim = 5  # original is 2
 
     saveprint_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Prints/'
     savefig_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Figures/'
@@ -69,12 +75,7 @@ def main():
     exp_name = "MaxDiff03142501" # 0305
 
     loader = DataLoader(dataset, batch_size=256, shuffle=True)
-    num_epochs = 200
-    checkpoint_interval = 50
 
-    cluster_weight = 0.001  # adjustable weight for cluster loss on unknown types
-    tau = 1.0             # temperature for Gumbel softmax
-    type_embed_dim = 5  # original is 2
 
     model = CrossAttentionNet(d_model=32, hidden_dim=32, center_B=10, num_total_types=5, type_embed_dim=type_embed_dim)
     optimizer = optim.Adam(model.parameters(), lr=1e-3)
