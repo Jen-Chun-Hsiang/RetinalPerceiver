@@ -413,15 +413,15 @@ class GaussianDataset(Dataset):
                     "Stretching Factor": cell["stretching_factor"],
                     "Surround Strength": cell["surround_strength"],
                 }
-        else:
-            row = {
-                "Cell ID": idx,
-                "Type ID": cell["type_id"],
-                "is_type_known": self.type_known_flags[idx],
-                "is_center_known": idx < self.A,
-                "Center X": center[0],
-                "Center Y": center[1]
-            }
+            else:
+                row = {
+                    "Cell ID": idx,
+                    "Type ID": cell["type_id"],
+                    "is_type_known": self.type_known_flags[idx],
+                    "is_center_known": idx < self.A,
+                    "Center X": center[0],
+                    "Center Y": center[1]
+                }
             data.append(row)
         df = pd.DataFrame(data)
         logging.info(f'df: {df} \n')
