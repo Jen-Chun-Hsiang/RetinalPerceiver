@@ -41,7 +41,7 @@ def main():
     num_epochs = 200
     checkpoint_interval = 50
 
-    cluster_weight = 0.0002  # adjustable weight for cluster loss on unknown types
+    cluster_weight = 0.000000001  # adjustable weight for cluster loss on unknown types
     tau = 1.0  # temperature for Gumbel softmax
     type_embed_dim = 5  # original is 2
 
