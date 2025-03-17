@@ -28,11 +28,11 @@ def main():
     args = parse_args()
     filename_fixed = args.experiment_name
     specific_known = [
-        {"center": [16, 16], "theta": 1.0, "eig1": 10, "eig2": 2, "type_id": 0},
-        {"center": [16, 16],  "theta": 1.0+math.pi/2, "eig1": 10, "eig2": 2, "type_id": 1},
-        {"center": [16, 16], "theta": 1.0 + math.pi / 2, "eig1": 2, "eig2": 2, "type_id": 2},
-        {"center": [16, 16], "theta": 1.0 + math.pi / 2, "eig1": 6, "eig2": 6, "type_id": 3},
-        {"center": [16, 16], "theta": 1.0 + math.pi / 4, "eig1": 10, "eig2": 2, "type_id": 4},
+        {"center": [16, 16], "theta": 1.0,               "eig1": 10, "eig2": 2, "type_id": 0, "surround_strength": 0.1},
+        {"center": [16, 16], "theta": 1.0+math.pi/2,     "eig1": 10, "eig2": 2, "type_id": 1, "surround_strength": 0.1},
+        {"center": [16, 16], "theta": 1.0 + math.pi / 2, "eig1": 2,  "eig2": 2, "type_id": 2, "surround_strength": 0.8},
+        {"center": [16, 16], "theta": 1.0 + math.pi / 2, "eig1": 6,  "eig2": 6, "type_id": 3, "surround_strength": 0.8},
+        {"center": [16, 16], "theta": 1.0 + math.pi / 4, "eig1": 10, "eig2": 2, "type_id": 4, "surround_strength": 0.2},
         # add more as needed...
     ]  # MaxDiff03102502
     seed = 47
