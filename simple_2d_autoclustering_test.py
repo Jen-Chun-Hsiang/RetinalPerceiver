@@ -34,7 +34,7 @@ def main():
         {"center": [16, 16], "theta": 1.0 + math.pi / 2, "eig1": 6,  "eig2": 6, "type_id": 3, "surround_strength": 0.8},
         {"center": [16, 16], "theta": 1.0 + math.pi / 4, "eig1": 10, "eig2": 2, "type_id": 4, "surround_strength": 0.2},
         # add more as needed...
-    ]  # MaxDiff03102502
+    ]
     seed = 47
     is_unknown_center_new = False
     image_size = 32
@@ -107,7 +107,7 @@ def main():
             is_type_known = batch['is_type_known']        # [B] bool
             cell_idx = batch['cell_idx']                  # [B] long
 
-            if (epoch + 1) > 100:
+            if (epoch + 1) > 150:
                 tau = 1
             else:
                 tau = 0.00000001
