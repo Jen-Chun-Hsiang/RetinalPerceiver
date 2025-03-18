@@ -100,7 +100,7 @@ def main():
     scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=5, T_mult=2, eta_min=1e-6)
     mse_loss = nn.MSELoss()
 
-    losses_dict = {"epochs": [], "total_loss": [], "reg_loss": [], "cluster_loss": []}
+    losses_dict = {"epochs": [], "total_loss": [], "known_loss": [], "unknown_loss": []}
 
     for epoch in range(num_epochs):
         running_loss_total = 0.0
@@ -188,8 +188,8 @@ def main():
     # Retrieve the losses stored during training.
     epochs = np.array(losses_dict["epochs"])
     total_loss = np.array(losses_dict["total_loss"])
-    reg_loss = np.array(losses_dict["reg_loss"])
-    cluster_loss = np.array(losses_dict["cluster_loss"])
+    reg_loss = np.array(losses_dict["known_loss"])
+    cluster_loss = np.array(losses_dict["unknown_loss"])
 
     # Create a single plot for all loss types.
     plt.figure(figsize=(8, 6))
@@ -198,10 +198,10 @@ def main():
     plt.plot(epochs, total_loss, marker='o', linestyle='-', label="Total Loss")
 
     # Plot regression (main task) loss.
-    plt.plot(epochs, reg_loss, marker='s', linestyle='--', color='g', label="Regression Loss")
+    plt.plot(epochs, reg_loss, marker='s', linestyle='--', color='g', label="Known location loss")
 
     # Plot clustering (global entropy regularization) loss.
-    plt.plot(epochs, cluster_loss, marker='d', linestyle='-.', color='r', label="Cluster Loss")
+    plt.plot(epochs, cluster_loss, marker='d', linestyle='-.', color='r', label="Unknown location loss")
 
     # Add labels and title.
     plt.title("Loss Over Epochs")
