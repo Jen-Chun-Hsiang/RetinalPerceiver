@@ -37,12 +37,12 @@ def main():
         {"center": [16, 16], "theta": 1.0 + math.pi / 4, "eig1": 10, "eig2": 2, "type_id": 4, "surround_strength": 0.2},
         # add more as needed...
     ]
-    num_A = 20
+    num_A = 32
     num_B = 4
     seed = 48
     is_unknown_center_new = False
     image_size = 32
-    num_total_types = 5
+    num_total_types = 7
     num_known_types = 3
     boundary = 4
     num_epochs = 200
@@ -167,7 +167,7 @@ def main():
         epoch_loss_unknown = running_loss_unknown / unknown_samples if unknown_samples > 0 else 0.0
 
         logging.info(f"Epoch {epoch + 1}/{num_epochs}, Total Loss: {epoch_loss_total:.6f}, "
-                     f"Reg Loss: {epoch_loss_known:.6f}, Cluster Loss: {epoch_loss_unknown:.6f} \n")
+                     f"KnownLoss: {epoch_loss_known:.6f}, Unknown Loss: {epoch_loss_unknown:.6f} \n")
         # Store loss values
         losses_dict["epochs"].append(epoch + 1)
         losses_dict["total_loss"].append(epoch_loss_total)
@@ -188,8 +188,8 @@ def main():
     # Retrieve the losses stored during training.
     epochs = np.array(losses_dict["epochs"])
     total_loss = np.array(losses_dict["total_loss"])
-    reg_loss = np.array(losses_dict["known_loss"])
-    cluster_loss = np.array(losses_dict["unknown_loss"])
+    known_loss = np.array(losses_dict["known_loss"])
+    unknown_loss = np.array(losses_dict["unknown_loss"])
 
     # Create a single plot for all loss types.
     plt.figure(figsize=(8, 6))
@@ -198,10 +198,10 @@ def main():
     plt.plot(epochs, total_loss, marker='o', linestyle='-', label="Total Loss")
 
     # Plot regression (main task) loss.
-    plt.plot(epochs, reg_loss, marker='s', linestyle='--', color='g', label="Known location loss")
+    plt.plot(epochs, known_loss, marker='s', linestyle='--', color='g', label="Known location loss")
 
     # Plot clustering (global entropy regularization) loss.
-    plt.plot(epochs, cluster_loss, marker='d', linestyle='-.', color='r', label="Unknown location loss")
+    plt.plot(epochs, unknown_loss, marker='d', linestyle='-.', color='r', label="Unknown location loss")
 
     # Add labels and title.
     plt.title("Loss Over Epochs")

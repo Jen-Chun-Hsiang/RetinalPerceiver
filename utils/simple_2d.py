@@ -408,12 +408,7 @@ class GaussianDataset(Dataset):
                     "is_type_known": self.type_known_flags[idx],
                     "is_center_known": idx < self.A,
                     "Center X": center[0],
-                    "Center Y": center[1],
-                    "Theta": cell["theta"],
-                    "Eig1": cell["eig1"],
-                    "Eig2": cell["eig2"],
-                    "Stretching Factor": cell["stretching_factor"],
-                    "Surround Strength": cell["surround_strength"],
+                    "Center Y": center[1]
                 }
             else:
                 row = {
@@ -422,8 +417,14 @@ class GaussianDataset(Dataset):
                     "is_type_known": self.type_known_flags[idx],
                     "is_center_known": idx < self.A,
                     "Center X": center[0],
-                    "Center Y": center[1]
+                    "Center Y": center[1],
+                    "Theta": cell["theta"],
+                    "Eig1": cell["eig1"],
+                    "Eig2": cell["eig2"],
+                    "Stretching Factor": cell["stretching_factor"],
+                    "Surround Strength": cell["surround_strength"],
                 }
+
             data.append(row)
         df = pd.DataFrame(data)
         logging.info(f'df: {df} \n')
