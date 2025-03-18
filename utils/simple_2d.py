@@ -433,7 +433,7 @@ class GaussianDataset(Dataset):
 # Model: CNN + Cross-Attention
 ##############################
 class CrossAttentionNet_POS(nn.Module):
-    def __init__(self, d_model=32, hidden_dim=32):
+    def __init__(self, d_model=32, hidden_dim=32, B=10):
         super(CrossAttentionNet_POS, self).__init__()
         self.cnn1 = nn.Conv2d(1, 8, kernel_size=3, stride=1, padding=1)
         self.pool1 = nn.AvgPool2d(kernel_size=2, stride=2)

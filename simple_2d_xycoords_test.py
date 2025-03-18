@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 import argparse
 import logging
-from utils.simple_2d import GaussianDataset, CrossAttentionNet, compute_sta
+from utils.simple_2d import GaussianDataset, compute_sta, CrossAttentionNet_POS
 
 import pandas as pd
 import scipy.io
@@ -91,6 +91,129 @@ def main():
     for i in range(5):
         dataset.plot_sample(i, save_folder=savefig_dir, save_name=f'{filename_fixed}_plot_cell_RF.png')
     dataset.print_cell_table()
+
+    loader = DataLoader(dataset, batch_size=256, shuffle=True)
+
+    model = CrossAttentionNet_POS(d_model=32, hidden_dim=32, B=num_B)
+    model.to(device)
+    optimizer = optim.Adam(model.parameters(), lr=1e-3)
+    scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=5, T_mult=2, eta_min=1e-6)
+    mse_loss = nn.MSELoss()
+
+    losses_dict = {"epochs": [], "total_loss": [], "reg_loss": [], "cluster_loss": []}
+
+    for epoch in range(num_epochs):
+        running_loss_total = 0.0
+        running_loss_known = 0.0
+        running_loss_unknown = 0.0
+        total_samples = 0
+        known_samples = 0
+        unknown_samples = 0
+
+        for batch in loader:
+            optimizer.zero_grad()
+
+            # Unpack the batch; note that your dataset should now provide the keys below.
+            images = batch['image'].to(device)  # [B, 1, H, W]
+            query = batch['query'].to(device)  # [B, 3]
+            is_known = batch['is_center_known'].to(device)  # [B] bool
+            unknown_id = batch['unknown_center_id'].to(device)
+            target = batch['target'].to(device)  # [B]
+
+            target_pred = model(images, query, is_known, unknown_id)
+
+            loss = mse_loss(target_pred, target)
+
+            loss.backward()
+            optimizer.step()
+            model.unknown_embedding.weight.data.clamp_(-0.999, 0.999)
+
+            batch_size = batch['image'].size(0)
+            running_loss_total += loss.item() * batch_size
+            total_samples += batch_size
+
+            # Separate loss accumulation based on is_known
+            mask_known = batch['is_center_known']
+            mask_unknown = ~batch['is_center_known']
+
+            if mask_known.any():
+                images = batch['image'][mask_known].to(device)  # [B, 1, H, W]
+                query = batch['query'][mask_known].to(device)  # [B, 3]
+                is_known = batch['is_center_known'][mask_known].to(device)  # [B] bool
+                unknown_id = batch['unknown_center_id'][mask_known].to(device)
+                target = batch['target'][mask_known].to(device)  # [B]
+
+                target_pred = model(images, query, is_known, unknown_id)
+                loss_known = mse_loss(target_pred, target)
+                running_loss_known += loss_known.item() * mask_known.sum().item()
+                known_samples += mask_known.sum().item()
+
+            if mask_unknown.any():
+                images = batch['image'][mask_unknown].to(device)  # [B, 1, H, W]
+                query = batch['query'][mask_unknown].to(device)  # [B, 3]
+                is_known = batch['is_center_known'][mask_unknown].to(device)  # [B] bool
+                unknown_id = batch['unknown_center_id'][mask_unknown].to(device)
+                target = batch['target'][mask_unknown].to(device)  # [B]
+
+                target_pred = model(images, query, is_known, unknown_id)
+                loss_unknown = mse_loss(target_pred, target)
+                running_loss_unknown += loss_unknown.item() * mask_unknown.sum().item()
+                unknown_samples += mask_unknown.sum().item()
+
+        scheduler.step()
+
+        epoch_loss_total = running_loss_total / total_samples if total_samples > 0 else 0.0
+        epoch_loss_known = running_loss_known / known_samples if known_samples > 0 else 0.0
+        epoch_loss_unknown = running_loss_unknown / unknown_samples if unknown_samples > 0 else 0.0
+
+        logging.info(f"Epoch {epoch + 1}/{num_epochs}, Total Loss: {epoch_loss_total:.6f}, "
+                     f"Reg Loss: {epoch_loss_known:.6f}, Cluster Loss: {epoch_loss_unknown:.6f} \n")
+        # Store loss values
+        losses_dict["epochs"].append(epoch + 1)
+        losses_dict["total_loss"].append(epoch_loss_total)
+        losses_dict["known_loss"].append(epoch_loss_known)
+        losses_dict["unknown_loss"].append(epoch_loss_unknown)
+
+        # Save a checkpoint every checkpoint_interval epochs
+        if (epoch + 1) % checkpoint_interval == 0:
+            checkpoint_path = os.path.join(savemodel_dir, f"{filename_fixed}_checkpoint_epoch_{epoch + 1}.pth")
+            torch.save({
+                'epoch': epoch + 1,
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'losses': losses_dict
+            }, checkpoint_path)
+            logging.info(f"Checkpoint saved at {checkpoint_path}\n")
+
+    # Retrieve the losses stored during training.
+    epochs = np.array(losses_dict["epochs"])
+    total_loss = np.array(losses_dict["total_loss"])
+    reg_loss = np.array(losses_dict["reg_loss"])
+    cluster_loss = np.array(losses_dict["cluster_loss"])
+
+    # Create a single plot for all loss types.
+    plt.figure(figsize=(8, 6))
+
+    # Plot total loss.
+    plt.plot(epochs, total_loss, marker='o', linestyle='-', label="Total Loss")
+
+    # Plot regression (main task) loss.
+    plt.plot(epochs, reg_loss, marker='s', linestyle='--', color='g', label="Regression Loss")
+
+    # Plot clustering (global entropy regularization) loss.
+    plt.plot(epochs, cluster_loss, marker='d', linestyle='-.', color='r', label="Cluster Loss")
+
+    # Add labels and title.
+    plt.title("Loss Over Epochs")
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.grid(True)
+    plt.legend()
+
+    # Show the plot.
+    save_name = f'{filename_fixed}_losses.png'
+    save_name = os.path.join(savefig_dir, f"{save_name}")
+    plt.savefig(save_name, dpi=300, bbox_inches="tight")
 
 if __name__ == '__main__':
     main()
