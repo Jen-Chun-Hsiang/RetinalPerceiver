@@ -21,7 +21,21 @@ import scipy.io
 def parse_args():
     parser = argparse.ArgumentParser(description="Script for Model Training to get 3D RF in simulation")
     parser.add_argument('--experiment_name', type=str, default='new_experiment', help='Experiment name')
+    parser.add_argument('--num_A', type=int, default=32, help='Number of data points - group A')
+    parser.add_argument('--num_B', type=int, default=4, help='Number of data points - group B')
+    parser.add_argument('--rng_seed', type=int, default=48, help='assign a random seed')
+    parser.add_argument('--is_unknown_center_new', action='store_true', help='provide unique type class for new centers')
+    parser.add_argument('--image_size', type=int, default=32, help='Input image size')
+    parser.add_argument('--num_total_types', type=int, default=7, help='Number of total types')
+    parser.add_argument('--num_known_types', type=int, default=3, help='Number of known types')
+    parser.add_argument('--boundary', type=int, default=4, help='image boundary to generate a receptive field')
+
+    # Training
     parser.add_argument('--is_GPU', action='store_true', help='Using GPUs for accelaration')
+    parser.add_argument('--num_epochs', type=int, default=200, help='Number of total epochs')
+    parser.add_argument('--checkpoint_interval', type=int, default=50, help='Number of epochs to save a checkpoints')
+    parser.add_argument('--num_samples', type=int, default=20000, help='Number of data samples in the dataset')
+    parser.add_argument('--batch_size', type=int, default=256, help='Batch size')
 
     return parser.parse_args()
 
@@ -37,17 +51,17 @@ def main():
         {"center": [16, 16], "theta": 1.0 + math.pi / 4, "eig1": 10, "eig2": 2, "type_id": 4, "surround_strength": 0.2},
         # add more as needed...
     ]
-    num_A = 32
-    num_B = 4
-    seed = 48
-    is_unknown_center_new = False
-    image_size = 32
-    num_total_types = 7
-    num_known_types = 3
-    boundary = 4
-    num_epochs = 200
-    checkpoint_interval = 50
     output_mode = 'B'
+    num_A = args.num_A
+    num_B = args.num_B
+    seed = args.rng_seed
+    is_unknown_center_new = args.is_unknown_center_new
+    image_size = args.image_size
+    num_total_types = args.num_total_types
+    num_known_types = args.num_known_types
+    boundary = args.boundary
+    num_epochs = args.num_epochs
+    checkpoint_interval = args.checkpoint_interval
 
     # Folders
     saveprint_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Prints/'
@@ -83,7 +97,7 @@ def main():
     np.random.seed(seed)
     torch.manual_seed(seed)
 
-    dataset = GaussianDataset(A=num_A, B=num_B, num_samples=20000, image_size=image_size,
+    dataset = GaussianDataset(A=num_A, B=num_B, num_samples=args.num_samples, image_size=image_size,
                               is_unknown_center_new=is_unknown_center_new,
                               specific_known_cells=specific_known, num_total_types=num_total_types,
                               num_known_types=num_known_types,
@@ -92,7 +106,7 @@ def main():
         dataset.plot_sample(i, save_folder=savefig_dir, save_name=f'{filename_fixed}_plot_cell_RF.png')
     dataset.print_cell_table()
 
-    loader = DataLoader(dataset, batch_size=256, shuffle=True)
+    loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True)
 
     model = CrossAttentionNet_POS(d_model=32, hidden_dim=32, B=num_B)
     model.to(device)
