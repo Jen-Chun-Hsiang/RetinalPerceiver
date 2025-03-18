@@ -21,8 +21,29 @@ import scipy.io
 def parse_args():
     parser = argparse.ArgumentParser(description="Script for Model Training to get 3D RF in simulation")
     parser.add_argument('--experiment_name', type=str, default='new_experiment', help='Experiment name')
-    parser.add_argument('--is_GPU', action='store_true', help='Using GPUs for accelaration')
 
+    # dataset
+    parser.add_argument('--num_A', type=int, default=20, help='Number of data points - group A')
+    parser.add_argument('--num_B', type=int, default=4, help='Number of data points - group B')
+    parser.add_argument('--rng_seed', type=int, default=45, help='assign a random seed')
+    parser.add_argument('--is_unknown_center_new', action='store_true', help='provide unique type class for new centers')
+    parser.add_argument('--image_size', type=int, default=32, help='Input image size')
+    parser.add_argument('--num_total_types', type=int, default=5, help='Number of total types')
+    parser.add_argument('--num_known_types', type=int, default=3, help='Number of known types')
+    parser.add_argument('--boundary', type=int, default=4, help='image boundary to generate a receptive field')
+    # Model
+    parser.add_argument('--early_tau', type=float, default=1e-7, help='Temperature for gumbel tau in early training stage')
+    parser.add_argument('--late_tau', type=float, default=1.0, help='Temperature for gumbel tau in late training stage')
+    parser.add_argument('--type_embed_dim', type=int, default=5, help='Number of dimension of the embedding of the types')
+    parser.add_argument('--tau_switch_epoch', type=int, default=250, help='Epoch number to switch gumbel tau from early to late')
+
+    # Training
+    parser.add_argument('--is_GPU', action='store_true', help='Using GPUs for accelaration')
+    parser.add_argument('--num_epochs', type=int, default=200, help='Number of total epochs')
+    parser.add_argument('--checkpoint_interval', type=int, default=50, help='Number of epochs to save a checkpoints')
+    parser.add_argument('--cluster_weight', type=float, default=0.0001, help='Weights of the cluster loss')
+    parser.add_argument('--num_samples', type=int, default=20000, help='Number of data samples in the dataset')
+    parser.add_argument('--batch_size', type=int, default=256, help='Batch size')
     return parser.parse_args()
 
 def main():
@@ -36,20 +57,18 @@ def main():
         {"center": [16, 16], "theta": 1.0 + math.pi / 4, "eig1": 10, "eig2": 2, "type_id": 4, "surround_strength": 0.2},
         # add more as needed...
     ]
-    num_A = 20
-    num_B = 4
-    seed = 47
-    is_unknown_center_new = False
-    image_size = 32
-    num_total_types = 5
-    num_known_types = 3
-    boundary = 4
-    num_epochs = 200
-    checkpoint_interval = 50
-    # cluster_weight = 0.0001  # adjustable weight for cluster loss on unknown types
-    cluster_weight = 0.0000000001
-    tau = 1.0  # temperature for Gumbel softmax
-    type_embed_dim = 5  # original is 2
+    num_A = args.num_A
+    num_B = args.num_B
+    seed = args.rng_seed
+    is_unknown_center_new = args.is_unknown_center_new
+    image_size = args.image_size
+    num_total_types = args.num_total_types
+    num_known_types = args.num_known_types
+    boundary = args.boundary
+    num_epochs = args.num_epochs
+    checkpoint_interval = args.checkpoint_interval
+    cluster_weight = args.cluster_weight
+    type_embed_dim = args.type_embed_dim  # original is 2
 
     # Folders
     saveprint_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Prints/'
@@ -85,14 +104,14 @@ def main():
     np.random.seed(seed)
     torch.manual_seed(seed)
 
-    dataset = GaussianDataset(A=num_A, B=num_B, num_samples=20000, image_size=image_size, is_unknown_center_new=is_unknown_center_new,
+    dataset = GaussianDataset(A=num_A, B=num_B, num_samples=args.num_samples, image_size=image_size, is_unknown_center_new=is_unknown_center_new,
                               specific_known_cells=specific_known, num_total_types=num_total_types, num_known_types=num_known_types,
                               boundary=boundary)
     for i in range(5):
         dataset.plot_sample(i, save_folder=savefig_dir, save_name=f'{filename_fixed}_plot_cell_RF.png')
     dataset.print_cell_table()
 
-    loader = DataLoader(dataset, batch_size=256, shuffle=True)
+    loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True)
 
     model = CrossAttentionNet(d_model=32, hidden_dim=32, center_B=10, num_total_types=num_total_types, type_embed_dim=type_embed_dim)
     model.to(device)
@@ -122,10 +141,10 @@ def main():
             is_type_known = batch['is_type_known'].to(device)        # [B] bool
             cell_idx = batch['cell_idx'].to(device)                  # [B] long
 
-            if (epoch + 1) > 250:
-                tau = 1
+            if (epoch + 1) > args.tau_switch_epoch:
+                tau = args.late_tau
             else:
-                tau = 0.00000001
+                tau = args.early_tau
 
 
             # Forward pass: returns regression predictions, type logits, and discrete predictions (for unknown samples)
