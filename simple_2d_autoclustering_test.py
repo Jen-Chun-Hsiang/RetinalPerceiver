@@ -107,11 +107,11 @@ def main():
             is_type_known = batch['is_type_known']        # [B] bool
             cell_idx = batch['cell_idx']                  # [B] long
 
-            # if (epoch + 1) > 100:
-            #     tau = 0.1
-            # else:
-            #     tau = 0.0
-            tau = 0.1
+            if (epoch + 1) > 100:
+                tau = 0.1
+            else:
+                tau = 0.00000001
+
 
             # Forward pass: returns regression predictions, type logits, and discrete predictions (for unknown samples)
             target_pred, global_entropy = model(images, query_center, is_center_known, unknown_center_id, type_gt,
