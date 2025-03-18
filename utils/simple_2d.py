@@ -26,10 +26,12 @@ class CrossAttentionNet(nn.Module):
         type_embed_dim: dimension for type embeddings.
         """
         super(CrossAttentionNet, self).__init__()
-        self.cnn1 = nn.Conv2d(1, 8, kernel_size=3, stride=1, padding=1)
+        self.cnn1 = nn.Conv2d(1, 16, kernel_size=3, stride=1, padding=1)
         self.pool1 = nn.AvgPool2d(kernel_size=2, stride=2)
-        self.cnn2 = nn.Conv2d(8, 16, kernel_size=3, stride=1, padding=1)
+        self.bn1 = nn.BatchNorm2d(16)  # match cnn1 out_channels
+        self.cnn2 = nn.Conv2d(16, 32, kernel_size=3, stride=1, padding=1)
         self.pool2 = nn.AvgPool2d(kernel_size=2, stride=2)
+        self.bn2 = nn.BatchNorm2d(32)  # match cnn1 out_channels
 
         self.key_proj = nn.Linear(16, d_model)
         self.value_proj = nn.Linear(16, d_model)
@@ -74,8 +76,11 @@ class CrossAttentionNet(nn.Module):
         tau: temperature for Gumbel-Softmax.
         """
         # Process image through CNN to get tokens.
-        x = F.relu(self.pool1(self.cnn1(x)))
-        x = F.relu(self.pool2(self.cnn2(x)))
+        # x = F.relu(self.pool1(self.cnn1(x)))
+        # x = F.relu(self.pool2(self.cnn2(x)))
+        x = self.pool1(F.relu(self.bn1(self.cnn1(x))))
+        x = self.pool2(F.relu(self.bn2(self.cnn2(x))))
+
         B, C, H, W = x.shape
         tokens = x.view(B, C, H * W).permute(0, 2, 1)  # [B, num_tokens, C]
         keys = self.key_proj(tokens) + self.positional_encoding.unsqueeze(0)
