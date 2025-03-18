@@ -108,7 +108,7 @@ def main():
             cell_idx = batch['cell_idx']                  # [B] long
 
             if (epoch + 1) > 100:
-                tau = 0.1
+                tau = 1
             else:
                 tau = 0.00000001
 
