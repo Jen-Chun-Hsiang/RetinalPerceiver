@@ -182,6 +182,7 @@ class GaussianDataset(Dataset):
         self.is_unknown_center_new = is_unknown_center_new
         self.num_total_types = num_total_types
         self.num_known_types = num_known_types
+        self.output_mode = output_mode
 
         # Create grid for PDF computation
         x_coords = np.arange(self.image_size)
