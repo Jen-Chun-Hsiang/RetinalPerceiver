@@ -251,7 +251,7 @@ def main():
         is_center_known = i < dataset.A
         if is_center_known is False:
           unknown_center_id = i - dataset.A
-          learned_center_embedding = model.unknown_embedding(torch.tensor(unknown_center_id, dtype=torch.long)).detach().cpu().numpy()
+          learned_center_embedding = model.unknown_embedding(torch.tensor(unknown_center_id, dtype=torch.long).to(device)).detach().cpu().numpy()
         else:
           learned_center_embedding = center_norm
 
