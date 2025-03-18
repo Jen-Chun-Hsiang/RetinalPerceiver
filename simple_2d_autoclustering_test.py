@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 import argparse
 import logging
-from utils.simple_2d import GaussianDataset, CrossAttentionNet
+from utils.simple_2d import GaussianDataset, CrossAttentionNet, compute_sta
 
 import pandas as pd
 import scipy.io
@@ -21,6 +21,7 @@ import scipy.io
 def parse_args():
     parser = argparse.ArgumentParser(description="Script for Model Training to get 3D RF in simulation")
     parser.add_argument('--experiment_name', type=str, default='new_experiment', help='Experiment name')
+    parser.add_argument('--is_GPU', action='store_true', help='Using GPUs for accelaration')
 
     return parser.parse_args()
 
@@ -35,6 +36,8 @@ def main():
         {"center": [16, 16], "theta": 1.0 + math.pi / 4, "eig1": 10, "eig2": 2, "type_id": 4, "surround_strength": 0.2},
         # add more as needed...
     ]
+    num_A = 20
+    num_B = 4
     seed = 47
     is_unknown_center_new = False
     image_size = 32
@@ -48,6 +51,7 @@ def main():
     type_embed_dim = 5  # original is 2
 
 
+
     # Folders
     saveprint_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Prints/'
     savefig_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Figures/'
@@ -57,6 +61,17 @@ def main():
     os.makedirs(savefig_dir, exist_ok=True)  # Ensure folder exists
     os.makedirs(savemodel_dir, exist_ok=True)  # Ensure folder exists
     timestr = datetime.now().strftime('%Y%m%d_%H%M%S')
+
+    if args.is_GPU:
+        # Check if CUDA is available
+        if not torch.cuda.is_available():
+            raise RuntimeError("CUDA is not available. Please check your GPU and CUDA installation.")
+        device = torch.device('cuda')
+        torch.cuda.empty_cache()
+        logging.info(f'set up GPU operation \n')
+    else:
+        device = 'cpu'
+        logging.info(f'set up CPU operation \n')
 
     # Construct the full path for the log file
     log_filename = os.path.join(saveprint_dir, f'{filename_fixed}_training_log_{timestr}.txt')
@@ -71,7 +86,7 @@ def main():
     np.random.seed(seed)
     torch.manual_seed(seed)
 
-    dataset = GaussianDataset(A=20, B=4, num_samples=20000, image_size=image_size, is_unknown_center_new=is_unknown_center_new,
+    dataset = GaussianDataset(A=num_A, B=num_B, num_samples=20000, image_size=image_size, is_unknown_center_new=is_unknown_center_new,
                               specific_known_cells=specific_known, num_total_types=num_total_types, num_known_types=num_known_types,
                               boundary=boundary)
     for i in range(5):
@@ -81,6 +96,7 @@ def main():
     loader = DataLoader(dataset, batch_size=256, shuffle=True)
 
     model = CrossAttentionNet(d_model=32, hidden_dim=32, center_B=10, num_total_types=num_total_types, type_embed_dim=type_embed_dim)
+    model.to(device)
     optimizer = optim.Adam(model.parameters(), lr=1e-3)
     scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=5, T_mult=2, eta_min=1e-6)
     mse_loss = nn.MSELoss()
@@ -98,14 +114,14 @@ def main():
             optimizer.zero_grad()
 
             # Unpack the batch; note that your dataset should now provide the keys below.
-            images = batch['image']                     # [B, 1, H, W]
-            target = batch['target']                    # [B]
-            query_center = batch['query_center']        # [B, 2]
-            is_center_known = batch['is_center_known']    # [B] bool
-            unknown_center_id = batch['unknown_center_id']# [B] long
-            type_gt = batch['type_gt']                    # [B] long
-            is_type_known = batch['is_type_known']        # [B] bool
-            cell_idx = batch['cell_idx']                  # [B] long
+            images = batch['image'].to(device)                 # [B, 1, H, W]
+            target = batch['target'].to(device)                  # [B]
+            query_center = batch['query_center'].to(device)        # [B, 2]
+            is_center_known = batch['is_center_known'].to(device)    # [B] bool
+            unknown_center_id = batch['unknown_center_id'].to(device) # [B] long
+            type_gt = batch['type_gt'].to(device)                    # [B] long
+            is_type_known = batch['is_type_known'].to(device)        # [B] bool
+            cell_idx = batch['cell_idx'].to(device)                  # [B] long
 
             if (epoch + 1) > 150:
                 tau = 1
@@ -195,6 +211,19 @@ def main():
     save_name = os.path.join(savefig_dir, f"{save_name}")
     plt.savefig(save_name, dpi=300, bbox_inches="tight")
 
+    for i in range(num_A + num_B):
+        sta_image, all_outputs = compute_sta(model, dataset, i, num_stimuli=10000, threshold=None, device=device)
+
+        # Plot the resulting STA image.
+        plt.figure(figsize=(5, 5))
+        plt.imshow(sta_image, cmap='viridis')
+        plt.title(f"STA for Cell {i}")
+        plt.colorbar()
+
+        save_name = f'{filename_fixed}_trained_STA_{i}.png'
+        save_name = os.path.join(savefig_dir, f"{save_name}")
+        plt.savefig(save_name, dpi=300, bbox_inches="tight")
+
     # Assume 'dataset' is your GaussianDataset instance
     # and 'model' is your trained CrossAttentionNet instance.
     # Also assume that dataset has an attribute "type_known_flags" that is a list
@@ -266,10 +295,10 @@ def main():
     logging.info(f'df: {df[selected_columns]} \n')
 
     # Convert DataFrame to a dictionary suitable for MATLAB
-    matlab_data = {
-        "column_names":np.array(df.columns, dtype=object),  # Store column names
-        "data": np.array(df.values.tolist(), dtype=object)    # Convert DataFrame rows into a list of lists
-    }
+    # matlab_data = {
+    #     "column_names":np.array(df.columns, dtype=object),  # Store column names
+    #     "data": np.array(df.values.tolist(), dtype=object)    # Convert DataFrame rows into a list of lists
+    # }
 
     # folder_path = '/content/drive/MyDrive/Colab/PreyCapture/'
     # saved_mat_path = os.path.join(folder_path, "cells_info.mat")

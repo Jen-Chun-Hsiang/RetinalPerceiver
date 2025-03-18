@@ -43,7 +43,6 @@ class CrossAttentionNet(nn.Module):
         self.unknown_embedding = nn.Embedding(center_B, 2)
         # Fixed type embedding table (each row corresponds to a discrete type).
         # We will freeze this embedding so it remains fixed.
-
         self.init_type_num = init_type_num
         self.type_embedding = nn.Embedding(self.init_type_num, type_embed_dim)
         self.type_embedding.weight.requires_grad = False  # freeze type embedding
@@ -52,7 +51,7 @@ class CrossAttentionNet(nn.Module):
         # a continuous logits vector for each cell. These logits (of length num_total_types)
         # are then transformed via Gumbel-Softmax to get a nearly one-hot distribution.
         self.cell_type_logits = nn.Embedding(self.init_type_num, self.init_type_num)
-        # Initialize with identity matrix
+        # Initialize with identity matrix plus small noise.
         with torch.no_grad():
             identity_matrix = torch.eye(self.init_type_num)  # Identity matrix
             noise = torch.rand(self.init_type_num, self.init_type_num) * 0.01
@@ -79,8 +78,8 @@ class CrossAttentionNet(nn.Module):
         x = F.relu(self.pool2(self.cnn2(x)))
         B, C, H, W = x.shape
         tokens = x.view(B, C, H * W).permute(0, 2, 1)  # [B, num_tokens, C]
-        keys = self.key_proj(tokens) + self.positional_encoding.unsqueeze(0).to(x.device)
-        values = self.value_proj(tokens) + self.positional_encoding.unsqueeze(0).to(x.device)
+        keys = self.key_proj(tokens) + self.positional_encoding.unsqueeze(0)
+        values = self.value_proj(tokens) + self.positional_encoding.unsqueeze(0)
 
         # Process center: for unknown centers, replace with the corresponding learnable embedding.
         query_center_mod = query_center.clone()
@@ -90,8 +89,7 @@ class CrossAttentionNet(nn.Module):
 
         # Process type part:
         # For each cell, if the type is known, use the ground-truth one-hot encoding.
-        # Otherwise, use the learnable logits from cell_type_logits, apply Gumbel-Softmax to get
-        # a near one-hot distribution, and use that to retrieve the type embedding.
+        # Otherwise, use the learnable logits from cell_type_logits and apply Gumbel-Softmax.
         type_query = []
         unknown_probs_list = []  # store unknown cells' soft one-hot vectors for regularization.
         for i in range(B):
@@ -119,7 +117,7 @@ class CrossAttentionNet(nn.Module):
             avg_prob = unknown_probs.mean(dim=0)
             global_entropy = - torch.sum(avg_prob * torch.log(avg_prob + 1e-10))
         else:
-            global_entropy = torch.tensor(0.0, device=x.device)
+            global_entropy = torch.tensor(0.0)  # Consider using x.new_tensor(0.0) for device consistency
 
         # Form the full query by concatenating the center and type parts.
         full_query = torch.cat([query_center_mod, type_query], dim=1)
@@ -133,8 +131,8 @@ class CrossAttentionNet(nn.Module):
         target_pred = self.fc2(out).squeeze(1)
 
         # Return the main prediction along with the computed global entropy.
-        # The global entropy term can be weighted and added to your main loss externally.
         return target_pred, global_entropy
+
 
 ##############################
 # Helper: 2D Sinusoidal Positional Encoding
@@ -472,3 +470,82 @@ class CrossAttentionNet_POS(nn.Module):
 
         out = F.relu(self.fc1(attended))
         return self.fc2(out).squeeze(1)
+
+
+def compute_sta(model, dataset, cell_id, num_stimuli=10000, threshold=None, device='cpu'):
+    """
+    Computes the receptive field estimate (STA) for a specific cell.
+
+    Parameters:
+      - model: the trained CrossAttentionNet model.
+      - dataset: instance of GaussianDataset (to obtain image size and cell properties).
+      - cell_id: integer specifying the cell index for which to compute the STA.
+      - num_stimuli: number of white-noise stimuli to generate.
+      - threshold: if provided, only stimuli with output > threshold are used.
+      - device: computation device (e.g., 'cpu' or 'cuda').
+
+    Returns:
+      - sta: the computed STA image as a numpy array of shape (image_size, image_size).
+      - outputs: the model outputs (firing rates) for all stimuli.
+    """
+    image_size = dataset.image_size
+
+    # Generate white noise stimuli directly on the specified device.
+    stimuli = torch.rand(num_stimuli, 1, image_size, image_size, device=device) * 2 - 1
+
+    # Prepare query components based on whether the cell is known or unknown.
+    if cell_id < dataset.A:
+        # Known cell: use stored center and type.
+        cell = dataset.cell_properties[cell_id]
+        center = np.array(cell["center"])
+        center_norm = (center / image_size) * 2 - 1  # normalized center, shape (2,)
+        type_id = cell["type_id"]
+        query_center = torch.tensor(center_norm, dtype=torch.float32, device=device).unsqueeze(0).repeat(num_stimuli, 1)
+        is_center_known = torch.ones(num_stimuli, dtype=torch.bool, device=device)
+        unknown_center_id = torch.full((num_stimuli,), -1, dtype=torch.long, device=device)
+        type_gt = torch.full((num_stimuli,), type_id, dtype=torch.long, device=device)
+        is_type_known = torch.ones(num_stimuli, dtype=torch.bool, device=device)
+    else:
+        # Unknown cell: use dummy center query (which the model will replace) and mark type as masked.
+        cell = dataset.cell_properties[cell_id]
+        center = np.array(cell["center"])
+        center_norm = (center / image_size) * 2 - 1
+        query_center = torch.tensor(center_norm, dtype=torch.float32, device=device).unsqueeze(0).repeat(num_stimuli, 1)
+        is_center_known = torch.zeros(num_stimuli, dtype=torch.bool, device=device)
+        unknown_center_id = torch.full((num_stimuli,), cell_id - dataset.A, dtype=torch.long, device=device)
+        type_id = cell["type_id"]
+        type_gt = torch.full((num_stimuli,), type_id, dtype=torch.long, device=device)
+        is_type_known = torch.zeros(num_stimuli, dtype=torch.bool, device=device)
+
+    # Create a tensor for the cell index (same value for all stimuli) on the device.
+    cell_idx = torch.full((num_stimuli,), cell_id, dtype=torch.long, device=device)
+
+    # Move the model to the specified device and set it to evaluation mode.
+    model.to(device)
+    model.eval()
+    with torch.no_grad():
+        # Forward pass: note that the updated model expects:
+        # x, query_center, is_center_known, unknown_center_id, type_gt, is_type_known, cell_idx, tau
+        # and returns: target_pred, global_entropy.
+        target_pred, global_entropy = model(
+            stimuli, query_center, is_center_known, unknown_center_id,
+            type_gt, is_type_known, cell_idx, tau=1.0
+        )
+        # Here, target_pred is interpreted as the model's firing rate output.
+
+    outputs = target_pred  # shape: (num_stimuli,)
+
+    # Compute the STA as a weighted average of the stimuli (weighted by the output).
+    if threshold is not None:
+        mask = outputs > threshold
+        if mask.sum() == 0:
+            print("No stimuli exceeded the threshold.")
+            return None, outputs.cpu().numpy()
+        selected_stimuli = stimuli[mask]
+        selected_outputs = outputs[mask]
+        sta = (selected_stimuli.squeeze(1) * selected_outputs.view(-1, 1, 1)).sum(dim=0) / selected_outputs.sum()
+    else:
+        sta = (stimuli.squeeze(1) * outputs.view(-1, 1, 1)).sum(dim=0) / outputs.sum()
+
+    return sta.cpu().numpy(), outputs.cpu().numpy()
+
