@@ -46,7 +46,8 @@ def main():
     boundary = 4
     num_epochs = 200
     checkpoint_interval = 50
-    cluster_weight = 0.0001  # adjustable weight for cluster loss on unknown types
+    # cluster_weight = 0.0001  # adjustable weight for cluster loss on unknown types
+    cluster_weight = 0.0000000001
     tau = 1.0  # temperature for Gumbel softmax
     type_embed_dim = 5  # original is 2
 
@@ -123,7 +124,7 @@ def main():
             is_type_known = batch['is_type_known'].to(device)        # [B] bool
             cell_idx = batch['cell_idx'].to(device)                  # [B] long
 
-            if (epoch + 1) > 150:
+            if (epoch + 1) > 250:
                 tau = 1
             else:
                 tau = 0.00000001
