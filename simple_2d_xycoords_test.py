@@ -215,5 +215,24 @@ def main():
     save_name = os.path.join(savefig_dir, f"{save_name}")
     plt.savefig(save_name, dpi=300, bbox_inches="tight")
 
+    # 1. Extract the true (normalized) centers for the unknown cells directly.
+    unknown_true_centers = []
+    for cell in dataset.cell_properties[dataset.A:]:  # unknown cells are stored after the first A known cells.
+        center = np.array(cell["center"])
+        # Normalize the center as done in __getitem__: (center / image_size) * 2 - 1
+        normalized_center = (center / dataset.image_size) * 2 - 1
+        unknown_true_centers.append(normalized_center)
+    unknown_true_centers = torch.tensor(unknown_true_centers, dtype=torch.float32)
+
+    # 2. Get the learned queries directly from the unknown_embedding weight.
+    # Ensure the model is on device and then move the weights to CPU for comparison.
+    learned_queries = model.unknown_embedding.weight.data.to('cpu')
+
+    # 3. Print comparison of each unknown cell.
+    print("\nComparison of Unknown Queries (Learned) vs. True Centers:")
+    for i, (true_center, learned) in enumerate(zip(unknown_true_centers, learned_queries)):
+        print(f"Unknown Cell {i}: True Center: {true_center.numpy()}, Learned Query: {learned.numpy()}")
+
+
 if __name__ == '__main__':
     main()

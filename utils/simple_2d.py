@@ -250,8 +250,8 @@ class GaussianDataset(Dataset):
                 else:
                     theta = np.random.uniform(0, 2 * np.pi)
                     eig1, eig2 = np.random.uniform(2, 5, size=2)
-                    stretching_factor = 2  # default stretching factor for surround
-                    surround_strength = 0.5  # default surround strength
+                    stretching_factor = np.random.uniform(2, 3.5)  # default stretching factor for surround
+                    surround_strength = np.random.uniform(0, 1.5)  # default surround strength
                     type_params[type_id] = {
                         "theta": theta,
                         "eig1": eig1,

@@ -51,8 +51,6 @@ def main():
     tau = 1.0  # temperature for Gumbel softmax
     type_embed_dim = 5  # original is 2
 
-
-
     # Folders
     saveprint_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Prints/'
     savefig_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Figures/'
