@@ -43,7 +43,7 @@ def main():
     boundary = 4
     num_epochs = 200
     checkpoint_interval = 50
-    cluster_weight = 0.00001  # adjustable weight for cluster loss on unknown types
+    cluster_weight = 0.0001  # adjustable weight for cluster loss on unknown types
     tau = 1.0  # temperature for Gumbel softmax
     type_embed_dim = 5  # original is 2
 
@@ -122,7 +122,7 @@ def main():
 
             loss_cluster = cluster_weight * global_entropy
 
-            if (epoch + 1) > 100:
+            if (epoch + 1) > 150:
               total_loss = loss_reg + loss_cluster
             else:
               total_loss = loss_reg
