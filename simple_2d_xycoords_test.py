@@ -229,9 +229,9 @@ def main():
     learned_queries = model.unknown_embedding.weight.data.to('cpu')
 
     # 3. Print comparison of each unknown cell.
-    print("\nComparison of Unknown Queries (Learned) vs. True Centers:")
+    logging.info("Comparison of Unknown Queries (Learned) vs. True Centers: \n")
     for i, (true_center, learned) in enumerate(zip(unknown_true_centers, learned_queries)):
-        print(f"Unknown Cell {i}: True Center: {true_center.numpy()}, Learned Query: {learned.numpy()}")
+        logging.info(f"Unknown Cell {i}: True Center: {true_center.numpy()}, Learned Query: {learned.numpy()}")
 
 
 if __name__ == '__main__':
