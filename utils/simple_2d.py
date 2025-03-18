@@ -433,8 +433,8 @@ class GaussianDataset(Dataset):
 # Model: CNN + Cross-Attention
 ##############################
 class CrossAttentionNet_POS(nn.Module):
-    def __init__(self, d_model=32, hidden_dim=32, B=4):
-        super(CrossAttentionNet, self).__init__()
+    def __init__(self, d_model=32, hidden_dim=32):
+        super(CrossAttentionNet_POS, self).__init__()
         self.cnn1 = nn.Conv2d(1, 8, kernel_size=3, stride=1, padding=1)
         self.pool1 = nn.AvgPool2d(kernel_size=2, stride=2)
         self.cnn2 = nn.Conv2d(8, 16, kernel_size=3, stride=1, padding=1)
@@ -458,15 +458,15 @@ class CrossAttentionNet_POS(nn.Module):
         B, C, H, W = x.shape
         tokens = x.view(B, C, H * W).permute(0, 2, 1)
         keys, values = self.key_proj(tokens), self.value_proj(tokens)
-        keys += self.positional_encoding.unsqueeze(0).to(keys.device)
-        values += self.positional_encoding.unsqueeze(0).to(values.device)
+        keys += self.positional_encoding.unsqueeze(0)
+        values += self.positional_encoding.unsqueeze(0)
 
         mask_unknown = ~is_known
         if mask_unknown.any():
             query[mask_unknown, 0:2] = self.unknown_embedding(unknown_id[mask_unknown])
 
         q = self.query_proj(query).unsqueeze(0)
-        attn_output, _ = self.attn(q, keys.transpose(0,1), values.transpose(0,1))
+        attn_output, _ = self.attn(q, keys.transpose(0, 1), values.transpose(0, 1))
         attended = attn_output.squeeze(0)
 
         out = F.relu(self.fc1(attended))
