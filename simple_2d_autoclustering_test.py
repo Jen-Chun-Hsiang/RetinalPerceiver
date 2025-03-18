@@ -61,6 +61,15 @@ def main():
     os.makedirs(savemodel_dir, exist_ok=True)  # Ensure folder exists
     timestr = datetime.now().strftime('%Y%m%d_%H%M%S')
 
+    # Construct the full path for the log file
+    log_filename = os.path.join(saveprint_dir, f'{filename_fixed}_training_log_{timestr}.txt')
+
+    # Setup logging
+    logging.basicConfig(filename=log_filename,
+                        level=logging.INFO,
+                        format='%(asctime)s %(levelname)s:%(message)s')
+    logging.info(f'start logging... \n')
+
     if args.is_GPU:
         # Check if CUDA is available
         if not torch.cuda.is_available():
@@ -71,15 +80,6 @@ def main():
     else:
         device = 'cpu'
         logging.info(f'set up CPU operation \n')
-
-    # Construct the full path for the log file
-    log_filename = os.path.join(saveprint_dir, f'{filename_fixed}_training_log_{timestr}.txt')
-
-    # Setup logging
-    logging.basicConfig(filename=log_filename,
-                        level=logging.INFO,
-                        format='%(asctime)s %(levelname)s:%(message)s')
-    logging.info(f'start logging... \n')
 
     # randomization initiate
     np.random.seed(seed)
