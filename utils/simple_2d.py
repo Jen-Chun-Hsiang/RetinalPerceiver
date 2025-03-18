@@ -169,7 +169,8 @@ def get_2d_sincos_positional_encoding(H, W, d_model):
 ##############################
 class GaussianDataset(Dataset):
     def __init__(self, A=22, B=10, image_size=32, num_samples=1000, num_total_types=5, num_known_types=3,
-                 boundary=4, is_unknown_center_new=False, specific_known_cells=None, masked_type_perc=0.33):
+                 boundary=4, is_unknown_center_new=False, specific_known_cells=None, masked_type_perc=0.33,
+                 output_mode="A"):
         """
         Creates A known cells and B unknown cells, each with a differential Gaussian defined by a center and a surround.
         num_total_types: total number of type_ids (e.g., 5). Types are indexed from 0.
@@ -193,11 +194,10 @@ class GaussianDataset(Dataset):
         self.cell_properties = []
         self.pdf_tensors = []
         known_centers = []
-        # Use type_params to reuse the same parameters for cells of a given type.
         type_params = {}
 
         num_specific = 0
-        if specific_known_cells is not None:
+        if specific_known_cells is not None and self.output_mode == "A":
             num_specific = len(specific_known_cells)
             if num_specific > A:
                 raise ValueError("More specific known cells provided than defined A.")
@@ -365,11 +365,13 @@ class GaussianDataset(Dataset):
         type_gt = torch.tensor(self.cell_properties[cell_idx]["type_id"], dtype=torch.long)
         is_type_known = torch.tensor(self.type_known_flags[cell_idx], dtype=torch.bool)
 
+        query = torch.tensor(np.append(center_norm, type_gt), dtype=torch.float32)
         return {
             'image': image,
             'target': target,
             'is_center_known': torch.tensor(is_center_known, dtype=torch.bool),
             'query_center': torch.tensor(center_norm, dtype=torch.float32),
+            'query': query,
             'unknown_center_id': unknown_center_id,
             'type_gt': type_gt,
             'is_type_known': is_type_known,
@@ -426,3 +428,47 @@ class GaussianDataset(Dataset):
             data.append(row)
         df = pd.DataFrame(data)
         logging.info(f'df: {df} \n')
+
+
+##############################
+# Model: CNN + Cross-Attention
+##############################
+class CrossAttentionNet_POS(nn.Module):
+    def __init__(self, d_model=32, hidden_dim=32, B=4):
+        super(CrossAttentionNet, self).__init__()
+        self.cnn1 = nn.Conv2d(1, 8, kernel_size=3, stride=1, padding=1)
+        self.pool1 = nn.AvgPool2d(kernel_size=2, stride=2)
+        self.cnn2 = nn.Conv2d(8, 16, kernel_size=3, stride=1, padding=1)
+        self.pool2 = nn.AvgPool2d(kernel_size=2, stride=2)
+
+        self.key_proj = nn.Linear(16, d_model)
+        self.value_proj = nn.Linear(16, d_model)
+        self.query_proj = nn.Linear(3, d_model)
+        self.attn = nn.MultiheadAttention(embed_dim=d_model, num_heads=2, batch_first=False)
+        self.fc1 = nn.Linear(d_model, hidden_dim)
+        self.fc2 = nn.Linear(hidden_dim, 1)
+
+        self.unknown_embedding = nn.Embedding(B, 2)
+        torch.nn.init.zeros_(self.unknown_embedding.weight)
+        pos_encoding = get_2d_sincos_positional_encoding(8, 8, d_model)
+        self.register_buffer('positional_encoding', pos_encoding)
+
+    def forward(self, x, query, is_known, unknown_id):
+        x = F.relu(self.pool1(self.cnn1(x)))
+        x = F.relu(self.pool2(self.cnn2(x)))
+        B, C, H, W = x.shape
+        tokens = x.view(B, C, H * W).permute(0, 2, 1)
+        keys, values = self.key_proj(tokens), self.value_proj(tokens)
+        keys += self.positional_encoding.unsqueeze(0).to(keys.device)
+        values += self.positional_encoding.unsqueeze(0).to(values.device)
+
+        mask_unknown = ~is_known
+        if mask_unknown.any():
+            query[mask_unknown, 0:2] = self.unknown_embedding(unknown_id[mask_unknown])
+
+        q = self.query_proj(query).unsqueeze(0)
+        attn_output, _ = self.attn(q, keys.transpose(0,1), values.transpose(0,1))
+        attended = attn_output.squeeze(0)
+
+        out = F.relu(self.fc1(attended))
+        return self.fc2(out).squeeze(1)
