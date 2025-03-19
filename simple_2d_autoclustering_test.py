@@ -9,6 +9,7 @@ import math
 import os
 import json
 import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 from datetime import datetime
 import argparse
 import logging
@@ -289,11 +290,6 @@ def main():
             # predicted_type = int(torch.argmax(one_hot).item())
             predicted_type = int(torch.argmax(logits).item())
 
-
-
-            # Retrieve the type embedding as the weighted sum over the fixed type embeddings.
-            # learned_embedding = (one_hot.unsqueeze(0) @ model.type_embedding.weight).detach().cpu().numpy().flatten()
-
         cells_info.append({
             "Cell ID": i,
             "Target Type": target_type,
@@ -310,15 +306,78 @@ def main():
     selected_columns = ["Cell ID", "Target Type", "Type Known", "Predicted Type"]
     logging.info(f'df: {df[selected_columns]} \n')
 
-    # Convert DataFrame to a dictionary suitable for MATLAB
-    # matlab_data = {
-    #     "column_names":np.array(df.columns, dtype=object),  # Store column names
-    #     "data": np.array(df.values.tolist(), dtype=object)    # Convert DataFrame rows into a list of lists
-    # }
+    save_name = f'{filename_fixed}_learned_logit.png'
+    save_name = os.path.join(savefig_dir, f"{save_name}")
+    plot_cell_type_logits_heatmap(dataset, model, device, type_known_flags, save_name=save_name)
 
-    # folder_path = '/content/drive/MyDrive/Colab/PreyCapture/'
-    # saved_mat_path = os.path.join(folder_path, "cells_info.mat")
-    # scipy.io.savemat(saved_mat_path, matlab_data)
+def plot_cell_type_logits_heatmap(dataset, model, device, type_known_flags, save_name=None):
+    """
+    Plots a heatmap for cell_type_logits for unknown cells.
+    For each unknown cell:
+      - A white rectangle highlights the predicted cell type (i.e. the argmax of the logits).
+      - If the predicted type does not match the target type, a red rectangle is drawn around the target type.
+
+    Args:
+        dataset: Dataset object containing:
+            - cell_properties: list of dicts with cell info (each should have "type_id").
+            - image_size: scalar used for normalization.
+            - A: number of known cells (unknown cells follow).
+        model: Model object with a callable attribute 'cell_type_logits' that returns logits.
+        device: Torch device to use.
+        type_known_flags: List or array of booleans indicating whether a cell's type is provided (True) or unknown (False).
+    """
+    # Identify indices for unknown cells (assumes unknown cells are those where type_known is False)
+    unknown_cells_indices = [i for i, known in enumerate(type_known_flags) if not known]
+
+    logits_matrix = []
+    target_types = []
+    predicted_types = []
+
+    # For each unknown cell, compute the logits from cell_type_logits.
+    # Here we assume that the lookup index for the logits is computed as (i - dataset.A)
+    for i in unknown_cells_indices:
+        unknown_index = i - dataset.A  # adjust index for unknown cells
+        logits = model.cell_type_logits(torch.tensor(unknown_index, dtype=torch.long).to(device))
+        logits = logits.detach().cpu().numpy()  # logits shape: [num_total_types]
+        logits_matrix.append(logits)
+        pred_type = int(np.argmax(logits))
+        predicted_types.append(pred_type)
+        target_types.append(dataset.cell_properties[i]["type_id"])
+
+    logits_matrix = np.array(logits_matrix)  # shape: (num_unknown_cells, num_total_types)
+
+    # Create the heatmap
+    plt.figure(figsize=(10, logits_matrix.shape[0] * 0.5 + 3))
+    im = plt.imshow(logits_matrix, aspect='auto', cmap='viridis')
+    plt.colorbar(im, label="Logit Value")
+    plt.xlabel("Cell Type Index")
+    plt.ylabel("Unknown Cell Index (ordered)")
+    plt.title("Heatmap of cell_type_logits for Unknown Cells")
+
+    ax = plt.gca()
+    num_rows, num_cols = logits_matrix.shape
+
+    # For each row (unknown cell), add rectangle annotations
+    for row in range(num_rows):
+        pred = predicted_types[row]
+        target = target_types[row]
+
+        # Draw a white rectangle around the predicted type
+        rect_pred = patches.Rectangle((pred - 0.5, row - 0.5), 1, 1, linewidth=2,
+                                      edgecolor='white', facecolor='none')
+        ax.add_patch(rect_pred)
+
+        # If the predicted type differs from the target, highlight the target type with a red rectangle
+        if pred != target:
+            rect_target = patches.Rectangle((target - 0.5, row - 0.5), 1, 1, linewidth=2,
+                                            edgecolor='red', facecolor='none')
+            ax.add_patch(rect_target)
+
+    plt.tight_layout()
+    if save_name is not None:
+        plt.savefig(save_name, dpi=300, bbox_inches="tight")
+    else:
+        plt.show()
 
 
 if __name__ == '__main__':
