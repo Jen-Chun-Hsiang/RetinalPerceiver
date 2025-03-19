@@ -38,6 +38,8 @@ def parse_args():
     parser.add_argument('--num_samples', type=int, default=20000, help='Number of data samples in the dataset')
     parser.add_argument('--batch_size', type=int, default=256, help='Batch size')
     parser.add_argument('--is_AGC', action='store_true', help='Add gradient clipping to make convergent to x, y more efficient')
+    parser.add_argument('--is_noisy_grad', action='store_true', help='Add noisy gradient to prevent vanish gradient landscape')
+    parser.add_argument('--noise_grad_std', type=float, default=1e-4, help='Std of gradient noise')
     return parser.parse_args()
 
 
@@ -140,6 +142,12 @@ def main():
             loss = mse_loss(target_pred, target)
 
             loss.backward()
+
+            if args.is_noisy_grad:
+                if model.unknown_embedding.weight.grad is not None:
+                    model.unknown_embedding.weight.grad.add_(
+                        torch.randn_like(model.unknown_embedding.weight.grad) * args.noise_grad_std
+                    )
 
             if args.is_AGC:
                 adaptive_grad_clip(model.unknown_embedding.parameters(), clip_factor=0.01)
