@@ -146,8 +146,6 @@ def main():
             else:
                 tau = args.early_tau
 
-
-            # Forward pass: returns regression predictions, type logits, and discrete predictions (for unknown samples)
             target_pred, global_entropy = model(images, query_center, is_center_known, unknown_center_id, type_gt,
                                                 is_type_known, cell_idx, tau=tau)
 

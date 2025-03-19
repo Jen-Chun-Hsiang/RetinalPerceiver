@@ -119,6 +119,9 @@ def main():
 
     losses_dict = {"epochs": [], "total_loss": [], "known_loss": [], "unknown_loss": []}
 
+    logging.info(f'Before training coordinates: \n')
+    print_unknown_cell_comparison(dataset, model)
+
     for epoch in range(num_epochs):
         running_loss_total = 0.0
         running_loss_known = 0.0
@@ -213,6 +216,9 @@ def main():
             }, checkpoint_path)
             logging.info(f"Checkpoint saved at {checkpoint_path}\n")
 
+            logging.info(f'During training coordinates (epoch: {epoch}): \n')
+            print_unknown_cell_comparison(dataset, model)
+
     # Retrieve the losses stored during training.
     epochs = np.array(losses_dict["epochs"])
     total_loss = np.array(losses_dict["total_loss"])
@@ -243,7 +249,40 @@ def main():
     save_name = os.path.join(savefig_dir, f"{save_name}")
     plt.savefig(save_name, dpi=300, bbox_inches="tight")
 
-    # 1. Extract the true (normalized) centers for the unknown cells directly.
+    print_unknown_cell_comparison(dataset, model)
+
+    # # 1. Extract the true (normalized) centers for the unknown cells directly.
+    # unknown_true_centers = []
+    # for cell in dataset.cell_properties[dataset.A:]:  # unknown cells are stored after the first A known cells.
+    #     center = np.array(cell["center"])
+    #     # Normalize the center as done in __getitem__: (center / image_size) * 2 - 1
+    #     normalized_center = (center / dataset.image_size) * 2 - 1
+    #     unknown_true_centers.append(normalized_center)
+    # unknown_true_centers = torch.tensor(unknown_true_centers, dtype=torch.float32)
+    #
+    # # 2. Get the learned queries directly from the unknown_embedding weight.
+    # # Ensure the model is on device and then move the weights to CPU for comparison.
+    # learned_queries = model.unknown_embedding.weight.data.to('cpu')
+    #
+    # # 3. Print comparison of each unknown cell.
+    # logging.info("Comparison of Unknown Queries (Learned) vs. True Centers: \n")
+    # for i, (true_center, learned) in enumerate(zip(unknown_true_centers, learned_queries)):
+    #     logging.info(f"Unknown Cell {i}: True Center: {true_center.numpy()}, Learned Query: {learned.numpy()}")
+
+
+def print_unknown_cell_comparison(dataset, model):
+    """
+    Prints a comparison of learned queries (from the model) versus the true normalized centers
+    of the unknown cells in the dataset.
+
+    Args:
+        dataset: Dataset object that must have:
+            - cell_properties: a list of dicts containing at least a "center" key.
+            - image_size: scalar value for image size used for normalization.
+            - A: the count of known cells (unknown cells follow this index).
+        model: Model object with an attribute unknown_embedding containing the learned queries.
+    """
+    # 1. Extract the true (normalized) centers for the unknown cells.
     unknown_true_centers = []
     for cell in dataset.cell_properties[dataset.A:]:  # unknown cells are stored after the first A known cells.
         center = np.array(cell["center"])
