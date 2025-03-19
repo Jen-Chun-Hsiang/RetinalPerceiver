@@ -13,6 +13,7 @@ from datetime import datetime
 import argparse
 import logging
 from utils.simple_2d import GaussianDataset, compute_sta, CrossAttentionNet_POS
+from utils.simple_2d_helper import adaptive_grad_clip
 
 import pandas as pd
 import scipy.io
@@ -139,6 +140,7 @@ def main():
             loss = mse_loss(target_pred, target)
 
             loss.backward()
+            adaptive_grad_clip(model.unknown_embedding.parameters(), clip_factor=0.01)
             optimizer.step()
             model.unknown_embedding.weight.data.clamp_(-0.999, 0.999)
 
