@@ -17,7 +17,7 @@ import os
 
 class CrossAttentionNet(nn.Module):
     def __init__(self, d_model=32, hidden_dim=32, center_B=10, num_total_types=5, type_embed_dim=2,
-                 init_type_num=24):
+                 init_type_num=24, layer1_channel=16, layer2_channel=32):
         """
         d_model: transformer embedding dimension.
         hidden_dim: hidden layer dimension.
@@ -26,15 +26,17 @@ class CrossAttentionNet(nn.Module):
         type_embed_dim: dimension for type embeddings.
         """
         super(CrossAttentionNet, self).__init__()
-        self.cnn1 = nn.Conv2d(1, 16, kernel_size=3, stride=1, padding=1)
+        self.layer1_channel = 16
+        self.layer2_channel = 32
+        self.cnn1 = nn.Conv2d(1, self.layer1_channel, kernel_size=3, stride=1, padding=1)
         self.pool1 = nn.AvgPool2d(kernel_size=2, stride=2)
-        self.bn1 = nn.BatchNorm2d(16)  # match cnn1 out_channels
-        self.cnn2 = nn.Conv2d(16, 32, kernel_size=3, stride=1, padding=1)
+        self.bn1 = nn.BatchNorm2d(self.layer1_channel)  # match cnn1 out_channels
+        self.cnn2 = nn.Conv2d(self.layer1_channel, self.layer2_channel, kernel_size=3, stride=1, padding=1)
         self.pool2 = nn.AvgPool2d(kernel_size=2, stride=2)
-        self.bn2 = nn.BatchNorm2d(32)  # match cnn1 out_channels
+        self.bn2 = nn.BatchNorm2d(self.layer2_channel)  # match cnn1 out_channels
 
-        self.key_proj = nn.Linear(16, d_model)
-        self.value_proj = nn.Linear(16, d_model)
+        self.key_proj = nn.Linear(self.layer2_channel, d_model)
+        self.value_proj = nn.Linear(self.layer2_channel, d_model)
         # Query is the concatenation of center (2 dims) and type embedding (type_embed_dim)
         self.query_proj = nn.Linear(2 + type_embed_dim, d_model)
         self.attn = nn.MultiheadAttention(embed_dim=d_model, num_heads=2, batch_first=False)
