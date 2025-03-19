@@ -310,7 +310,7 @@ def main():
     save_name = os.path.join(savefig_dir, f"{save_name}")
     plot_cell_type_logits_heatmap(dataset, model, device, type_known_flags, save_name=save_name)
 
-def plot_cell_type_logits_heatmap(dataset, model, device, type_known_flags, save_name=None):
+def plot_cell_type_logits_heatmap(dataset, model, device, save_name=None):
     """
     Plots a heatmap for cell_type_logits for unknown cells.
     For each unknown cell:
@@ -326,8 +326,7 @@ def plot_cell_type_logits_heatmap(dataset, model, device, type_known_flags, save
         device: Torch device to use.
         type_known_flags: List or array of booleans indicating whether a cell's type is provided (True) or unknown (False).
     """
-    # Identify indices for unknown cells (assumes unknown cells are those where type_known is False)
-    unknown_cells_indices = [i for i, known in enumerate(type_known_flags) if not known]
+    unknown_indices = list(range(dataset.A, len(dataset.cell_properties)))
 
     logits_matrix = []
     target_types = []
@@ -335,7 +334,7 @@ def plot_cell_type_logits_heatmap(dataset, model, device, type_known_flags, save
 
     # For each unknown cell, compute the logits from cell_type_logits.
     # Here we assume that the lookup index for the logits is computed as (i - dataset.A)
-    for i in unknown_cells_indices:
+    for i in unknown_indices:
         unknown_index = i - dataset.A  # adjust index for unknown cells
         logits = model.cell_type_logits(torch.tensor(unknown_index, dtype=torch.long).to(device))
         logits = logits.detach().cpu().numpy()  # logits shape: [num_total_types]
