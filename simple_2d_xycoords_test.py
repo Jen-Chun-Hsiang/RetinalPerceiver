@@ -37,7 +37,7 @@ def parse_args():
     parser.add_argument('--checkpoint_interval', type=int, default=50, help='Number of epochs to save a checkpoints')
     parser.add_argument('--num_samples', type=int, default=20000, help='Number of data samples in the dataset')
     parser.add_argument('--batch_size', type=int, default=256, help='Batch size')
-
+    parser.add_argument('--is_AGC', action='store_true', help='Add gradient clipping to make convergent to x, y more efficient')
     return parser.parse_args()
 
 
@@ -140,8 +140,11 @@ def main():
             loss = mse_loss(target_pred, target)
 
             loss.backward()
-            adaptive_grad_clip(model.unknown_embedding.parameters(), clip_factor=0.01)
+
+            if args.is_AGC:
+                adaptive_grad_clip(model.unknown_embedding.parameters(), clip_factor=0.01)
             optimizer.step()
+
             model.unknown_embedding.weight.data.clamp_(-0.999, 0.999)
 
             batch_size = batch['image'].size(0)
