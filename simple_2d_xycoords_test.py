@@ -144,7 +144,7 @@ def main():
             loss.backward()
 
             if args.is_noisy_grad:
-                epoch_progress = (num_epochs-epoch+1)/epoch
+                epoch_progress = (num_epochs-epoch)/(epoch+1)
                 if model.unknown_embedding.weight.grad is not None:
                     model.unknown_embedding.weight.grad.add_(
                         torch.randn_like(model.unknown_embedding.weight.grad) * args.noise_grad_std * epoch_progress
