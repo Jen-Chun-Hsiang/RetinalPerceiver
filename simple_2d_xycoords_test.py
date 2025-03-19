@@ -120,7 +120,7 @@ def main():
     losses_dict = {"epochs": [], "total_loss": [], "known_loss": [], "unknown_loss": []}
 
     if args.is_noisy_grad:
-        print(f'noise gradient std: {args.noise_grad_std}')
+        logging.info(f'noise gradient std: {args.noise_grad_std} \n')
     logging.info(f'Before training coordinates: \n')
     print_unknown_cell_comparison(dataset, model)
 
