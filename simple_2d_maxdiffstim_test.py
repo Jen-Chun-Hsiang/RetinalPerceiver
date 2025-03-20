@@ -54,6 +54,7 @@ def main():
         {"center": [16, 16], "theta": 1.0 + math.pi / 2, "eig1": 2, "eig2": 2, "type_id": 2, "surround_strength": 0.8},
         {"center": [16, 16], "theta": 1.0 + math.pi / 2, "eig1": 6, "eig2": 6, "type_id": 3, "surround_strength": 0.8},
     ]
+    specific_known = specific_known_1
     output_mode = 'A'
     num_A = args.num_A
     num_B = args.num_B
@@ -102,7 +103,7 @@ def main():
 
     dataset = GaussianDataset(A=num_A, B=num_B, num_samples=args.num_samples, image_size=image_size,
                               is_unknown_center_new=is_unknown_center_new,
-                              specific_known_cells=specific_known_1, num_total_types=num_total_types,
+                              specific_known_cells=specific_known, num_total_types=num_total_types,
                               num_known_types=num_known_types,
                               boundary=boundary, output_mode=output_mode)
     for i in range(5):
