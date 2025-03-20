@@ -71,6 +71,7 @@ def main():
     num_epochs = args.num_epochs
     checkpoint_interval = args.checkpoint_interval
     cluster_weight = args.cluster_weight
+    is_applied_low_dim_type_encoding = True
 
     # Folders
     saveprint_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Prints/'
@@ -267,10 +268,12 @@ def main():
         center_norm = (center / dataset.image_size) * 2 - 1  # normalized
         is_center_known = i < dataset.A
         if is_center_known is False:
-          unknown_center_id = i - dataset.A
-          learned_center_embedding = model.unknown_embedding(torch.tensor(unknown_center_id, dtype=torch.long).to(device)).detach().cpu().numpy()
+            unknown_center_id = i - dataset.A
+            learned_center_embedding = model.unknown_embedding(
+                torch.tensor(unknown_center_id, dtype=torch.long).to(device)
+            ).detach().cpu().numpy()
         else:
-          learned_center_embedding = center_norm
+            learned_center_embedding = center_norm
 
         if type_known:
             # For known cells, the query uses the ground-truth type,
@@ -282,13 +285,20 @@ def main():
             # Assume that unknown cells are those with index >= dataset.A,
             # and the lookup index for cell_type_logits is computed as (cell_id - dataset.A).
             unknown_index = i   # - dataset.A
-
-            logits = model.cell_type_logits(torch.tensor(unknown_index, dtype=torch.long).to(device))
-            learned_embedding = logits.detach().cpu().numpy()
-            # logits = self.cell_type_logits(cell_idx[i].long())  # shape: [num_total_types]
+            if is_applied_low_dim_type_encoding:
+                # Use the learnable low-dimensional encoding path.
+                encoding = model.cell_type_encoding(
+                    torch.tensor(unknown_index, dtype=torch.long).to(device)
+                )
+                logits = model.cell_type_logits_proj(encoding)
+            else:
+                # Use the original cell_type_logits.
+                logits = model.cell_type_logits(
+                    torch.tensor(unknown_index, dtype=torch.long).to(device)
+                )
+            learned_embedding = logits.detach().cpu().numpy()\
             # Use Gumbel-Softmax (with tau=1.0, hard=True) to get a nearly one-hot vector.
             one_hot = F.gumbel_softmax(logits, tau=0.001, hard=True)
-            # predicted_type = int(torch.argmax(one_hot).item())
             predicted_type = int(torch.argmax(logits).item())
 
         cells_info.append({
