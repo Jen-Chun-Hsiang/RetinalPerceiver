@@ -326,7 +326,7 @@ def plot_cell_type_logits_heatmap(dataset, model, device, save_name=None):
         device: Torch device to use.
         type_known_flags: List or array of booleans indicating whether a cell's type is provided (True) or unknown (False).
     """
-    unknown_indices = list(range(dataset.A, len(dataset.cell_properties)))
+    unknown_indices = [i for i, cell in enumerate(dataset.cell_properties) if not cell["type_known"]]
 
     logits_matrix = []
     target_types = []
@@ -334,13 +334,16 @@ def plot_cell_type_logits_heatmap(dataset, model, device, save_name=None):
 
     # For each unknown cell, compute the logits from cell_type_logits.
     # Here we assume that the lookup index for the logits is computed as (i - dataset.A)
-    for i in unknown_indices:
-        unknown_index = i - dataset.A  # adjust index for unknown cells
-        logits = model.cell_type_logits(torch.tensor(unknown_index, dtype=torch.long).to(device))
-        logits = logits.detach().cpu().numpy()  # logits shape: [num_total_types]
+    for j, i in enumerate(unknown_indices):
+        logits = model.cell_type_logits(torch.tensor(j, dtype=torch.long).to(device))
+        logits = logits.detach().cpu().numpy()  # shape: [num_total_types]
         logits_matrix.append(logits)
+
+        # Predicted type is the argmax of the logits.
         pred_type = int(np.argmax(logits))
         predicted_types.append(pred_type)
+
+        # Retrieve the target type from cell_properties.
         target_types.append(dataset.cell_properties[i]["type_id"])
 
     logits_matrix = np.array(logits_matrix)  # shape: (num_unknown_cells, num_total_types)
