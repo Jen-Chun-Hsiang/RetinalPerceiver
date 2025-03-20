@@ -320,7 +320,7 @@ def plot_cell_type_logits_heatmap(dataset, model, device, save_name=None):
             - A: number of known cells (unknown cells follow).
         model: Model object with a callable attribute 'cell_type_logits' that returns logits.
         device: Torch device to use.
-        type_known_flags: List or array of booleans indicating whether a cell's type is provided (True) or unknown (False).
+        save_name: Filename to save the plot, if provided.
     """
     unknown_indices = [i for i, flag in enumerate(dataset.type_known_flags) if not flag]
 
@@ -342,14 +342,23 @@ def plot_cell_type_logits_heatmap(dataset, model, device, save_name=None):
         # Retrieve the target type from cell_properties.
         target_types.append(dataset.cell_properties[i]["type_id"])
 
+    # Convert lists to numpy arrays for sorting
     logits_matrix = np.array(logits_matrix)  # shape: (num_unknown_cells, num_total_types)
+    target_types = np.array(target_types)
+    predicted_types = np.array(predicted_types)
+
+    # Sort the arrays by target_types
+    sort_indices = np.argsort(target_types)
+    logits_matrix = logits_matrix[sort_indices]
+    target_types = target_types[sort_indices]
+    predicted_types = predicted_types[sort_indices]
 
     # Create the heatmap
     plt.figure(figsize=(10, logits_matrix.shape[0] * 0.5 + 3))
     im = plt.imshow(logits_matrix, aspect='auto', cmap='viridis')
     plt.colorbar(im, label="Logit Value")
     plt.xlabel("Cell Type Index")
-    plt.ylabel("Unknown Cell Index (ordered)")
+    plt.ylabel("Unknown Cell Index (sorted by target type)")
     plt.title("Heatmap of cell_type_logits for Unknown Cells")
 
     ax = plt.gca()
@@ -376,6 +385,7 @@ def plot_cell_type_logits_heatmap(dataset, model, device, save_name=None):
         plt.savefig(save_name, dpi=300, bbox_inches="tight")
     else:
         plt.show()
+
 
 
 if __name__ == '__main__':
