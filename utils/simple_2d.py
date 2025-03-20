@@ -305,11 +305,12 @@ class GaussianDataset(Dataset):
 
         # Unknown cells: for these, we assign types from [num_known_types, num_total_types-1]
 
-        # Assuming known_centers is a NumPy array of shape (N, 2)
-        x_min = np.min(known_centers[:, 0])
-        x_max = np.max(known_centers[:, 0])
-        y_min = np.min(known_centers[:, 1])
-        y_max = np.max(known_centers[:, 1])
+        known_centers_arr = np.array(known_centers)
+        # Compute the bounds for x and y
+        x_min = np.min(known_centers_arr[:, 0])
+        x_max = np.max(known_centers_arr[:, 0])
+        y_min = np.min(known_centers_arr[:, 1])
+        y_max = np.max(known_centers_arr[:, 1])
 
         self.A = A
         self.B = B
