@@ -37,6 +37,7 @@ def parse_args():
     parser.add_argument('--late_tau', type=float, default=1.0, help='Temperature for gumbel tau in late training stage')
     parser.add_argument('--type_embed_dim', type=int, default=5, help='Number of dimension of the embedding of the types')
     parser.add_argument('--tau_switch_epoch', type=int, default=250, help='Epoch number to switch gumbel tau from early to late')
+    parser.add_argument('--cell_type_encoding_dim', type=int, default=3, help='Number of low dimension cell type embedding')
 
     # Training
     parser.add_argument('--is_GPU', action='store_true', help='Using GPUs for accelaration')
@@ -70,7 +71,6 @@ def main():
     num_epochs = args.num_epochs
     checkpoint_interval = args.checkpoint_interval
     cluster_weight = args.cluster_weight
-    type_embed_dim = args.type_embed_dim  # original is 2
 
     # Folders
     saveprint_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Prints/'
@@ -115,7 +115,10 @@ def main():
 
     loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True)
 
-    model = CrossAttentionNet(d_model=32, hidden_dim=32, center_B=10, num_total_types=num_total_types, type_embed_dim=type_embed_dim)
+    init_type_num = args.num_A + args.num_B
+    model = CrossAttentionNet(d_model=32, hidden_dim=32, center_B=10, num_total_types=num_total_types,
+                              type_embed_dim=args.type_embed_dim, init_type_num=init_type_num,
+                              cell_type_encoding_dim=args.cell_type_encoding_dim)
     model.to(device)
     optimizer = optim.Adam(model.parameters(), lr=1e-3)
     scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=5, T_mult=2, eta_min=1e-6)
@@ -145,11 +148,13 @@ def main():
 
             if (epoch + 1) > args.tau_switch_epoch:
                 tau = args.late_tau
+                alpha = 0.0
             else:
                 tau = args.early_tau
+                alpha = 1.0
 
             target_pred, global_entropy = model(images, query_center, is_center_known, unknown_center_id, type_gt,
-                                                is_type_known, cell_idx, tau=tau)
+                                                is_type_known, cell_idx, tau=tau, alpha=alpha)
 
             # 1. Regression loss for the target prediction
             loss_reg = mse_loss(target_pred, target)
