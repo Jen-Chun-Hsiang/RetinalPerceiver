@@ -286,11 +286,22 @@ class GaussianDataset(Dataset):
                 self.pdf_tensors.append(pdf_tensor)
 
         # Unknown cells: for these, we assign types from [num_known_types, num_total_types-1]
+
+        # Assuming known_centers is a NumPy array of shape (N, 2)
+        x_min = np.min(known_centers[:, 0])
+        x_max = np.max(known_centers[:, 0])
+        y_min = np.min(known_centers[:, 1])
+        y_max = np.max(known_centers[:, 1])
+
         self.A = A
         self.B = B
         for i in range(B):
             if is_unknown_center_new:
-                center = np.random.uniform(boundary, image_size-boundary, size=2)
+                # center = np.random.uniform(boundary, image_size-boundary, size=2)
+                center = np.array([
+                    np.random.uniform(x_min, x_max),
+                    np.random.uniform(y_min, y_max)
+                ])
             else:
                 center = known_centers[np.random.randint(0, A)]
             unknown_possible = np.arange(num_known_types, num_total_types)
