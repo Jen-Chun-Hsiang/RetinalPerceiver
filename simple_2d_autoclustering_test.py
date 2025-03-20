@@ -326,7 +326,7 @@ def plot_cell_type_logits_heatmap(dataset, model, device, save_name=None):
         device: Torch device to use.
         type_known_flags: List or array of booleans indicating whether a cell's type is provided (True) or unknown (False).
     """
-    unknown_indices = [i for i, cell in enumerate(dataset.cell_properties) if not cell["type_known"]]
+    unknown_indices = [i for i, flag in enumerate(dataset.type_known_flags) if not flag]
 
     logits_matrix = []
     target_types = []
