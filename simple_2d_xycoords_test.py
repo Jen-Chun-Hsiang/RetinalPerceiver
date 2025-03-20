@@ -30,7 +30,9 @@ def parse_args():
     parser.add_argument('--num_total_types', type=int, default=7, help='Number of total types')
     parser.add_argument('--num_known_types', type=int, default=3, help='Number of known types')
     parser.add_argument('--boundary', type=int, default=4, help='image boundary to generate a receptive field')
-
+    # Dataset
+    parser.add_argument('--surround_strength_lwb', type=float, default=0.0, help='Std of gradient noise')
+    parser.add_argument('--surround_strength_upb', type=float, default=1.5, help='Std of gradient noise')
     # Training
     parser.add_argument('--is_GPU', action='store_true', help='Using GPUs for accelaration')
     parser.add_argument('--num_epochs', type=int, default=200, help='Number of total epochs')
@@ -103,8 +105,9 @@ def main():
     dataset = GaussianDataset(A=num_A, B=num_B, num_samples=args.num_samples, image_size=image_size,
                               is_unknown_center_new=is_unknown_center_new,
                               specific_known_cells=specific_known, num_total_types=num_total_types,
-                              num_known_types=num_known_types,
-                              boundary=boundary, output_mode=output_mode)
+                              num_known_types=num_known_types, boundary=boundary, output_mode=output_mode,
+                              surround_strength_lwb=args.surround_strength_lwb,
+                              surround_strength_upb=args.surround_strength_upb)
     for i in range(5):
         dataset.plot_sample(i, save_folder=savefig_dir, save_name=f'{filename_fixed}_plot_cell_RF.png')
     dataset.print_cell_table()
