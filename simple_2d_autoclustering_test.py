@@ -32,6 +32,7 @@ def parse_args():
     parser.add_argument('--num_total_types', type=int, default=5, help='Number of total types')
     parser.add_argument('--num_known_types', type=int, default=3, help='Number of known types')
     parser.add_argument('--boundary', type=int, default=4, help='image boundary to generate a receptive field')
+    parser.add_argument('--num_center_pos', type=int, default=5, help='Number of different center position in training')
     # Model
     parser.add_argument('--early_tau', type=float, default=1e-7, help='Temperature for gumbel tau in early training stage')
     parser.add_argument('--late_tau', type=float, default=1.0, help='Temperature for gumbel tau in late training stage')
@@ -107,9 +108,10 @@ def main():
     np.random.seed(seed)
     torch.manual_seed(seed)
 
-    dataset = GaussianDataset(A=num_A, B=num_B, num_samples=args.num_samples, image_size=image_size, is_unknown_center_new=is_unknown_center_new,
-                              specific_known_cells=specific_known, num_total_types=num_total_types, num_known_types=num_known_types,
-                              boundary=boundary)
+    dataset = GaussianDataset(A=num_A, B=num_B, num_samples=args.num_samples, image_size=image_size,
+                              is_unknown_center_new=is_unknown_center_new, specific_known_cells=specific_known,
+                              num_total_types=num_total_types, num_known_types=num_known_types,
+                              boundary=boundary, num_center_pos=args.num_center_pos)
     for i in range(5):
         dataset.plot_sample(i, save_folder=savefig_dir, save_name=f'{filename_fixed}_plot_cell_RF.png')
     dataset.print_cell_table()

@@ -34,6 +34,7 @@ def parse_args():
     parser.add_argument('--surround_strength_lwb', type=float, default=0.0, help='Std of gradient noise')
     parser.add_argument('--surround_strength_upb', type=float, default=1.5, help='Std of gradient noise')
     parser.add_argument('--num_center_pos', type=int, default=5, help='Number of different center position in training')
+    parser.add_argument('--num_worker', type=int, default=0, help='Use to offline loading data in batch')
     # Training
     parser.add_argument('--is_GPU', action='store_true', help='Using GPUs for accelaration')
     parser.add_argument('--num_epochs', type=int, default=200, help='Number of total epochs')
@@ -113,7 +114,11 @@ def main():
         dataset.plot_sample(i, save_folder=savefig_dir, save_name=f'{filename_fixed}_plot_cell_RF.png')
     dataset.print_cell_table()
 
-    loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True)
+    if args.num_worker == 0:
+        loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True)
+    else:
+        loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True,
+                            num_workers=args.num_worker, pin_memory=True, persistent_workers=False)
 
     model = CrossAttentionNet_POS(d_model=32, hidden_dim=32, B=num_B)
     model.to(device)
