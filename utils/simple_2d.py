@@ -175,7 +175,7 @@ def get_2d_sincos_positional_encoding(H, W, d_model):
 class GaussianDataset(Dataset):
     def __init__(self, A=22, B=10, image_size=32, num_samples=1000, num_total_types=5, num_known_types=3,
                  boundary=4, is_unknown_center_new=False, specific_known_cells=None, masked_type_perc=0.33,
-                 output_mode="A", surround_strength_lwb=0, surround_strength_upb=1.5):
+                 output_mode="A", surround_strength_lwb=0, surround_strength_upb=1.5, num_center_pos=5):
         """
         Creates A known cells and B unknown cells, each with a differential Gaussian defined by a center and a surround.
         num_total_types: total number of type_ids (e.g., 5). Types are indexed from 0.
@@ -192,6 +192,7 @@ class GaussianDataset(Dataset):
         self.output_mode = output_mode
         self.surround_strength_lwb = surround_strength_lwb
         self.surround_strength_upb = surround_strength_upb
+        self.num_center_pos = num_center_pos
 
         # Create grid for PDF computation
         x_coords = np.arange(self.image_size)
@@ -204,7 +205,7 @@ class GaussianDataset(Dataset):
         known_centers = []
         type_params = {}
 
-        centers = np.random.uniform(boundary, image_size - boundary, size=(round((A+B)/5), 2))
+        centers = np.random.uniform(boundary, image_size - boundary, size=(self.num_center_pos, 2))
 
         num_specific = 0
         if specific_known_cells is not None and self.output_mode == "A":

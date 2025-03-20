@@ -33,6 +33,7 @@ def parse_args():
     # Dataset
     parser.add_argument('--surround_strength_lwb', type=float, default=0.0, help='Std of gradient noise')
     parser.add_argument('--surround_strength_upb', type=float, default=1.5, help='Std of gradient noise')
+    parser.add_argument('--num_center_pos', type=int, default=5, help='Number of different center position in training')
     # Training
     parser.add_argument('--is_GPU', action='store_true', help='Using GPUs for accelaration')
     parser.add_argument('--num_epochs', type=int, default=200, help='Number of total epochs')
@@ -107,7 +108,7 @@ def main():
                               specific_known_cells=specific_known, num_total_types=num_total_types,
                               num_known_types=num_known_types, boundary=boundary, output_mode=output_mode,
                               surround_strength_lwb=args.surround_strength_lwb,
-                              surround_strength_upb=args.surround_strength_upb)
+                              surround_strength_upb=args.surround_strength_upb, num_center_pos=args.num_center_pos)
     for i in range(5):
         dataset.plot_sample(i, save_folder=savefig_dir, save_name=f'{filename_fixed}_plot_cell_RF.png')
     dataset.print_cell_table()
