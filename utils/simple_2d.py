@@ -202,6 +202,8 @@ class GaussianDataset(Dataset):
         known_centers = []
         type_params = {}
 
+        centers = np.random.uniform(boundary, image_size - boundary, size=(round((A+B)/5), 2))
+
         num_specific = 0
         if specific_known_cells is not None and self.output_mode == "A":
             num_specific = len(specific_known_cells)
@@ -245,7 +247,8 @@ class GaussianDataset(Dataset):
             known_type_ids = np.repeat(np.arange(num_total_types), remaining_known // num_total_types)
             known_type_ids = np.concatenate((known_type_ids, np.random.choice(num_total_types, remaining_known % num_total_types, replace=False)))
             for i in range(remaining_known):
-                center = np.random.uniform(boundary, image_size-boundary, size=2)
+                center = centers[np.random.choice(centers.shape[0])]
+                # center = np.random.uniform(boundary, image_size-boundary, size=2)
                 type_id = int(known_type_ids[i])
                 if type_id in type_params:
                     params = type_params[type_id]
