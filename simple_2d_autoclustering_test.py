@@ -45,6 +45,7 @@ def parse_args():
     parser.add_argument('--cluster_weight', type=float, default=0.0001, help='Weights of the cluster loss')
     parser.add_argument('--num_samples', type=int, default=20000, help='Number of data samples in the dataset')
     parser.add_argument('--batch_size', type=int, default=256, help='Batch size')
+    parser.add_argument('--is_showing_STA', action='store_true', help='generate sta for each cell')
     return parser.parse_args()
 
 def main():
@@ -228,24 +229,19 @@ def main():
     save_name = os.path.join(savefig_dir, f"{save_name}")
     plt.savefig(save_name, dpi=300, bbox_inches="tight")
 
-    for i in range(num_A + num_B):
-        sta_image, all_outputs = compute_sta(model, dataset, i, num_stimuli=10000, threshold=None, device=device)
+    if args.is_showing_STA:
+        for i in range(num_A + num_B):
+            sta_image, all_outputs = compute_sta(model, dataset, i, num_stimuli=10000, threshold=None, device=device)
 
-        # Plot the resulting STA image.
-        plt.figure(figsize=(5, 5))
-        plt.imshow(sta_image, cmap='viridis')
-        plt.title(f"STA for Cell {i}")
-        plt.colorbar()
+            # Plot the resulting STA image.
+            plt.figure(figsize=(5, 5))
+            plt.imshow(sta_image, cmap='viridis')
+            plt.title(f"STA for Cell {i}")
+            plt.colorbar()
 
-        save_name = f'{filename_fixed}_trained_STA_{i}.png'
-        save_name = os.path.join(savefig_dir, f"{save_name}")
-        plt.savefig(save_name, dpi=300, bbox_inches="tight")
-
-    # Assume 'dataset' is your GaussianDataset instance
-    # and 'model' is your trained CrossAttentionNet instance.
-    # Also assume that dataset has an attribute "type_known_flags" that is a list
-    # with a Boolean value for each cell indicating if its type is provided.
-    # If not available, we infer known cells as those with target type < dataset.num_known_types.
+            save_name = f'{filename_fixed}_trained_STA_{i}.png'
+            save_name = os.path.join(savefig_dir, f"{save_name}")
+            plt.savefig(save_name, dpi=300, bbox_inches="tight")
 
     if hasattr(dataset, "type_known_flags"):
         type_known_flags = dataset.type_known_flags
