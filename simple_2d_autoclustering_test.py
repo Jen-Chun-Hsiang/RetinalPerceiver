@@ -318,10 +318,11 @@ def main():
     logging.info(f'df: {df[selected_columns]} \n')
 
     save_name = os.path.join(savefig_dir, f'{filename_fixed}_learned_logit.png')
-    plot_cell_type_logits_heatmap(dataset, model, device, save_name=save_name)
+    plot_cell_type_logits_heatmap(dataset, model, device, save_name=save_name,
+                                  is_applied_low_dim_type_encoding=is_applied_low_dim_type_encoding)
 
 
-def plot_cell_type_logits_heatmap(dataset, model, device, save_name=None):
+def plot_cell_type_logits_heatmap(dataset, model, device, save_name=None, is_applied_low_dim_type_encoding=True):
     """
     Plots a heatmap for cell_type_logits for unknown cells.
     For each unknown cell:
@@ -346,7 +347,12 @@ def plot_cell_type_logits_heatmap(dataset, model, device, save_name=None):
     # For each unknown cell, compute the logits from cell_type_logits.
     # Here we assume that the lookup index for the logits is computed as (i - dataset.A)
     for j, i in enumerate(unknown_indices):
-        logits = model.cell_type_logits(torch.tensor(i, dtype=torch.long).to(device))
+        if is_applied_low_dim_type_encoding:
+            encoding = model.cell_type_encoding(torch.tensor(i, dtype=torch.long).to(device))
+            logits = model.cell_type_logits_proj(encoding)
+        else:
+            logits = model.cell_type_logits(torch.tensor(i, dtype=torch.long).to(device))
+
         logits = logits.detach().cpu().numpy()  # shape: [num_total_types]
         logits_matrix.append(logits)
 
