@@ -335,7 +335,7 @@ def plot_cell_type_logits_heatmap(dataset, model, device, save_name=None):
     # For each unknown cell, compute the logits from cell_type_logits.
     # Here we assume that the lookup index for the logits is computed as (i - dataset.A)
     for j, i in enumerate(unknown_indices):
-        logits = model.cell_type_logits(torch.tensor(j, dtype=torch.long).to(device))
+        logits = model.cell_type_logits(torch.tensor(i, dtype=torch.long).to(device))
         logits = logits.detach().cpu().numpy()  # shape: [num_total_types]
         logits_matrix.append(logits)
 
