@@ -13,7 +13,7 @@ from datetime import datetime
 import argparse
 import logging
 from utils.simple_2d import GaussianDataset, compute_sta, CrossAttentionNet_POS
-from utils.simple_2d_helper import adaptive_grad_clip
+from utils.simple_2d_helper import adaptive_grad_clip, SharedPerturbationOptimizer
 
 import pandas as pd
 import scipy.io
@@ -260,6 +260,43 @@ def main():
     logging.info("Comparison of Unknown Queries (Learned) vs. True Centers: \n")
     for i, (true_center, learned) in enumerate(zip(unknown_true_centers, learned_queries)):
         logging.info(f"Unknown Cell {i}: True Center: {true_center.numpy()}, Learned Query: {learned.numpy()}")
+
+    max_iter = 250
+    image = torch.randn(1, image_size, image_size).unsqueeze(0)
+    cell_idx = 0
+    center_norm = (np.array(specific_known[cell_idx]['center']) / image_size) * 2 - 1  # normalized center
+    type_id = dataset.cell_properties[cell_idx]["type_id"]
+    query1 = torch.tensor(np.append(center_norm, type_id), dtype=torch.float32).unsqueeze(0)
+
+    cell_idx = 1
+    center_norm = (np.array(specific_known[cell_idx]['center']) / image_size) * 2 - 1  # normalized center
+    type_id = dataset.cell_properties[cell_idx]["type_id"]
+    query2 = torch.tensor(np.append(center_norm, type_id), dtype=torch.float32).unsqueeze(0)
+
+    batch_size = 1
+    # model(batch['image'], batch['query'], batch['is_known'], batch['unknown_id'])
+
+    target1 = torch.tensor([1.0]).expand(batch_size, 1)  # Desired output for query1
+    target2 = torch.tensor([-1.0]).expand(batch_size, 1)  # Desired output for query2
+
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    optimizer = SharedPerturbationOptimizer(model, image, query1, query2, target1, target2, device=device,
+                                            max_iter=max_iter)
+    optimized_image_1 = optimizer.optimize()
+    optimizer.print_model_outputs()
+    optimizer.print_final_losses()
+    # optimizer.evaluate_model()
+
+    print('=====================================')
+
+    target1 = torch.tensor([-1.0]).expand(batch_size, 1)  # Desired output for query1
+    target2 = torch.tensor([1.0]).expand(batch_size, 1)  # Desired output for query2
+
+    optimizer = SharedPerturbationOptimizer(model, image, query1, query2, target1, target2, device=device,
+                                            max_iter=max_iter)
+    optimized_image_2 = optimizer.optimize()
+    optimizer.print_model_outputs()
+    optimizer.print_final_losses()
 
 
 if __name__ == '__main__':
