@@ -15,118 +15,137 @@ import os
 # Model: CNN + Cross-Attention with Type Learning via Gumbel Softmax
 ##############################
 
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+
+# Assume get_2d_sincos_positional_encoding is defined elsewhere.
+# def get_2d_sincos_positional_encoding(H, W, d_model): ...
+
 class CrossAttentionNet(nn.Module):
-    def __init__(self, d_model=32, hidden_dim=32, center_B=10, num_total_types=5, type_embed_dim=2,
-                 init_type_num=24, layer1_channel=16, layer2_channel=32):
+    def __init__(self, d_model=32, hidden_dim=32, center_B=10, num_total_types=5,
+                 type_embed_dim=3, init_type_num=24, cell_type_encoding_dim=8,
+                 layer1_channel=16, layer2_channel=32):
         """
         d_model: transformer embedding dimension.
         hidden_dim: hidden layer dimension.
-        center_B: number of unknown center embeddings (should match B in dataset).
-        num_total_types: total number of type classes (maximum available types).
+        center_B: number of unknown center embeddings.
+        num_total_types: total number of type classes.
         type_embed_dim: dimension for type embeddings.
+        init_type_num: number of initial discrete types.
+        cell_type_encoding_dim: lower-dimension for cell type encoding (always < init_type_num).
         """
         super(CrossAttentionNet, self).__init__()
-        self.layer1_channel = 16
-        self.layer2_channel = 32
+
+        # CNN backbone.
+        self.layer1_channel = layer1_channel
+        self.layer2_channel = layer2_channel
         self.cnn1 = nn.Conv2d(1, self.layer1_channel, kernel_size=3, stride=1, padding=1)
         self.pool1 = nn.AvgPool2d(kernel_size=2, stride=2)
-        self.bn1 = nn.BatchNorm2d(self.layer1_channel)  # match cnn1 out_channels
+        self.bn1 = nn.BatchNorm2d(self.layer1_channel)
         self.cnn2 = nn.Conv2d(self.layer1_channel, self.layer2_channel, kernel_size=3, stride=1, padding=1)
         self.pool2 = nn.AvgPool2d(kernel_size=2, stride=2)
-        self.bn2 = nn.BatchNorm2d(self.layer2_channel)  # match cnn1 out_channels
+        self.bn2 = nn.BatchNorm2d(self.layer2_channel)
 
+        # Transformer projections.
         self.key_proj = nn.Linear(self.layer2_channel, d_model)
         self.value_proj = nn.Linear(self.layer2_channel, d_model)
-        # Query is the concatenation of center (2 dims) and type embedding (type_embed_dim)
         self.query_proj = nn.Linear(2 + type_embed_dim, d_model)
         self.attn = nn.MultiheadAttention(embed_dim=d_model, num_heads=2, batch_first=False)
         self.fc1 = nn.Linear(d_model, hidden_dim)
         self.fc2 = nn.Linear(hidden_dim, 1)
 
-        # Center: learnable embedding for unknown centers (when center is missing)
+        # Center: learnable embedding for unknown centers.
         self.unknown_embedding = nn.Embedding(center_B, 2)
+
         # Fixed type embedding table (each row corresponds to a discrete type).
-        # We will freeze this embedding so it remains fixed.
+        # We freeze these embeddings.
         self.init_type_num = init_type_num
         self.type_embedding = nn.Embedding(self.init_type_num, type_embed_dim)
-        self.type_embedding.weight.requires_grad = False  # freeze type embedding
+        self.type_embedding.weight.requires_grad = False  # freeze fixed type embeddings
 
-        # For unknown type queries, we have a learnable lookup table that produces
-        # a continuous logits vector for each cell. These logits (of length num_total_types)
-        # are then transformed via Gumbel-Softmax to get a nearly one-hot distribution.
-        self.cell_type_logits = nn.Embedding(self.init_type_num, self.init_type_num)
-        # Initialize with identity matrix plus small noise.
+        # Fixed identity logits: used to guarantee unique one-hot vectors initially.
+        # This is analogous to your original cell_type_logits.
+        self.fixed_cell_type_logits = nn.Embedding(self.init_type_num, self.init_type_num)
         with torch.no_grad():
-            identity_matrix = torch.eye(self.init_type_num)  # Identity matrix
+            identity_matrix = torch.eye(self.init_type_num)
             noise = torch.rand(self.init_type_num, self.init_type_num) * 0.01
-            self.cell_type_logits.weight.copy_(identity_matrix + noise)
+            self.fixed_cell_type_logits.weight.copy_(identity_matrix + noise)
 
+        # Learnable cell type encoding (lower-dimension) and projection to full logits.
+        # Note: We assume that the number of cells equals init_type_num (one unique entry per cell).
+        self.cell_type_encoding = nn.Embedding(self.init_type_num, cell_type_encoding_dim)
+        self.cell_type_logits_proj = nn.Linear(cell_type_encoding_dim, self.init_type_num)
+
+        # Positional encoding for tokens.
         pos_encoding = get_2d_sincos_positional_encoding(8, 8, d_model)
         self.register_buffer('positional_encoding', pos_encoding)
-        # self.register_buffer('gumbel_tau', torch.tensor(0.0))
 
     def forward(self, x, query_center, is_center_known, unknown_center_id,
-                type_gt, is_type_known, cell_idx, tau=1.0):
+                type_gt, is_type_known, cell_idx, tau=1.0, alpha=0.0):
         """
         x: input image tensor of shape [batch, 1, H, W]
         query_center: [batch, 2] normalized center coordinates.
         is_center_known: boolean tensor [batch] indicating if center is provided.
         unknown_center_id: tensor [batch] with indices for unknown center embedding.
-        type_gt: tensor [batch] ground-truth type ids (used when type info is known).
+        type_gt: tensor [batch] ground-truth type ids (if known).
         is_type_known: boolean tensor [batch] indicating if type info is provided.
-        cell_idx: tensor [batch] with cell indices for looking up cell type logits.
+        cell_idx: tensor [batch] with cell indices (used for indexing type logits).
         tau: temperature for Gumbel-Softmax.
+        alpha: mixing parameter between fixed identity (alpha=0) and learnable logits (alpha=1).
+               You can schedule this externally (e.g., increase after 120 epochs).
         """
-        # Process image through CNN to get tokens.
-        # x = F.relu(self.pool1(self.cnn1(x)))
-        # x = F.relu(self.pool2(self.cnn2(x)))
+        # Process image through CNN.
         x = self.pool1(F.relu(self.bn1(self.cnn1(x))))
         x = self.pool2(F.relu(self.bn2(self.cnn2(x))))
 
         B, C, H, W = x.shape
-        tokens = x.view(B, C, H * W).permute(0, 2, 1)  # [B, num_tokens, C]
+        tokens = x.view(B, C, H * W).permute(0, 2, 1)  # shape: [B, num_tokens, C]
         keys = self.key_proj(tokens) + self.positional_encoding.unsqueeze(0)
         values = self.value_proj(tokens) + self.positional_encoding.unsqueeze(0)
 
-        # Process center: for unknown centers, replace with the corresponding learnable embedding.
+        # Process center: replace unknown centers with their learnable embedding.
         query_center_mod = query_center.clone()
         if (~is_center_known).any():
             unknown_idx = torch.nonzero(~is_center_known).squeeze(1)
             query_center_mod[unknown_idx] = self.unknown_embedding(unknown_center_id[unknown_idx])
 
-        # Process type part:
-        # For each cell, if the type is known, use the ground-truth one-hot encoding.
-        # Otherwise, use the learnable logits from cell_type_logits and apply Gumbel-Softmax.
+        # Process type part.
         type_query = []
-        unknown_probs_list = []  # store unknown cells' soft one-hot vectors for regularization.
+        unknown_probs_list = []  # for regularization.
         for i in range(B):
             if is_type_known[i]:
-                # Ground-truth: create one-hot vector.
+                # Use provided ground-truth one-hot vector.
                 one_hot = F.one_hot(type_gt[i].long(), num_classes=self.type_embedding.num_embeddings).float()
-                # Compute type embedding as a weighted sum of the fixed type embeddings.
                 type_emb = torch.matmul(one_hot, self.type_embedding.weight)
                 type_query.append(type_emb)
             else:
-                # Unknown: look up the logits vector for this cell.
-                logits = self.cell_type_logits(cell_idx[i].long())  # shape: [num_total_types]
-                # Apply Gumbel-Softmax to get a nearly one-hot distribution.
-                one_hot = F.gumbel_softmax(logits, tau=tau, hard=True)
-                # Save the distribution for global entropy regularization.
+                # Unknown type: mix fixed identity and learnable logits.
+                # Retrieve fixed logits.
+                fixed_logits = self.fixed_cell_type_logits(cell_idx[i].long())
+                # Retrieve learnable logits from the low-dim encoding.
+                learnable_encoding = self.cell_type_encoding(cell_idx[i].long())
+                learnable_logits = self.cell_type_logits_proj(learnable_encoding)
+                # Mix using the gating parameter alpha.
+                final_logits = (1 - alpha) * fixed_logits + alpha * learnable_logits
+                # Apply Gumbel-Softmax.
+                one_hot = F.gumbel_softmax(final_logits, tau=tau, hard=True)
                 unknown_probs_list.append(one_hot)
-                # Retrieve type embedding.
+                # Compute type embedding from the fixed type embedding table.
                 type_emb = torch.matmul(one_hot, self.type_embedding.weight)
                 type_query.append(type_emb)
-        type_query = torch.stack(type_query, dim=0)  # [B, type_embed_dim]
+        type_query = torch.stack(type_query, dim=0)  # shape: [B, type_embed_dim]
 
-        # Compute global entropy of unknown type assignments for regularization.
+        # Global entropy regularization (if needed).
         if len(unknown_probs_list) > 0:
-            unknown_probs = torch.stack(unknown_probs_list, dim=0)  # [N_unknown, num_total_types]
+            unknown_probs = torch.stack(unknown_probs_list, dim=0)  # [N_unknown, init_type_num]
             avg_prob = unknown_probs.mean(dim=0)
             global_entropy = - torch.sum(avg_prob * torch.log(avg_prob + 1e-10))
         else:
-            global_entropy = torch.tensor(0.0)  # Consider using x.new_tensor(0.0) for device consistency
+            global_entropy = torch.tensor(0.0, device=x.device)
 
-        # Form the full query by concatenating the center and type parts.
+        # Form the full query by concatenating center and type information.
         full_query = torch.cat([query_center_mod, type_query], dim=1)
         q = self.query_proj(full_query).unsqueeze(0)  # [1, B, d_model]
 
@@ -137,7 +156,6 @@ class CrossAttentionNet(nn.Module):
         out = F.relu(self.fc1(attended))
         target_pred = self.fc2(out).squeeze(1)
 
-        # Return the main prediction along with the computed global entropy.
         return target_pred, global_entropy
 
 
