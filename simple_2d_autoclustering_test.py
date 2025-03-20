@@ -306,9 +306,9 @@ def main():
     selected_columns = ["Cell ID", "Target Type", "Type Known", "Predicted Type"]
     logging.info(f'df: {df[selected_columns]} \n')
 
-    save_name = f'{filename_fixed}_learned_logit.png'
-    save_name = os.path.join(savefig_dir, f"{save_name}")
-    plot_cell_type_logits_heatmap(dataset, model, device, type_known_flags, save_name=save_name)
+    save_name = os.path.join(savefig_dir, f'{filename_fixed}_learned_logit.png')
+    plot_cell_type_logits_heatmap(dataset, model, device, save_name=save_name)
+
 
 def plot_cell_type_logits_heatmap(dataset, model, device, save_name=None):
     """
