@@ -238,6 +238,19 @@ def main():
     known_loss = np.array(losses_dict["known_loss"])
     unknown_loss = np.array(losses_dict["unknown_loss"])
 
+    # Create a dictionary to hold your variables
+    data_dict = {
+        'epochs': epochs,
+        'total_loss': total_loss,
+        'known_loss': known_loss,
+        'unknown_loss': unknown_loss
+    }
+
+    # Save the dictionary to a .mat file
+    save_name = f'{filename_fixed}_losses.mat'
+    save_name = os.path.join(savemat_dir, f"{save_name}")
+    savemat(save_name, data_dict)
+
     # Create a single plot for all loss types.
     plt.figure(figsize=(8, 6))
 
