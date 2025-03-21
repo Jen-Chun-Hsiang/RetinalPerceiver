@@ -133,7 +133,7 @@ class SharedPerturbationOptimizer:
             directional_target = self.target2 - self.target1
             directional_target_expanded = directional_target.view(1).expand_as(output2 - output1)
             directional_loss = F.mse_loss(output2 - output1, directional_target_expanded)
-            total_loss = directional_loss * self.directional_loss_weight + tv_loss + pert_loss_l1 + pert_loss_l2
+            total_loss = loss1 + loss2 + directional_loss * self.directional_loss_weight + tv_loss + pert_loss_l1 + pert_loss_l2
         else:
             total_loss = loss1 + loss2 + tv_loss + pert_loss_l1 + pert_loss_l2
 
