@@ -288,7 +288,7 @@ def main():
     optimizer.print_final_losses()
     # optimizer.evaluate_model()
 
-    print('=====================================')
+    logging.info('=====================================')
 
     target1 = torch.tensor([-1.0]).expand(batch_size, 1)  # Desired output for query1
     target2 = torch.tensor([1.0]).expand(batch_size, 1)  # Desired output for query2
