@@ -164,13 +164,14 @@ def main():
                 alpha = 1.0
 
             if args.is_alt_model:
-                target_pred, global_entropy = model(images, query_center, is_center_known, unknown_center_id, type_gt,
-                                                    is_type_known, cell_idx, tau=tau, alpha=alpha)
-                consistency_loss = 0.0
-            else:
                 target_pred, global_entropy, consistency_loss = \
                     model(images, query_center, is_center_known, unknown_center_id, type_gt, is_type_known, cell_idx,
                           tau=tau, alpha=alpha)
+            else:
+                target_pred, global_entropy = model(images, query_center, is_center_known, unknown_center_id, type_gt,
+                                                    is_type_known, cell_idx, tau=tau, alpha=alpha)
+                consistency_loss = 0.0
+
 
             # 1. Regression loss for the target prediction
             loss_reg = mse_loss(target_pred, target)
