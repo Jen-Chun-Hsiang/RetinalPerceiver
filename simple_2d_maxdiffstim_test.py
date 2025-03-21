@@ -30,7 +30,8 @@ def parse_args():
     parser.add_argument('--num_total_types', type=int, default=7, help='Number of total types')
     parser.add_argument('--num_known_types', type=int, default=3, help='Number of known types')
     parser.add_argument('--boundary', type=int, default=4, help='image boundary to generate a receptive field')
-
+    # Model
+    parser.add_argument('--directional_loss_weight', type=float, default=0.0, help='R2 - R1 difference')
     # Training
     parser.add_argument('--is_GPU', action='store_true', help='Using GPUs for accelaration')
     parser.add_argument('--num_epochs', type=int, default=200, help='Number of total epochs')
@@ -280,7 +281,8 @@ def main():
     target1 = torch.tensor([1.0]).expand(batch_size, 1).to(device)  # Desired output for query1
     target2 = torch.tensor([-1.0]).expand(batch_size, 1).to(device)  # Desired output for query2
 
-    optimizer = SharedPerturbationOptimizer(model, image, query1, query2, target1, target2, max_iter=max_iter)
+    optimizer = SharedPerturbationOptimizer(model, image, query1, query2, target1, target2, max_iter=max_iter,
+                                            directional_loss_weight=args.directional_loss_weight)
     optimized_image_1 = optimizer.optimize()
     optimizer.print_model_outputs()
     optimizer.print_final_losses()
@@ -290,7 +292,8 @@ def main():
     target1 = torch.tensor([-1.0]).expand(batch_size, 1).to(device)  # Desired output for query1
     target2 = torch.tensor([1.0]).expand(batch_size, 1).to(device)  # Desired output for query2
 
-    optimizer = SharedPerturbationOptimizer(model, image, query1, query2, target1, target2, max_iter=max_iter)
+    optimizer = SharedPerturbationOptimizer(model, image, query1, query2, target1, target2, max_iter=max_iter,
+                                            directional_loss_weight=args.directional_loss_weight)
     optimized_image_2 = optimizer.optimize()
     optimizer.print_model_outputs()
     optimizer.print_final_losses()
