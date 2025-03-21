@@ -299,6 +299,33 @@ def main():
     optimizer.print_model_outputs()
     optimizer.print_final_losses()
 
+    # Create subplots
+    fig, axes = plt.subplots(2, 2, figsize=(10, 10))  # 1 row, 2 columns
+
+    # First image
+    axes[0, 0].imshow(image.squeeze(), cmap='gray', interpolation='nearest')
+    axes[0, 0].set_title("Image 1")
+    axes[0, 0].axis('off')  # Hide axes for better visualization
+
+    # Second image
+    axes[0, 1].imshow(optimized_image_1.squeeze(), cmap='gray', interpolation='nearest')
+    axes[0, 1].set_title("Optimized Image")
+    axes[0, 1].axis('off')
+
+    # Second image
+    axes[1, 0].imshow(optimized_image_2.squeeze(), cmap='gray', interpolation='nearest')
+    axes[1, 0].set_title("Reversed optimized Image")
+    axes[1, 0].axis('off')
+
+    axes[1, 1].imshow((optimized_image_1 - optimized_image_2).squeeze(), cmap='gray', interpolation='nearest')
+    axes[1, 1].set_title("Contrast optimized Image")
+    axes[1, 1].axis('off')
+
+    # Show the plot.
+    save_name = f'{filename_fixed}_max_differential_stimuli.png'
+    save_name = os.path.join(savefig_dir, f"{save_name}")
+    plt.savefig(save_name, dpi=300, bbox_inches="tight")
+
 
 if __name__ == '__main__':
     main()
