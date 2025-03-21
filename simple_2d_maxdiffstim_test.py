@@ -14,6 +14,7 @@ import argparse
 import logging
 from utils.simple_2d import GaussianDataset, CrossAttentionNet_POS, compute_sta_pos
 from utils.simple_2d_helper import adaptive_grad_clip, SharedPerturbationOptimizer
+from scipy.io import savemat  # Import savemat from scipy.io
 
 import pandas as pd
 import scipy.io
@@ -73,6 +74,7 @@ def main():
     saveprint_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Prints/'
     savefig_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Figures/'
     savemodel_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/CheckPoints/'
+    savemat_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Matfiles/'
 
     os.makedirs(saveprint_dir, exist_ok=True)  # Ensure folder exists
     os.makedirs(savefig_dir, exist_ok=True)  # Ensure folder exists
@@ -260,6 +262,11 @@ def main():
             save_name = os.path.join(savefig_dir, f"{save_name}")
             plt.savefig(save_name, dpi=300, bbox_inches="tight")
 
+            # Create a dictionary to hold your variables
+            data_dict = {'sta_image': sta_image, 'all_outputs': all_outputs}
+            save_name = os.path.join(savemat_dir, f'{filename_fixed}_{i}_sta.mat')
+            savemat(save_name, data_dict)
+
     # 1. Extract the true (normalized) centers for the unknown cells directly.
     unknown_true_centers = []
     for cell in dataset.cell_properties[dataset.A:]:  # unknown cells are stored after the first A known cells.
@@ -316,18 +323,22 @@ def main():
     # Create subplots
     fig, axes = plt.subplots(2, 2, figsize=(10, 10))  # 1 row, 2 columns
 
+
     # First image
-    axes[0, 0].imshow(image.cpu().squeeze(), cmap='gray', interpolation='nearest')
+    image = image.cpu().squeeze().numpy()
+    axes[0, 0].imshow(image, cmap='gray', interpolation='nearest')
     axes[0, 0].set_title("Image 1")
     axes[0, 0].axis('off')  # Hide axes for better visualization
 
     # Second image
-    axes[0, 1].imshow(optimized_image_1.cpu().squeeze(), cmap='gray', interpolation='nearest')
+    optimized_image_1 = optimized_image_1.cpu().squeeze().numpy()
+    axes[0, 1].imshow(optimized_image_1, cmap='gray', interpolation='nearest')
     axes[0, 1].set_title("Optimized Image")
     axes[0, 1].axis('off')
 
     # Second image
-    axes[1, 0].imshow(optimized_image_2.cpu().squeeze(), cmap='gray', interpolation='nearest')
+    optimized_image_2 = optimized_image_2.cpu().squeeze().numpy()
+    axes[1, 0].imshow(optimized_image_2, cmap='gray', interpolation='nearest')
     axes[1, 0].set_title("Reversed optimized Image")
     axes[1, 0].axis('off')
 
@@ -339,6 +350,10 @@ def main():
     save_name = f'{filename_fixed}_max_differential_stimuli.png'
     save_name = os.path.join(savefig_dir, f"{save_name}")
     plt.savefig(save_name, dpi=300, bbox_inches="tight")
+
+    data_dict = {'image': image, 'optimized_image_1': optimized_image_1, 'optimized_image_2': optimized_image_2}
+    save_name = os.path.join(savemat_dir, f'{filename_fixed}_optimized_stimuli.mat')
+    savemat(save_name, data_dict)
 
 
 if __name__ == '__main__':
