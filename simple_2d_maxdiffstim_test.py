@@ -342,7 +342,7 @@ def main():
     axes[1, 0].set_title("Reversed optimized Image")
     axes[1, 0].axis('off')
 
-    axes[1, 1].imshow((optimized_image_1 - optimized_image_2).cpu().squeeze(), cmap='gray', interpolation='nearest')
+    axes[1, 1].imshow(optimized_image_1 - optimized_image_2, cmap='gray', interpolation='nearest')
     axes[1, 1].set_title("Contrast optimized Image")
     axes[1, 1].axis('off')
 
