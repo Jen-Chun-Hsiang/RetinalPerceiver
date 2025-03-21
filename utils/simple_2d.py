@@ -732,3 +732,76 @@ def compute_sta(model, dataset, cell_id, num_stimuli=10000, threshold=None, devi
 
     return sta.cpu().numpy(), outputs.cpu().numpy()
 
+
+def compute_sta_pos(model, dataset, cell_id, num_stimuli=10000, threshold=None, device='cpu'):
+    """
+    Computes the receptive field estimate (STA) for a specific cell using the CrossAttentionNet_POS model.
+
+    Parameters:
+      - model: the trained CrossAttentionNet_POS model.
+      - dataset: instance of GaussianDataset (providing image size and cell properties).
+      - cell_id: integer specifying the cell index for which to compute the STA.
+      - num_stimuli: number of white-noise stimuli to generate.
+      - threshold: if provided, only stimuli with output > threshold are used.
+      - device: computation device (e.g., 'cpu' or 'cuda').
+
+    Returns:
+      - sta: the computed STA image as a numpy array of shape (image_size, image_size).
+      - outputs: the model outputs (firing rates) for all stimuli.
+    """
+    import torch
+    import numpy as np
+
+    image_size = dataset.image_size
+
+    # Generate white noise stimuli on the specified device.
+    stimuli = torch.rand(num_stimuli, 1, image_size, image_size, device=device) * 2 - 1
+
+    # Prepare the query tensor.
+    # For the new model, the query needs three components.
+    if cell_id < dataset.A:
+        # Known cell: use the stored center.
+        cell = dataset.cell_properties[cell_id]
+        center = np.array(cell["center"])
+        center_norm = (center / image_size) * 2 - 1  # normalized to [-1, 1], shape (2,)
+        query_center = torch.tensor(center_norm, dtype=torch.float32, device=device).unsqueeze(0).repeat(num_stimuli, 1)
+        is_known = torch.ones(num_stimuli, dtype=torch.bool, device=device)
+        unknown_id = torch.full((num_stimuli,), -1, dtype=torch.long, device=device)
+    else:
+        # Unknown cell: use a dummy center query (to be replaced by the model) and mark as unknown.
+        cell = dataset.cell_properties[cell_id]
+        center = np.array(cell["center"])
+        center_norm = (center / image_size) * 2 - 1
+        query_center = torch.tensor(center_norm, dtype=torch.float32, device=device).unsqueeze(0).repeat(num_stimuli, 1)
+        is_known = torch.zeros(num_stimuli, dtype=torch.bool, device=device)
+        unknown_id = torch.full((num_stimuli,), cell_id - dataset.A, dtype=torch.long, device=device)
+
+    # Construct a full query tensor with three components.
+    # Here, we append a third component (set to 0) to the normalized center.
+    extra_feature = torch.zeros(num_stimuli, 1, dtype=torch.float32, device=device)
+    query = torch.cat([query_center, extra_feature], dim=1)  # shape: (num_stimuli, 3)
+
+    # Prepare the model.
+    model.to(device)
+    model.eval()
+    with torch.no_grad():
+        # For CrossAttentionNet_POS, the forward pass requires:
+        #   x, query, is_known, unknown_id
+        outputs = model(stimuli, query, is_known, unknown_id)
+        # outputs: the firing rate predictions for each stimulus.
+
+    # Compute the STA as a weighted average of the stimuli.
+    if threshold is not None:
+        mask = outputs > threshold
+        if mask.sum() == 0:
+            print("No stimuli exceeded the threshold.")
+            return None, outputs.cpu().numpy()
+        selected_stimuli = stimuli[mask]
+        selected_outputs = outputs[mask]
+        sta = (selected_stimuli.squeeze(1) * selected_outputs.view(-1, 1, 1)).sum(dim=0) / selected_outputs.sum()
+    else:
+        sta = (stimuli.squeeze(1) * outputs.view(-1, 1, 1)).sum(dim=0) / outputs.sum()
+
+    return sta.cpu().numpy(), outputs.cpu().numpy()
+
+

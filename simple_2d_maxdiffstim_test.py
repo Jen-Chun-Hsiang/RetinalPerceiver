@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 import argparse
 import logging
-from utils.simple_2d import GaussianDataset, compute_sta, CrossAttentionNet_POS
+from utils.simple_2d import GaussianDataset, CrossAttentionNet_POS, compute_sta_pos
 from utils.simple_2d_helper import adaptive_grad_clip, SharedPerturbationOptimizer
 
 import pandas as pd
@@ -248,7 +248,7 @@ def main():
 
     if args.is_showing_STA:
         for i in range(2):
-            sta_image, all_outputs = compute_sta(model, dataset, i, num_stimuli=10000, threshold=None, device=device)
+            sta_image, all_outputs = compute_sta_pos(model, dataset, i, num_stimuli=10000, threshold=None, device=device)
 
             # Plot the resulting STA image.
             plt.figure(figsize=(5, 5))
