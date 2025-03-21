@@ -107,7 +107,7 @@ def main():
                               specific_known_cells=specific_known, num_total_types=num_total_types,
                               num_known_types=num_known_types,
                               boundary=boundary, output_mode=output_mode)
-    for i in range(5):
+    for i in range(2):
         dataset.plot_sample(i, save_folder=savefig_dir, save_name=f'{filename_fixed}_plot_cell_RF.png')
     dataset.print_cell_table()
 
