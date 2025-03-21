@@ -163,13 +163,13 @@ def main():
 
             if (epoch + 1) > args.tau_switch_epoch:
                 tau = args.late_tau
-                alpha = 0.0
-                beta = 0.0
+                alpha = 1.0
                 cluster_weight = 0.0
+                beta = args.consistency_weight
             else:
                 tau = args.early_tau
-                alpha = 1.0
-                beta = args.consistency_weight
+                alpha = 0.0
+                beta = 0.0
 
 
             if args.is_alt_model:
