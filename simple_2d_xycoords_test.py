@@ -248,7 +248,7 @@ def main():
 
     # Save the dictionary to a .mat file
     save_name = f'{filename_fixed}_losses.mat'
-    save_name = os.path.join(savemat_dir, f"{save_name}")
+    save_name = os.path.join(savemat_dir, save_name)
     savemat(save_name, data_dict)
 
     # Create a single plot for all loss types.
