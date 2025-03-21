@@ -189,6 +189,8 @@ class SharedPerturbationOptimizer:
         logging.info("Prediction Loss (Query 2): %.6f", self.final_losses.get("Prediction Loss (Query 2)", 0))
         logging.info("Perturbation Loss L1: %.6f", self.final_losses.get("L1 Regularization Loss", 0))
         logging.info("Perturbation Loss L2: %.6f", self.final_losses.get("L2 Regularization Loss", 0))
+        if self.directional_loss_weight > 0:
+            logging.info("Directional Loss L2: %.6f", self.final_losses.get("Directional Loss", 0))
         logging.info("Total Variation Loss: %.6f", self.final_losses.get("Total Variation Loss", 0))
         logging.info("Total Loss: %.6f", self.final_losses.get("Total Loss", 0))
 
