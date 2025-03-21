@@ -179,7 +179,7 @@ def main():
             else:
                 target_pred, global_entropy = model(images, query_center, is_center_known, unknown_center_id, type_gt,
                                                     is_type_known, cell_idx, tau=tau, alpha=alpha)
-                consistency_loss = 0.0
+                consistency_loss = torch.tensor(0.0, device=images.device)
 
             loss_reg = mse_loss(target_pred, target)
             loss_cluster = cluster_weight * global_entropy
@@ -195,7 +195,7 @@ def main():
             running_total_loss += total_loss.item() * batch_size
             running_reg_loss += loss_reg.item() * batch_size
             running_cluster_loss += loss_cluster.item() * batch_size
-            running_consistency_loss += consistency_loss.item()*batch_size
+            running_consistency_loss += consistency_loss.item() * batch_size
             total_samples += batch_size
 
         # Step the scheduler after each epoch
