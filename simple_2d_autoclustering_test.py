@@ -134,7 +134,7 @@ def main():
     scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=5, T_mult=2, eta_min=1e-6)
     mse_loss = nn.MSELoss()
 
-    losses_dict = {"epochs": [], "total_loss": [], "reg_loss": [], "cluster_loss": []}
+    losses_dict = {"epochs": [], "total_loss": [], "reg_loss": [], "cluster_loss": [], "consistency_loss": []}
 
     for epoch in range(num_epochs):
         model.train()
