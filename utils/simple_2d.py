@@ -159,6 +159,144 @@ class CrossAttentionNet(nn.Module):
         return target_pred, global_entropy
 
 
+class CrossAttentionNetAlt(nn.Module):
+    def __init__(self, d_model=32, hidden_dim=32, center_B=10, num_total_types=5,
+                 type_embed_dim=3, init_type_num=24, cell_type_encoding_dim=8,
+                 layer1_channel=16, layer2_channel=32):
+        """
+        Similar arguments as the original model.
+        """
+        super(CrossAttentionNetAlt, self).__init__()
+
+        # CNN backbone.
+        self.layer1_channel = layer1_channel
+        self.layer2_channel = layer2_channel
+        self.cnn1 = nn.Conv2d(1, self.layer1_channel, kernel_size=3, stride=1, padding=1)
+        self.pool1 = nn.AvgPool2d(kernel_size=2, stride=2)
+        self.bn1 = nn.BatchNorm2d(self.layer1_channel)
+        self.cnn2 = nn.Conv2d(self.layer1_channel, self.layer2_channel, kernel_size=3, stride=1, padding=1)
+        self.pool2 = nn.AvgPool2d(kernel_size=2, stride=2)
+        self.bn2 = nn.BatchNorm2d(self.layer2_channel)
+
+        # Transformer projections.
+        self.key_proj = nn.Linear(self.layer2_channel, d_model)
+        self.value_proj = nn.Linear(self.layer2_channel, d_model)
+        self.query_proj = nn.Linear(2 + type_embed_dim, d_model)
+        self.attn = nn.MultiheadAttention(embed_dim=d_model, num_heads=2, batch_first=False)
+        self.fc1 = nn.Linear(d_model, hidden_dim)
+        self.fc2 = nn.Linear(hidden_dim, 1)
+
+        # Center: learnable embedding for unknown centers.
+        self.unknown_embedding = nn.Embedding(center_B, 2)
+
+        # Fixed type embedding table (frozen).
+        self.init_type_num = init_type_num
+        self.type_embedding = nn.Embedding(self.init_type_num, type_embed_dim)
+        self.type_embedding.weight.requires_grad = False
+
+        # Fixed identity logits for unique one-hot vectors.
+        self.fixed_cell_type_logits = nn.Embedding(self.init_type_num, self.init_type_num)
+        with torch.no_grad():
+            identity_matrix = torch.eye(self.init_type_num)
+            noise = torch.rand(self.init_type_num, self.init_type_num) * 0.01
+            self.fixed_cell_type_logits.weight.copy_(identity_matrix + noise)
+
+        # Learnable cell type encoding and projection.
+        self.cell_type_encoding = nn.Embedding(self.init_type_num, cell_type_encoding_dim)
+        self.cell_type_logits_proj = nn.Linear(cell_type_encoding_dim, self.init_type_num)
+
+        # Positional encoding for tokens.
+        pos_encoding = get_2d_sincos_positional_encoding(8, 8, d_model)
+        self.register_buffer('positional_encoding', pos_encoding)
+
+    def forward(self, x, query_center, is_center_known, unknown_center_id,
+                type_gt, is_type_known, cell_idx, tau=1.0, alpha=0.0):
+        """
+        Parameters are the same as before with an added beta for weighting the consistency loss.
+        """
+        # Process image through CNN.
+        x = self.pool1(F.relu(self.bn1(self.cnn1(x))))
+        x = self.pool2(F.relu(self.bn2(self.cnn2(x))))
+        B, C, H, W = x.shape
+        tokens = x.view(B, C, H * W).permute(0, 2, 1)  # shape: [B, num_tokens, C]
+        keys = self.key_proj(tokens) + self.positional_encoding.unsqueeze(0)
+        values = self.value_proj(tokens) + self.positional_encoding.unsqueeze(0)
+
+        # Process center: replace unknown centers with learnable embeddings.
+        query_center_mod = query_center.clone()
+        if (~is_center_known).any():
+            unknown_idx = torch.nonzero(~is_center_known).squeeze(1)
+            query_center_mod[unknown_idx] = self.unknown_embedding(unknown_center_id[unknown_idx])
+
+        # Prepare type queries and accumulate known embeddings for consistency loss.
+        type_query = []
+        unknown_probs_list = []  # for global entropy
+        known_embeddings = []
+        known_types = []
+
+        for i in range(B):
+            # Get the learnable cell type encoding and corresponding logits.
+            learnable_encoding = self.cell_type_encoding(cell_idx[i].long())
+            learnable_logits = self.cell_type_logits_proj(learnable_encoding)
+
+            if is_type_known[i]:
+                # Use provided ground-truth one-hot vector for query.
+                one_hot = F.one_hot(type_gt[i].long(), num_classes=self.type_embedding.num_embeddings).float()
+                type_emb = torch.matmul(one_hot, self.type_embedding.weight)
+                type_query.append(type_emb)
+                # Also save the learnable encoding for consistency.
+                known_embeddings.append(learnable_encoding)
+                known_types.append(type_gt[i].long())
+            else:
+                # For unknown types, mix fixed identity and learnable logits.
+                fixed_logits = self.fixed_cell_type_logits(cell_idx[i].long())
+                final_logits = (1 - alpha) * fixed_logits + alpha * learnable_logits
+                one_hot = F.gumbel_softmax(final_logits, tau=tau, hard=True)
+                unknown_probs_list.append(one_hot)
+                # Compute type embedding using the fixed type embedding table.
+                type_emb = torch.matmul(one_hot, self.type_embedding.weight)
+                type_query.append(type_emb)
+
+        type_query = torch.stack(type_query, dim=0)  # shape: [B, type_embed_dim]
+
+        # Global entropy regularization (for unknown types).
+        if len(unknown_probs_list) > 0:
+            unknown_probs = torch.stack(unknown_probs_list, dim=0)
+            avg_prob = unknown_probs.mean(dim=0)
+            global_entropy = - torch.sum(avg_prob * torch.log(avg_prob + 1e-10))
+        else:
+            global_entropy = torch.tensor(0.0, device=x.device)
+
+        # Compute consistency loss for known cells.
+        if len(known_embeddings) > 0:
+            known_embeddings = torch.stack(known_embeddings, dim=0)  # [N_known, cell_type_encoding_dim]
+            known_types = torch.stack(known_types, dim=0)  # [N_known]
+            consistency_loss = 0.0
+            unique_types = torch.unique(known_types)
+            for t in unique_types:
+                mask = (known_types == t)
+                group = known_embeddings[mask]
+                if group.size(0) > 1:
+                    group_mean = group.mean(dim=0)
+                    consistency_loss += ((group - group_mean)**2).mean()
+            consistency_loss /= unique_types.numel()
+        else:
+            consistency_loss = torch.tensor(0.0, device=x.device)
+
+        # Form the full query by concatenating center and type information.
+        full_query = torch.cat([query_center_mod, type_query], dim=1)
+        q = self.query_proj(full_query).unsqueeze(0)  # shape: [1, B, d_model]
+        attn_output, _ = self.attn(q, keys.transpose(0, 1), values.transpose(0, 1))
+        attended = attn_output.squeeze(0)
+        out = F.relu(self.fc1(attended))
+        target_pred = self.fc2(out).squeeze(1)
+
+        # Return prediction along with the additional losses.
+        # The overall loss would later combine the regression loss, global_entropy (if used),
+        # and beta * consistency_loss.
+        return target_pred, global_entropy, consistency_loss
+
+
 ##############################
 # Helper: 2D Sinusoidal Positional Encoding
 ##############################

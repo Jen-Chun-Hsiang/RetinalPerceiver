@@ -13,7 +13,7 @@ import matplotlib.patches as patches
 from datetime import datetime
 import argparse
 import logging
-from utils.simple_2d import GaussianDataset, CrossAttentionNet, compute_sta
+from utils.simple_2d import GaussianDataset, CrossAttentionNet, compute_sta, CrossAttentionNetAlt
 
 import pandas as pd
 import scipy.io
@@ -48,6 +48,7 @@ def parse_args():
     parser.add_argument('--num_samples', type=int, default=20000, help='Number of data samples in the dataset')
     parser.add_argument('--batch_size', type=int, default=256, help='Batch size')
     parser.add_argument('--is_showing_STA', action='store_true', help='generate sta for each cell')
+    parser.add_argument('--consistency_weight', type=float, default=1e-1, help='panelty strength of the consistency losses')
     return parser.parse_args()
 
 def main():
@@ -119,9 +120,14 @@ def main():
     loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True)
 
     init_type_num = args.num_A + args.num_B
-    model = CrossAttentionNet(d_model=32, hidden_dim=32, center_B=10, num_total_types=num_total_types,
+    if args.is_alt_model:
+        model = CrossAttentionNetAlt(d_model=32, hidden_dim=32, center_B=10, num_total_types=num_total_types,
                               type_embed_dim=args.type_embed_dim, init_type_num=init_type_num,
                               cell_type_encoding_dim=args.cell_type_encoding_dim)
+    else:
+        model = CrossAttentionNet(d_model=32, hidden_dim=32, center_B=10, num_total_types=num_total_types,
+                                  type_embed_dim=args.type_embed_dim, init_type_num=init_type_num,
+                                  cell_type_encoding_dim=args.cell_type_encoding_dim)
     model.to(device)
     optimizer = optim.Adam(model.parameters(), lr=1e-3)
     scheduler = CosineAnnealingWarmRestarts(optimizer, T_0=5, T_mult=2, eta_min=1e-6)
@@ -156,18 +162,23 @@ def main():
                 tau = args.early_tau
                 alpha = 1.0
 
-            target_pred, global_entropy = model(images, query_center, is_center_known, unknown_center_id, type_gt,
-                                                is_type_known, cell_idx, tau=tau, alpha=alpha)
+            if args.is_alt_model:
+                target_pred, global_entropy = model(images, query_center, is_center_known, unknown_center_id, type_gt,
+                                                    is_type_known, cell_idx, tau=tau, alpha=alpha)
+                consistency_loss = 0.0
+            else:
+                target_pred, global_entropy, consistency_loss = \
+                    model(images, query_center, is_center_known, unknown_center_id, type_gt, is_type_known, cell_idx,
+                          tau=tau, alpha=alpha)
 
             # 1. Regression loss for the target prediction
             loss_reg = mse_loss(target_pred, target)
-
             loss_cluster = cluster_weight * global_entropy
 
             if (epoch + 1) > 150:
-              total_loss = loss_reg + loss_cluster
+              total_loss = loss_reg + loss_cluster + args.consistency_weight * consistency_loss
             else:
-              total_loss = loss_reg
+              total_loss = loss_reg + args.consistency_weight * consistency_loss
 
             total_loss.backward()
             optimizer.step()
