@@ -319,9 +319,10 @@ def print_unknown_cell_comparison(dataset, model, save_dir=None, save_name=None)
         "true_centers": unknown_true_centers.numpy(),
         "learned_queries": learned_queries.numpy()
     }
-    save_mat_name = os.path.join(save_dir, f"{save_name}_center_location.mat")
-    savemat(save_mat_name, output_dict)
-    logging.info("Data saved to unknown_cell_data.mat")
+    if save_dir is not None:
+        save_mat_name = os.path.join(save_dir, f"{save_name}_center_location.mat")
+        savemat(save_mat_name, output_dict)
+        logging.info("Data saved to unknown_cell_data.mat")
 
 
 if __name__ == '__main__':
