@@ -141,6 +141,7 @@ def main():
         running_total_loss = 0.0
         running_reg_loss = 0.0
         running_cluster_loss = 0.0
+        running_consistency_loss = 0.0
         total_samples = 0
 
         for batch in loader:
@@ -191,6 +192,7 @@ def main():
             running_total_loss += total_loss.item() * batch_size
             running_reg_loss += loss_reg.item() * batch_size
             running_cluster_loss += loss_cluster.item() * batch_size
+            running_consistency_loss += consistency_loss.item()*batch_size
             total_samples += batch_size
 
         # Step the scheduler after each epoch
@@ -200,14 +202,17 @@ def main():
         epoch_total_loss = running_total_loss / total_samples if total_samples > 0 else 0.0
         epoch_reg_loss = running_reg_loss / total_samples if total_samples > 0 else 0.0
         epoch_cluster_loss = running_cluster_loss / total_samples if total_samples > 0 else 0.0
+        epoch_consistency_loss = running_consistency_loss / total_samples if total_samples > 0 else 0.0
 
         logging.info(f"Epoch {epoch+1}/{num_epochs}, Total Loss: {epoch_total_loss:.6f}, "
-              f"Reg Loss: {epoch_reg_loss:.6f}, Cluster Loss: {epoch_cluster_loss:.6f} \n")
+                     f"Reg Loss: {epoch_reg_loss:.6f}, \n"
+                     f"Consistency loss: {epoch_consistency_loss: 6f}, Cluster Loss: {epoch_cluster_loss:.6f} \n")
         # Store losses for this epoch.
         losses_dict["epochs"].append(epoch + 1)
         losses_dict["total_loss"].append(epoch_total_loss)
         losses_dict["reg_loss"].append(epoch_reg_loss)
         losses_dict["cluster_loss"].append(epoch_cluster_loss)
+        losses_dict["consistency_loss"].append(epoch_consistency_loss)
 
         # Save a checkpoint every 'checkpoint_interval' epochs
         if (epoch + 1) % checkpoint_interval == 0:
