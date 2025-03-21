@@ -749,8 +749,6 @@ def compute_sta_pos(model, dataset, cell_id, num_stimuli=10000, threshold=None, 
       - sta: the computed STA image as a numpy array of shape (image_size, image_size).
       - outputs: the model outputs (firing rates) for all stimuli.
     """
-    import torch
-    import numpy as np
 
     image_size = dataset.image_size
 
@@ -763,6 +761,7 @@ def compute_sta_pos(model, dataset, cell_id, num_stimuli=10000, threshold=None, 
         # Known cell: use the stored center.
         cell = dataset.cell_properties[cell_id]
         center = np.array(cell["center"])
+        type_gt = torch.tensor(cell["type_id"], dtype=torch.long, device=device).unsqueeze(0).repeat(num_stimuli, 1)
         center_norm = (center / image_size) * 2 - 1  # normalized to [-1, 1], shape (2,)
         query_center = torch.tensor(center_norm, dtype=torch.float32, device=device).unsqueeze(0).repeat(num_stimuli, 1)
         is_known = torch.ones(num_stimuli, dtype=torch.bool, device=device)
@@ -770,6 +769,7 @@ def compute_sta_pos(model, dataset, cell_id, num_stimuli=10000, threshold=None, 
     else:
         # Unknown cell: use a dummy center query (to be replaced by the model) and mark as unknown.
         cell = dataset.cell_properties[cell_id]
+        type_gt = torch.tensor(cell["type_id"], dtype=torch.long, device=device).unsqueeze(0).repeat(num_stimuli, 1)
         center = np.array(cell["center"])
         center_norm = (center / image_size) * 2 - 1
         query_center = torch.tensor(center_norm, dtype=torch.float32, device=device).unsqueeze(0).repeat(num_stimuli, 1)
@@ -778,8 +778,8 @@ def compute_sta_pos(model, dataset, cell_id, num_stimuli=10000, threshold=None, 
 
     # Construct a full query tensor with three components.
     # Here, we append a third component (set to 0) to the normalized center.
-    extra_feature = torch.zeros(num_stimuli, 1, dtype=torch.float32, device=device)
-    query = torch.cat([query_center, extra_feature], dim=1)  # shape: (num_stimuli, 3)
+    # extra_feature = torch.zeros(num_stimuli, 1, dtype=torch.float32, device=device)
+    query = torch.cat([query_center, type_gt], dim=1)  # shape: (num_stimuli, 3)
 
     # Prepare the model.
     model.to(device)
