@@ -112,6 +112,7 @@ def main():
                               boundary=boundary, output_mode=output_mode)
     for i in range(2):
         dataset.plot_sample(i, save_folder=savefig_dir, save_name=f'{filename_fixed}_plot_cell_RF.png')
+        dataset.save_pdf_mat(i, save_folder=savemat_dir, save_name=filename_fixed)
     dataset.print_cell_table()
 
     loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True)

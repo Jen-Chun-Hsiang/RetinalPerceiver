@@ -7,7 +7,7 @@ import torch.nn.functional as F
 import seaborn as sns
 import matplotlib.pyplot as plt
 from torch.utils.data import Dataset, DataLoader
-
+from scipy.io import savemat
 import logging
 import os
 
@@ -577,6 +577,12 @@ class GaussianDataset(Dataset):
             plt.savefig(filepath, dpi=300, bbox_inches="tight")
         else:
             plt.show()
+
+    def save_pdf_mat(self, index=None, save_folder=None, save_name=None):
+        pdf_tensor = self.pdf_tensors[index].numpy()
+        data_dict = {'pdf_tensor': pdf_tensor}
+        save_name = os.path.join(save_folder, f"{index}_{save_name}_pdf.mat")
+        savemat(save_name, data_dict)
 
     def print_cell_table(self, is_shorter=True):
         data = []
