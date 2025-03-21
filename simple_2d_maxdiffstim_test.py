@@ -41,6 +41,7 @@ def parse_args():
     parser.add_argument('--is_AGC', action='store_true', help='Add gradient clipping to make convergent to x, y more efficient')
     parser.add_argument('--is_noisy_grad', action='store_true', help='Add noisy gradient to prevent vanish gradient landscape')
     parser.add_argument('--noise_grad_std', type=float, default=1e-4, help='Std of gradient noise')
+    parser.add_argument('--is_showing_STA', action='store_true', help='generate sta for each cell')
     return parser.parse_args()
 
 
@@ -244,6 +245,20 @@ def main():
     save_name = f'{filename_fixed}_losses.png'
     save_name = os.path.join(savefig_dir, f"{save_name}")
     plt.savefig(save_name, dpi=300, bbox_inches="tight")
+
+    if args.is_showing_STA:
+        for i in range(2):
+            sta_image, all_outputs = compute_sta(model, dataset, i, num_stimuli=10000, threshold=None, device=device)
+
+            # Plot the resulting STA image.
+            plt.figure(figsize=(5, 5))
+            plt.imshow(sta_image, cmap='viridis')
+            plt.title(f"STA for Cell {i}")
+            plt.colorbar()
+
+            save_name = f'{filename_fixed}_trained_STA_{i}.png'
+            save_name = os.path.join(savefig_dir, f"{save_name}")
+            plt.savefig(save_name, dpi=300, bbox_inches="tight")
 
     # 1. Extract the true (normalized) centers for the unknown cells directly.
     unknown_true_centers = []
