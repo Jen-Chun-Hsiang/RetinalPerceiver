@@ -22,7 +22,7 @@ def adaptive_grad_clip(parameters, clip_factor=0.01, eps=1e-3):
 class SharedPerturbationOptimizer:
     def __init__(self, model, image, query1, query2, target1, target2,
                  lr=1e-3, max_iter=300, tv_weight=0.5, tolerance=1e-6,
-                 batch_size=256, noisy_image_scaling=1.0, directional_loss_weight=1.0,
+                 batch_size=256, noisy_image_scaling=1.0, directional_loss_weight=0.0,
                  device='cuda'):
         """
         Optimizes a shared perturbation image (initialized as blank) that is subtracted from a
