@@ -22,8 +22,7 @@ def adaptive_grad_clip(parameters, clip_factor=0.01, eps=1e-3):
 class SharedPerturbationOptimizer:
     def __init__(self, model, image, query1, query2, target1, target2,
                  lr=1e-3, max_iter=300, tv_weight=0.5, tolerance=1e-6,
-                 batch_size=256, noisy_image_scaling=1.0, directional_loss_weight=0.0,
-                 device='cuda'):
+                 batch_size=256, noisy_image_scaling=1.0, directional_loss_weight=0.0):
         """
         Optimizes a shared perturbation image (initialized as blank) that is subtracted from a
         batch of random noise images. The model is then fed these perturbed images for two queries,
@@ -31,11 +30,11 @@ class SharedPerturbationOptimizer:
         their respective target values.
 
         Parameters:
-        - model: The trained neural network model.
-        - image: A template image tensor of shape (1, H, W) (single channel) whose dimensions
-                 will be used for the shared perturbation image.
-        - query1, query2: The two query inputs to the model.
-        - target1, target2: The desired output values for query1 and query2.
+        - model: The trained neural network model. It is assumed to be already on the correct device.
+        - image: A template image tensor of shape (1, H, W) whose dimensions will be used for the
+                 shared perturbation image. (Already on the correct device.)
+        - query1, query2: The two query inputs to the model (already on the correct device).
+        - target1, target2: The desired output values for query1 and query2 (already on the correct device).
         - lr: Learning rate for the optimizer.
         - max_iter: Maximum number of optimization iterations.
         - tv_weight: Weight for total variation loss (regularizes smoothness).
@@ -44,18 +43,15 @@ class SharedPerturbationOptimizer:
         - noisy_image_scaling: Scaling factor for the noise.
         - directional_loss_weight: Weight for the directional loss that encourages
           (output2 - output1) to match (target2 - target1). Set to 0 to disable.
-        - device: 'cuda' or 'cpu'.
         """
-        self.model = model.to(device).eval()
-        # Freeze model parameters
+        self.model = model.eval()  # Model is assumed to be on the correct device.
         for param in self.model.parameters():
             param.requires_grad = False
 
-        self.query1 = query1.to(device)
-        self.query2 = query2.to(device)
-        self.target1 = target1.to(device)
-        self.target2 = target2.to(device)
-        self.device = device
+        self.query1 = query1
+        self.query2 = query2
+        self.target1 = target1
+        self.target2 = target2
         self.max_iter = max_iter
         self.tv_weight = tv_weight
         self.tolerance = tolerance
@@ -63,16 +59,18 @@ class SharedPerturbationOptimizer:
         self.noisy_image_scaling = noisy_image_scaling
         self.directional_loss_weight = directional_loss_weight
 
-        # Initialize the shared perturbation image as a blank (all zeros) image
-        # using the provided image's shape as a template.
+        # Infer device from the image tensor.
+        self.device = image.device
+
+        # Initialize the shared perturbation image as a blank image using the provided image's shape.
         if image.dim() == 4 and image.shape[0] == 1:
-            self.orig_image = torch.zeros_like(image[0:1]).to(device)
+            self.orig_image = torch.zeros_like(image[0:1])
         else:
-            self.orig_image = torch.zeros_like(image).to(device)
+            self.orig_image = torch.zeros_like(image)
+        self.orig_image = self.orig_image.to(self.device)
         self.shared_perturbation = self.orig_image.clone().detach()
         self.shared_perturbation.requires_grad = True
 
-        # Optimizer and scheduler for the shared perturbation image
         self.optimizer = optim.Adam([self.shared_perturbation], lr=lr)
         self.scheduler = CosineAnnealingWarmRestarts(self.optimizer, T_0=4, T_mult=2, eta_min=1e-6)
 
@@ -85,50 +83,46 @@ class SharedPerturbationOptimizer:
 
     def perturbation_loss_l1(self, x, x_orig, weight=1e-1):
         """L1 regularization loss on the perturbation."""
-        l1_loss = torch.mean(torch.abs(x - x_orig))
-        return weight * l1_loss
+        return weight * torch.mean(torch.abs(x - x_orig))
 
     def perturbation_loss_l2(self, x, x_orig, weight=5e-4):
         """L2 regularization loss on the perturbation."""
-        l2_loss = torch.norm(x - x_orig, p=2) ** 2
-        return weight * l2_loss
+        return weight * (torch.norm(x - x_orig, p=2) ** 2)
 
     def closure(self):
         """Performs a forward pass with a new random noise batch and computes the total loss."""
         self.optimizer.zero_grad()
+        device = self.device  # Use the inferred device.
 
-        # Determine the shape for the noise batch.
+        # Generate random noise batch.
         if self.shared_perturbation.dim() == 4:
             _, channels, height, width = self.shared_perturbation.shape
         else:
             channels, height, width = self.shared_perturbation.shape
-        noise_batch = 2 * torch.rand((self.batch_size, channels, height, width), device=self.device) - 1
+        noise_batch = 2 * torch.rand((self.batch_size, channels, height, width), device=device) - 1
         noise_batch = self.noisy_image_scaling * noise_batch
 
-        # Subtract the shared perturbation from each noise image and clip the result to (-1, 1)
-        perturbed_batch = noise_batch - self.shared_perturbation
-        perturbed_batch = torch.clamp(perturbed_batch, -1, 1)
+        # Create perturbed batch.
+        perturbed_batch = torch.clamp(noise_batch - self.shared_perturbation, -1, 1)
 
-        # Prepare extra inputs for the model
-        bool_tensor = torch.tensor([True]).expand(self.batch_size, 1).to(self.device)
-        num_tensor = torch.tensor([-1.0]).expand(self.batch_size, 1).to(self.device)
+        # Prepare extra inputs.
+        bool_tensor = torch.tensor([True], device=device).expand(self.batch_size, 1)
+        num_tensor = torch.tensor([-1.0], device=device).expand(self.batch_size, 1)
 
-        query1_batch = self.query1.expand(self.batch_size, -1).to(self.device)
-        query2_batch = self.query2.expand(self.batch_size, -1).to(self.device)
+        query1_batch = self.query1.expand(self.batch_size, -1)
+        query2_batch = self.query2.expand(self.batch_size, -1)
 
-        # Forward pass for both queries on the perturbed images
+        # Forward pass.
         output1 = self.model(perturbed_batch, query1_batch, bool_tensor, num_tensor)
         output2 = self.model(perturbed_batch, query2_batch, bool_tensor, num_tensor)
 
         loss1 = F.mse_loss(output1, self.target1.view(1).expand_as(output1))
         loss2 = F.mse_loss(output2, self.target2.view(1).expand_as(output2))
 
-        # Compute regularization losses on the shared perturbation image
         tv_loss = self.tv_weight * self.total_variation_loss(self.shared_perturbation, self.orig_image)
         pert_loss_l1 = self.perturbation_loss_l1(self.shared_perturbation, self.orig_image)
         pert_loss_l2 = self.perturbation_loss_l2(self.shared_perturbation, self.orig_image)
 
-        # Compute the directional loss if enabled
         if self.directional_loss_weight > 0:
             directional_target = self.target2 - self.target1
             directional_target_expanded = directional_target.view(1).expand_as(output2 - output1)
@@ -166,7 +160,6 @@ class SharedPerturbationOptimizer:
             self.optimizer.zero_grad()
             loss = self.closure()
             self.optimizer.step()
-            # Ensure the shared perturbation stays within (-1, 1)
             self.shared_perturbation.data.clamp_(-1, 1)
             self.scheduler.step()
 
@@ -181,7 +174,7 @@ class SharedPerturbationOptimizer:
             final_image = self.orig_image - self.shared_perturbation
             logging.info("Final Image Shape: %s", final_image.shape)
             bool_tensor = torch.tensor([[True]], device=self.device)
-            num_tensor = torch.tensor([[-1.0]]).to(self.device)
+            num_tensor = torch.tensor([[-1.0]], device=self.device)
 
             output1 = self.model(final_image, self.query1, bool_tensor, num_tensor)
             output2 = self.model(final_image, self.query2, bool_tensor, num_tensor)
@@ -234,6 +227,7 @@ class SharedPerturbationOptimizer:
         logging.info("Improvements:")
         logging.info("  Query 1 Loss Reduction: %.6f", improvement1)
         logging.info("  Query 2 Loss Reduction: %.6f", improvement2)
+
 
 
 

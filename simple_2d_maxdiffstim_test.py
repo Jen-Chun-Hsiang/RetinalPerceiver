@@ -263,38 +263,34 @@ def main():
         logging.info(f"Unknown Cell {i}: True Center: {true_center.numpy()}, Learned Query: {learned.numpy()}")
 
     max_iter = 250
-    image = torch.randn(1, image_size, image_size).unsqueeze(0)
+    image = torch.randn(1, image_size, image_size).unsqueeze(0).to(device)
     cell_idx = 0
     center_norm = (np.array(specific_known[cell_idx]['center']) / image_size) * 2 - 1  # normalized center
     type_id = dataset.cell_properties[cell_idx]["type_id"]
-    query1 = torch.tensor(np.append(center_norm, type_id), dtype=torch.float32).unsqueeze(0)
+    query1 = torch.tensor(np.append(center_norm, type_id), dtype=torch.float32).unsqueeze(0).to(device)
 
     cell_idx = 1
     center_norm = (np.array(specific_known[cell_idx]['center']) / image_size) * 2 - 1  # normalized center
     type_id = dataset.cell_properties[cell_idx]["type_id"]
-    query2 = torch.tensor(np.append(center_norm, type_id), dtype=torch.float32).unsqueeze(0)
+    query2 = torch.tensor(np.append(center_norm, type_id), dtype=torch.float32).unsqueeze(0).to(device)
 
     batch_size = 1
     # model(batch['image'], batch['query'], batch['is_known'], batch['unknown_id'])
 
-    target1 = torch.tensor([1.0]).expand(batch_size, 1)  # Desired output for query1
-    target2 = torch.tensor([-1.0]).expand(batch_size, 1)  # Desired output for query2
+    target1 = torch.tensor([1.0]).expand(batch_size, 1).to(device)  # Desired output for query1
+    target2 = torch.tensor([-1.0]).expand(batch_size, 1).to(device)  # Desired output for query2
 
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    optimizer = SharedPerturbationOptimizer(model, image, query1, query2, target1, target2, device=device,
-                                            max_iter=max_iter)
+    optimizer = SharedPerturbationOptimizer(model, image, query1, query2, target1, target2, max_iter=max_iter)
     optimized_image_1 = optimizer.optimize()
     optimizer.print_model_outputs()
     optimizer.print_final_losses()
-    # optimizer.evaluate_model()
 
     logging.info('=====================================')
 
-    target1 = torch.tensor([-1.0]).expand(batch_size, 1)  # Desired output for query1
-    target2 = torch.tensor([1.0]).expand(batch_size, 1)  # Desired output for query2
+    target1 = torch.tensor([-1.0]).expand(batch_size, 1).to(device)  # Desired output for query1
+    target2 = torch.tensor([1.0]).expand(batch_size, 1).to(device)  # Desired output for query2
 
-    optimizer = SharedPerturbationOptimizer(model, image, query1, query2, target1, target2, device=device,
-                                            max_iter=max_iter)
+    optimizer = SharedPerturbationOptimizer(model, image, query1, query2, target1, target2, max_iter=max_iter)
     optimized_image_2 = optimizer.optimize()
     optimizer.print_model_outputs()
     optimizer.print_final_losses()
@@ -303,21 +299,21 @@ def main():
     fig, axes = plt.subplots(2, 2, figsize=(10, 10))  # 1 row, 2 columns
 
     # First image
-    axes[0, 0].imshow(image.squeeze(), cmap='gray', interpolation='nearest')
+    axes[0, 0].imshow(image.cpu().squeeze(), cmap='gray', interpolation='nearest')
     axes[0, 0].set_title("Image 1")
     axes[0, 0].axis('off')  # Hide axes for better visualization
 
     # Second image
-    axes[0, 1].imshow(optimized_image_1.squeeze(), cmap='gray', interpolation='nearest')
+    axes[0, 1].imshow(optimized_image_1.cpu().squeeze(), cmap='gray', interpolation='nearest')
     axes[0, 1].set_title("Optimized Image")
     axes[0, 1].axis('off')
 
     # Second image
-    axes[1, 0].imshow(optimized_image_2.squeeze(), cmap='gray', interpolation='nearest')
+    axes[1, 0].imshow(optimized_image_2.cpu().squeeze(), cmap='gray', interpolation='nearest')
     axes[1, 0].set_title("Reversed optimized Image")
     axes[1, 0].axis('off')
 
-    axes[1, 1].imshow((optimized_image_1 - optimized_image_2).squeeze(), cmap='gray', interpolation='nearest')
+    axes[1, 1].imshow((optimized_image_1 - optimized_image_2).cpu().squeeze(), cmap='gray', interpolation='nearest')
     axes[1, 1].set_title("Contrast optimized Image")
     axes[1, 1].axis('off')
 
