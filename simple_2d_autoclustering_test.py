@@ -160,9 +160,13 @@ def main():
             if (epoch + 1) > args.tau_switch_epoch:
                 tau = args.late_tau
                 alpha = 0.0
+                beta = 0.0
+                cluster_weight = 0.0
             else:
                 tau = args.early_tau
                 alpha = 1.0
+                beta = args.consistency_weight
+
 
             if args.is_alt_model:
                 target_pred, global_entropy, consistency_loss = \
@@ -173,15 +177,10 @@ def main():
                                                     is_type_known, cell_idx, tau=tau, alpha=alpha)
                 consistency_loss = 0.0
 
-
-            # 1. Regression loss for the target prediction
             loss_reg = mse_loss(target_pred, target)
             loss_cluster = cluster_weight * global_entropy
 
-            if (epoch + 1) > 150:
-              total_loss = loss_reg + loss_cluster + args.consistency_weight * consistency_loss
-            else:
-              total_loss = loss_reg + args.consistency_weight * consistency_loss
+            total_loss = loss_reg + loss_cluster + beta * consistency_loss
 
             total_loss.backward()
             optimizer.step()
