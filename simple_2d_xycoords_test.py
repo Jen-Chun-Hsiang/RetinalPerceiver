@@ -14,6 +14,7 @@ import argparse
 import logging
 from utils.simple_2d import GaussianDataset, compute_sta, CrossAttentionNet_POS
 from utils.simple_2d_helper import adaptive_grad_clip
+from scipy.io import savemat  # Import savemat from scipy.io
 
 import pandas as pd
 import scipy.io
@@ -74,6 +75,7 @@ def main():
     saveprint_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Prints/'
     savefig_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Figures/'
     savemodel_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/CheckPoints/'
+    savemat_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Matfiles/'
 
     os.makedirs(saveprint_dir, exist_ok=True)  # Ensure folder exists
     os.makedirs(savefig_dir, exist_ok=True)  # Ensure folder exists
@@ -260,7 +262,7 @@ def main():
     save_name = os.path.join(savefig_dir, f"{save_name}")
     plt.savefig(save_name, dpi=300, bbox_inches="tight")
 
-    print_unknown_cell_comparison(dataset, model)
+    print_unknown_cell_comparison(dataset, model, save_dir=savemat_dir, save_name=filename_fixed)
 
     # # 1. Extract the true (normalized) centers for the unknown cells directly.
     # unknown_true_centers = []
@@ -281,7 +283,7 @@ def main():
     #     logging.info(f"Unknown Cell {i}: True Center: {true_center.numpy()}, Learned Query: {learned.numpy()}")
 
 
-def print_unknown_cell_comparison(dataset, model):
+def print_unknown_cell_comparison(dataset, model, save_dir=None, save_name=None):
     """
     Prints a comparison of learned queries (from the model) versus the true normalized centers
     of the unknown cells in the dataset.
@@ -310,6 +312,16 @@ def print_unknown_cell_comparison(dataset, model):
     logging.info("Comparison of Unknown Queries (Learned) vs. True Centers: \n")
     for i, (true_center, learned) in enumerate(zip(unknown_true_centers, learned_queries)):
         logging.info(f"Unknown Cell {i}: True Center: {true_center.numpy()}, Learned Query: {learned.numpy()}")
+
+    # 4. Save the outputs as a .mat file for MATLAB.
+    # Convert tensors to numpy arrays before saving.
+    output_dict = {
+        "true_centers": unknown_true_centers.numpy(),
+        "learned_queries": learned_queries.numpy()
+    }
+    save_mat_name = os.path.join(save_dir, f"{save_name}_center_location.mat")
+    savemat(save_mat_name, output_dict)
+    logging.info("Data saved to unknown_cell_data.mat")
 
 
 if __name__ == '__main__':
