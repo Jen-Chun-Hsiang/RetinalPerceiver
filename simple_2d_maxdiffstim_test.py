@@ -43,6 +43,7 @@ def parse_args():
     parser.add_argument('--is_noisy_grad', action='store_true', help='Add noisy gradient to prevent vanish gradient landscape')
     parser.add_argument('--noise_grad_std', type=float, default=1e-4, help='Std of gradient noise')
     parser.add_argument('--is_showing_STA', action='store_true', help='generate sta for each cell')
+    parser.add_argument('--choice_of_set', type=int, default=1, help='Batch size')
     return parser.parse_args()
 
 
@@ -57,7 +58,11 @@ def main():
         {"center": [16, 16], "theta": 1.0 + math.pi / 2, "eig1": 2, "eig2": 2, "type_id": 2, "surround_strength": 0.8},
         {"center": [16, 16], "theta": 1.0 + math.pi / 2, "eig1": 6, "eig2": 6, "type_id": 3, "surround_strength": 0.8},
     ]
-    specific_known = specific_known_1
+
+    if args.choice_of_set == 1:
+        specific_known = specific_known_1
+    elif args.choice_of_set == 2:
+        specific_known = specific_known_2
     output_mode = 'A'
     num_A = args.num_A
     num_B = args.num_B
