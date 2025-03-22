@@ -139,7 +139,7 @@ def main():
     mse_loss = nn.MSELoss()
 
     losses_dict = {"epochs": [], "total_loss": [], "reg_loss": [], "cluster_loss": [], "consistency_loss": []}
-
+    adaptive_tau = np.logspace(args.early_tau, args.late_tau, num=num_epochs)
     for epoch in range(num_epochs):
         model.train()
         running_total_loss = 0.0
@@ -161,10 +161,11 @@ def main():
             is_type_known = batch['is_type_known'].to(device)        # [B] bool
             cell_idx = batch['cell_idx'].to(device)                  # [B] long
 
-            if (epoch + 1) > args.tau_switch_epoch:
-                tau = args.late_tau
-            else:
-                tau = args.early_tau
+            # if (epoch + 1) > args.tau_switch_epoch:
+            #     tau = args.late_tau
+            # else:
+            #     tau = args.early_tau
+            tau = adaptive_tau(epoch)
 
             cluster_weight = args.cluster_weight
             alpha = (epoch/num_epochs) ** 2
