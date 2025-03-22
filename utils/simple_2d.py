@@ -581,7 +581,7 @@ class GaussianDataset(Dataset):
     def save_pdf_mat(self, index=None, save_folder=None, save_name=None):
         pdf_tensor = self.pdf_tensors[index].numpy()
         data_dict = {'pdf_tensor': pdf_tensor}
-        save_name = os.path.join(save_folder, f"{index}_{save_name}_pdf.mat")
+        save_name = os.path.join(save_folder, f"{save_name}_{index}_pdf.mat")
         savemat(save_name, data_dict)
 
     def print_cell_table(self, is_shorter=True):
