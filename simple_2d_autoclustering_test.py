@@ -73,7 +73,7 @@ def main():
     boundary = args.boundary
     num_epochs = args.num_epochs
     checkpoint_interval = args.checkpoint_interval
-    is_applied_low_dim_type_encoding = True
+    is_applied_low_dim_type_encoding = False
 
     # Folders
     saveprint_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Prints/'

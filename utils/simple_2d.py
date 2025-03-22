@@ -75,8 +75,9 @@ class CrossAttentionNet(nn.Module):
 
         # Learnable cell type encoding (lower-dimension) and projection to full logits.
         # Note: We assume that the number of cells equals init_type_num (one unique entry per cell).
-        self.cell_type_encoding = nn.Embedding(self.init_type_num, cell_type_encoding_dim)
-        self.cell_type_logits_proj = nn.Linear(cell_type_encoding_dim, self.init_type_num)
+        # self.cell_type_encoding = nn.Embedding(self.init_type_num, cell_type_encoding_dim)
+        # self.cell_type_logits_proj = nn.Linear(cell_type_encoding_dim, self.init_type_num)
+        self.cell_type_logits = nn.Embedding(self.init_type_num, self.init_type_num)
 
         # Positional encoding for tokens.
         pos_encoding = get_2d_sincos_positional_encoding(8, 8, d_model)
@@ -125,8 +126,8 @@ class CrossAttentionNet(nn.Module):
                 # Retrieve fixed logits.
                 fixed_logits = self.fixed_cell_type_logits(cell_idx[i].long())
                 # Retrieve learnable logits from the low-dim encoding.
-                learnable_encoding = self.cell_type_encoding(cell_idx[i].long())
-                learnable_logits = self.cell_type_logits_proj(learnable_encoding)
+                # learnable_encoding = self.cell_type_encoding(cell_idx[i].long())
+                learnable_logits = self.cell_type_logits(cell_idx[i].long())
                 # Mix using the gating parameter alpha.
                 final_logits = (1 - alpha) * fixed_logits + alpha * learnable_logits
                 # Apply Gumbel-Softmax.
