@@ -123,7 +123,7 @@ def main():
                               num_known_types=num_known_types,
                               boundary=boundary, output_mode=output_mode)
     for i in range(2):
-        dataset.plot_sample(i, save_folder=savefig_dir, save_name=f'{filename_fixed}_plot_cell_RF.png')
+        dataset.plot_sample(i, save_folder=savefig_dir, save_name=filename_fixed)
         dataset.save_pdf_mat(i, save_folder=savemat_dir, save_name=filename_fixed)
     dataset.print_cell_table()
 

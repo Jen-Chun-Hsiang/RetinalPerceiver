@@ -573,7 +573,7 @@ class GaussianDataset(Dataset):
         axes[1].set_title("Random Noise Image")
         plt.tight_layout()
         if save_folder is not None:
-            filepath = os.path.join(save_folder, f"{index}_{save_name}")
+            filepath = os.path.join(save_folder, f"{save_name}_{index}_cell_pdf.png")
             plt.savefig(filepath, dpi=300, bbox_inches="tight")
         else:
             plt.show()
