@@ -14,7 +14,7 @@ from datetime import datetime
 import argparse
 import logging
 from utils.simple_2d import GaussianDataset, CrossAttentionNet, compute_sta, CrossAttentionNetAlt
-
+from scipy.io import savemat
 import pandas as pd
 import scipy.io
 
@@ -79,6 +79,7 @@ def main():
     saveprint_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Prints/'
     savefig_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Figures/'
     savemodel_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/CheckPoints/'
+    savemat_dir = '/storage1/fs1/KerschensteinerD/Active/Emily/RISserver/RetinalPerceiver/Results/Matfiles/'
 
     os.makedirs(saveprint_dir, exist_ok=True)  # Ensure folder exists
     os.makedirs(savefig_dir, exist_ok=True)  # Ensure folder exists
@@ -232,6 +233,19 @@ def main():
     reg_loss = np.array(losses_dict["reg_loss"])
     cluster_loss = np.array(losses_dict["cluster_loss"])
 
+    # Create a dictionary to hold your variables
+    data_dict = {
+        'epochs': epochs,
+        'total_loss': total_loss,
+        'reg_loss': reg_loss,
+        'cluster_loss': cluster_loss
+    }
+
+    # Save the dictionary to a .mat file
+    save_name = f'{filename_fixed}_losses.mat'
+    save_name = os.path.join(savemat_dir, save_name)
+    savemat(save_name, data_dict)
+
     # Create a single plot for all loss types.
     plt.figure(figsize=(8, 6))
 
@@ -341,6 +355,9 @@ def main():
     save_name = os.path.join(savefig_dir, f'{filename_fixed}_learned_logit.png')
     plot_cell_type_logits_heatmap(dataset, model, device, save_name=save_name,
                                   is_applied_low_dim_type_encoding=is_applied_low_dim_type_encoding)
+    save_name = os.path.join(savemat_dir, f'{filename_fixed}_learned_logit.mat')
+    save_cell_type_logits_mat(dataset, model, device, save_name,
+                              is_applied_low_dim_type_encoding=is_applied_low_dim_type_encoding)
 
 
 def plot_cell_type_logits_heatmap(dataset, model, device, save_name=None, is_applied_low_dim_type_encoding=True):
@@ -427,6 +444,61 @@ def plot_cell_type_logits_heatmap(dataset, model, device, save_name=None, is_app
         plt.savefig(save_name, dpi=300, bbox_inches="tight")
     else:
         plt.show()
+
+
+def save_cell_type_logits_mat(dataset, model, device, mat_file_name, is_applied_low_dim_type_encoding=True):
+    """
+    Computes cell_type_logits for unknown cells, sorts the corresponding target and predicted types,
+    and saves the sorted arrays into a .mat file for MATLAB processing.
+
+    For each unknown cell:
+      - It computes logits using either a low-dimensional encoding or the full logits,
+      - Determines the predicted type (as the argmax of the logits),
+      - Retrieves the target type from the cell_properties.
+
+    The function then sorts both arrays based on the target_types and saves them to a .mat file.
+
+    Args:
+        dataset: Dataset object with the following attributes:
+            - type_known_flags: Boolean flags for known cell types.
+            - cell_properties: List of dicts containing cell info, where each dict has a "type_id".
+        model: Model object with:
+            - cell_type_logits: Callable for full logits.
+            - cell_type_encoding: Callable for low-dim type encoding.
+            - cell_type_logits_proj: Projection function for low-dim encoded logits.
+        device: Torch device to use.
+        mat_file_name: String filename (including .mat extension) to save the MAT file.
+        is_applied_low_dim_type_encoding: Boolean flag to select which computation path to use.
+    """
+    unknown_indices = [i for i, flag in enumerate(dataset.type_known_flags) if not flag]
+
+    target_types = []
+    predicted_types = []
+
+    # Process each unknown cell
+    for i in unknown_indices:
+        if is_applied_low_dim_type_encoding:
+            encoding = model.cell_type_encoding(torch.tensor(i, dtype=torch.long).to(device))
+            logits = model.cell_type_logits_proj(encoding)
+        else:
+            logits = model.cell_type_logits(torch.tensor(i, dtype=torch.long).to(device))
+
+        logits = logits.detach().cpu().numpy()  # Convert to numpy array
+        pred_type = int(np.argmax(logits))  # Determine the predicted type
+        predicted_types.append(pred_type)
+        target_types.append(dataset.cell_properties[i]["type_id"])  # Retrieve the target type
+
+    # Convert lists to numpy arrays
+    target_types = np.array(target_types)
+    predicted_types = np.array(predicted_types)
+
+    # Sort the arrays by target_types
+    sort_indices = np.argsort(target_types)
+    target_types_sorted = target_types[sort_indices]
+    predicted_types_sorted = predicted_types[sort_indices]
+
+    # Save the sorted arrays into a .mat file for MATLAB processing
+    savemat(mat_file_name, {'target_types': target_types_sorted, 'predicted_types': predicted_types_sorted})
 
 
 
