@@ -63,6 +63,7 @@ class CrossAttentionNet(nn.Module):
         # We freeze these embeddings.
         self.init_type_num = init_type_num
         self.type_embedding = nn.Embedding(self.init_type_num, type_embed_dim)
+        nn.init.uniform_(self.type_embedding.weight, a=-1, b=1)
         self.type_embedding.weight.requires_grad = False  # freeze fixed type embeddings
 
         # Fixed identity logits: used to guarantee unique one-hot vectors initially.
