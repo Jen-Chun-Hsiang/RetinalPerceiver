@@ -63,6 +63,7 @@ def main():
         specific_known = specific_known_1
     elif args.choice_of_set == 2:
         specific_known = specific_known_2
+
     output_mode = 'A'
     num_A = args.num_A
     num_B = args.num_B
