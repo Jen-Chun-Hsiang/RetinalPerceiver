@@ -166,7 +166,7 @@ def main():
                 tau = args.early_tau
 
             cluster_weight = args.cluster_weight
-            alpha = epoch/num_epochs
+            alpha = (epoch/num_epochs) ** 2
             beta = alpha*args.consistency_weight
 
 
