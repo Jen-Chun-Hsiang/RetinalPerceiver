@@ -165,7 +165,7 @@ def main():
             #     tau = args.late_tau
             # else:
             #     tau = args.early_tau
-            tau = adaptive_tau(epoch)
+            tau = adaptive_tau[epoch]
 
             cluster_weight = args.cluster_weight
             alpha = (epoch/num_epochs) ** 2
