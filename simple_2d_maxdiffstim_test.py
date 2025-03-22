@@ -58,11 +58,17 @@ def main():
         {"center": [16, 16], "theta": 1.0 + math.pi / 2, "eig1": 2, "eig2": 2, "type_id": 2, "surround_strength": 0.8},
         {"center": [16, 16], "theta": 1.0 + math.pi / 2, "eig1": 6, "eig2": 6, "type_id": 3, "surround_strength": 0.8},
     ]
+    specific_known_3 = [
+        {"center": [16, 16], "theta": 1.0,               "eig1": 10, "eig2": 2, "type_id": 0, "surround_strength": 0.2},
+        {"center": [16, 16], "theta": 1.0 + math.pi / 2, "eig1": 10, "eig2": 2, "type_id": 1, "surround_strength": 0.2},
+    ]
 
     if args.choice_of_set == 1:
         specific_known = specific_known_1
     elif args.choice_of_set == 2:
         specific_known = specific_known_2
+    elif args.choice_of_set == 3:
+        specific_known = specific_known_3
 
     output_mode = 'A'
     num_A = args.num_A
