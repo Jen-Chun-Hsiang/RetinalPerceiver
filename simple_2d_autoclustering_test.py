@@ -40,6 +40,8 @@ def parse_args():
                                                                                      'complementary test dataset')
     parser.add_argument('--selected_types', nargs='+', type=int, default=None,
                         help="List of selected type ids for complementary dataset generation (e.g., 3 4).")
+    parser.add_argument('--error_metric', type=str, default='mse', choices=['mse', 'mae'],
+                        help="Error metric to use ('mse' or 'mae').")
     # Model
     parser.add_argument('--early_tau', type=float, default=1e-7, help='Temperature for gumbel tau in early training stage')
     parser.add_argument('--late_tau', type=float, default=1.0, help='Temperature for gumbel tau in late training stage')
