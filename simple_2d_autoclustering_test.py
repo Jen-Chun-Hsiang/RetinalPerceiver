@@ -382,6 +382,17 @@ def main():
     errors_comp, outputs_all_comp, targets_all_comp = compute_prediction_errors_all(
         model, comp_dataset, num_stimuli=args.num_stimuli, error_metric=args.error_metric, device=args.device
     )
+    results = {
+        'errors_current': errors_current,
+        'outputs_all_current': np.stack(outputs_all_current),  # shape: (num_cells_current, num_stimuli)
+        'targets_all_current': np.stack(targets_all_current),
+        'errors_comp': errors_comp,
+        'outputs_all_comp': np.stack(outputs_all_comp),  # shape: (num_cells_comp, num_stimuli)
+        'targets_all_comp': np.stack(targets_all_comp)
+    }
+    save_mat_name = os.path.join(savemat_dir, f'{filename_fixed}prediction_results.mat')
+    savemat(save_mat_name, results)
+    print(f"Prediction results saved to {save_mat_name}")
 
 
 def plot_cell_type_logits_heatmap(dataset, model, device, save_name=None, mat_file_name=None,
