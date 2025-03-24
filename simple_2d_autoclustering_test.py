@@ -377,10 +377,10 @@ def main():
                                   is_applied_low_dim_type_encoding=is_applied_low_dim_type_encoding)
 
     errors_current, outputs_all_current, targets_all_current = compute_prediction_errors_all(
-        model, dataset, num_stimuli=args.num_stimuli, error_metric=args.error_metric, device=args.device
+        model, dataset, num_stimuli=args.num_stimuli, error_metric=args.error_metric, device=device
     )
     errors_comp, outputs_all_comp, targets_all_comp = compute_prediction_errors_all(
-        model, comp_dataset, num_stimuli=args.num_stimuli, error_metric=args.error_metric, device=args.device
+        model, comp_dataset, num_stimuli=args.num_stimuli, error_metric=args.error_metric, device=device
     )
     results = {
         'errors_current': errors_current,
