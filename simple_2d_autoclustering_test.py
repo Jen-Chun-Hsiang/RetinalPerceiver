@@ -41,6 +41,7 @@ def parse_args():
     parser.add_argument('--tau_switch_epoch', type=int, default=250, help='Epoch number to switch gumbel tau from early to late')
     parser.add_argument('--cell_type_encoding_dim', type=int, default=3, help='Number of low dimension cell type embedding')
     parser.add_argument('--is_alt_model', action='store_true', help='Enable consistency loss')
+    parser.add_argument('--is_alpha_zero', action='store_true', help='Enable consistency loss')
     # Training
     parser.add_argument('--is_GPU', action='store_true', help='Using GPUs for accelaration')
     parser.add_argument('--num_epochs', type=int, default=200, help='Number of total epochs')
@@ -168,7 +169,10 @@ def main():
             tau = adaptive_tau[epoch]
 
             cluster_weight = args.cluster_weight
-            alpha = (epoch/num_epochs) ** 2
+            if args.is_alpha_zero:
+                alpha = 0.0
+            else:
+                alpha = (epoch / num_epochs) ** 2
             beta = alpha*args.consistency_weight
 
 
