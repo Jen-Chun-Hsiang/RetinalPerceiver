@@ -16,7 +16,7 @@ import logging
 from utils.simple_2d import GaussianDataset, CrossAttentionNet, compute_sta, CrossAttentionNetAlt
 from scipy.io import savemat
 import pandas as pd
-import scipy.io
+from utils.simple_2d_helper import ComplementaryGaussianDataset, compute_prediction_errors_all
 
 
 def parse_args():
@@ -34,6 +34,12 @@ def parse_args():
     parser.add_argument('--boundary', type=int, default=4, help='image boundary to generate a receptive field')
     parser.add_argument('--num_center_pos', type=int, default=5, help='Number of different center position in training')
     parser.add_argument('--num_worker', type=int, default=0, help='Use to offline loading data in batch')
+    # complementary dataset
+    parser.add_argument('--max_new_cells_per_type', type=int, default=10, help='maximum number of test cell per type')
+    parser.add_argument('--is_test_dataset_random_center', action='store_true', help='use random generator for center in'
+                                                                                     'complementary test dataset')
+    parser.add_argument('--selected_types', nargs='+', type=int, default=None,
+                        help="List of selected type ids for complementary dataset generation (e.g., 3 4).")
     # Model
     parser.add_argument('--early_tau', type=float, default=1e-7, help='Temperature for gumbel tau in early training stage')
     parser.add_argument('--late_tau', type=float, default=1.0, help='Temperature for gumbel tau in late training stage')
@@ -118,6 +124,14 @@ def main():
     for i in range(5):
         dataset.plot_sample(i, save_folder=savefig_dir, save_name=f'{filename_fixed}_plot_cell_RF.png')
     dataset.print_cell_table()
+
+    comp_dataset = ComplementaryGaussianDataset(
+        current_dataset=dataset,
+        max_new_cells_per_type=args.max_new_cells_per_type,
+        random_center=args.is_test_dataset_random_center,
+        selected_types=args.selected_types
+    )
+    comp_dataset.print_cell_table()
 
     if args.num_worker == 0:
         loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True)
@@ -361,6 +375,13 @@ def main():
     save_mat_name = os.path.join(savemat_dir, f'{filename_fixed}_learned_logit.mat')
     plot_cell_type_logits_heatmap(dataset, model, device, save_name=save_name, mat_file_name=save_mat_name,
                                   is_applied_low_dim_type_encoding=is_applied_low_dim_type_encoding)
+
+    errors_current, outputs_all_current, targets_all_current = compute_prediction_errors_all(
+        model, dataset, num_stimuli=args.num_stimuli, error_metric=args.error_metric, device=args.device
+    )
+    errors_comp, outputs_all_comp, targets_all_comp = compute_prediction_errors_all(
+        model, comp_dataset, num_stimuli=args.num_stimuli, error_metric=args.error_metric, device=args.device
+    )
 
 
 def plot_cell_type_logits_heatmap(dataset, model, device, save_name=None, mat_file_name=None,
