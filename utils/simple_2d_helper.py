@@ -535,12 +535,11 @@ def compute_prediction_error(model, dataset, cell_id, num_stimuli=10000, error_m
         center = np.array(cell["center"])
         center_norm = (center / image_size) * 2 - 1
         query_center = torch.tensor(center_norm, dtype=torch.float32, device=device).unsqueeze(0).repeat(num_stimuli, 1)
-        is_center_known = torch.zeros(num_stimuli, dtype=torch.bool, device=device)
-        # Use cell_id as the unknown center index.
-        unknown_center_id = torch.full((num_stimuli,), cell_id, dtype=torch.long, device=device)
+        is_center_known = torch.ones(num_stimuli, dtype=torch.bool, device=device)
+        unknown_center_id = torch.full((num_stimuli,), -1, dtype=torch.long, device=device)
         type_id = cell["type_id"]
         type_gt = torch.full((num_stimuli,), type_id, dtype=torch.long, device=device)
-        is_type_known = torch.zeros(num_stimuli, dtype=torch.bool, device=device)
+        is_type_known = torch.ones(num_stimuli, dtype=torch.bool, device=device)
 
     # Create a tensor for the cell index (same value repeated).
     cell_idx = torch.full((num_stimuli,), cell_id, dtype=torch.long, device=device)
