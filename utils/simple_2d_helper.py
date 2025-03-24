@@ -240,6 +240,16 @@ class SharedPerturbationOptimizer:
         logging.info("  Query 2 Loss Reduction: %.6f", improvement2)
 
 
+import os
+import numpy as np
+import torch
+import random
+import logging
+import pandas as pd
+from scipy.io import savemat
+from torch.utils.data import Dataset
+
+
 class ComplementaryGaussianDataset(Dataset):
     def __init__(self, current_dataset, max_new_cells_per_type=16, random_center=False, selected_types=None):
         """
@@ -252,17 +262,16 @@ class ComplementaryGaussianDataset(Dataset):
                            If True, centers are generated randomly, bounded by the min and max coordinates of current cells.
           - selected_types: a list of type_ids to generate new cells for. If None, use all types found in current_dataset.
 
-        The new cells will have the same type-specific parameters as in the current dataset. However, we ensure that
+        Each new cell will have the same type-specific parameters as in the current dataset. However, we ensure that
         the (center, type) combination is not present in the current dataset.
         """
-        # Store image size and create the grid (same as in the original dataset)
         self.image_size = current_dataset.image_size
         x_coords = np.arange(self.image_size)
         y_coords = np.arange(self.image_size)
         xv, yv = np.meshgrid(x_coords, y_coords, indexing='xy')
         self.grid = np.stack([xv, yv], axis=-1)  # shape: (image_size, image_size, 2)
 
-        # Extract cell properties from the current dataset
+        # Extract cell properties from the current dataset.
         current_cells = current_dataset.cell_properties
 
         # For each type, store the first encountered parameter set.
@@ -285,13 +294,24 @@ class ComplementaryGaussianDataset(Dataset):
             self.types_to_generate = list(self.type_params.keys())
 
         # Build a lookup of centers already used in the current dataset for each type.
+        # We first extract unique centers from current_cells.
+        unique_centers = np.unique(np.array([cell["center"] for cell in current_cells]), axis=0)
+        self.unique_centers = unique_centers  # for permutation option
+
+        # For each type in self.types_to_generate, collect unique centers (as in current dataset) that have that type.
         self.current_centers_by_type = {t: [] for t in self.types_to_generate}
         for cell in current_cells:
             t = cell["type_id"]
             if t in self.current_centers_by_type:
                 self.current_centers_by_type[t].append(cell["center"])
+        # Convert each to a unique numpy array.
+        for t in self.current_centers_by_type:
+            if len(self.current_centers_by_type[t]) > 0:
+                self.current_centers_by_type[t] = np.unique(np.array(self.current_centers_by_type[t]), axis=0)
+            else:
+                self.current_centers_by_type[t] = np.array([])
 
-        # If using random centers, compute the overall bounds from current dataset centers.
+        # If using random centers, compute overall bounds from all centers in current dataset.
         all_centers = np.array([cell["center"] for cell in current_cells])
         self.x_min, self.x_max = np.min(all_centers[:, 0]), np.max(all_centers[:, 0])
         self.y_min, self.y_max = np.min(all_centers[:, 1]), np.max(all_centers[:, 1])
@@ -301,15 +321,13 @@ class ComplementaryGaussianDataset(Dataset):
         self.pdf_tensors = []
 
         if not random_center:
-            # Permutation option: use centers from the current dataset.
-            # We use all centers from the current dataset and assign them to the new type if the (center, type) pair is new.
-            available_centers = [cell["center"] for cell in current_cells]
+            # Permutation option: use unique centers from current dataset.
             for t in self.types_to_generate:
                 count = 0
                 current_centers = self.current_centers_by_type[t]
-                # For each candidate center, add it if the combination (center, t) is not present.
-                for center in available_centers:
-                    if any(np.allclose(center, c) for c in current_centers):
+                # For each candidate center, add it only if (center, t) does not exist in current dataset.
+                for center in self.unique_centers:
+                    if current_centers.size > 0 and any(np.allclose(center, c) for c in current_centers):
                         continue
                     params = self.type_params[t]
                     new_cell = {
@@ -330,18 +348,20 @@ class ComplementaryGaussianDataset(Dataset):
                     if count >= max_new_cells_per_type:
                         break
         else:
-            # Random center option: generate new centers within the bounds.
+            # Random center option: generate new centers within bounds that are unique for each type.
             for t in self.types_to_generate:
                 count = 0
                 current_centers = self.current_centers_by_type[t]
-                # Continue generating until we reach the maximum count.
+                # Keep track of centers already generated for this type in the complementary dataset.
+                generated_centers = []
                 while count < max_new_cells_per_type:
                     new_center = np.array([
                         np.random.uniform(self.x_min, self.x_max),
                         np.random.uniform(self.y_min, self.y_max)
                     ])
-                    # Check that this (new_center, t) combination is not already in the current dataset.
-                    if any(np.allclose(new_center, c) for c in current_centers):
+                    # Check if new_center is already in the current dataset or has been generated already.
+                    if (current_centers.size > 0 and any(np.allclose(new_center, c) for c in current_centers)) or \
+                            any(np.allclose(new_center, c) for c in generated_centers):
                         continue
                     params = self.type_params[t]
                     new_cell = {
@@ -358,19 +378,16 @@ class ComplementaryGaussianDataset(Dataset):
                                                             params["theta"], params["eig1"], params["eig2"],
                                                             params["stretching_factor"], params["surround_strength"])
                     self.pdf_tensors.append(pdf_tensor)
+                    generated_centers.append(new_center)
                     count += 1
 
         self.num_cells = len(self.cell_properties)
 
     def _compute_gaussian_pdf(self, grid, center, theta, eig1, eig2, stretching_factor, surround_strength):
-        """
-        Compute the differential Gaussian PDF as defined in the original GaussianDataset.
-        """
-        # Compute the rotation matrix.
+        # Compute rotation matrix based on theta.
         R = np.array([[np.cos(theta), -np.sin(theta)],
                       [np.sin(theta), np.cos(theta)]])
-
-        # Center Gaussian
+        # Center Gaussian covariance and PDF.
         cov_center = R @ np.diag([eig1, eig2]) @ R.T
         norm_factor_center = 1.0 / (2 * np.pi * np.sqrt(np.linalg.det(cov_center)))
         diff = grid - center
@@ -378,7 +395,7 @@ class ComplementaryGaussianDataset(Dataset):
         exponent_center = -0.5 * np.einsum('...i,ij,...j', diff, inv_cov_center, diff)
         center_pdf = norm_factor_center * np.exp(exponent_center)
 
-        # Surround Gaussian (with stretched eigenvalues)
+        # Surround Gaussian: same theta but with stretched eigenvalues.
         eig1_surround = eig1 * stretching_factor
         eig2_surround = eig2 * stretching_factor
         cov_surround = R @ np.diag([eig1_surround, eig2_surround]) @ R.T
@@ -395,9 +412,7 @@ class ComplementaryGaussianDataset(Dataset):
         return self.num_cells
 
     def __getitem__(self, idx):
-        """
-        For each sample, create a random white noise image and compute the dot-product target with the precomputed PDF.
-        """
+        # For each sample, create a white noise image and compute the dot-product target with the precomputed PDF.
         cell_idx = random.randint(0, self.num_cells - 1)
         image = torch.rand(1, self.image_size, self.image_size) * 2 - 1  # white noise image
         pdf_tensor = self.pdf_tensors[cell_idx]
@@ -452,7 +467,7 @@ class ComplementaryGaussianDataset(Dataset):
                     "Eig1": cell["eig1"],
                     "Eig2": cell["eig2"],
                     "Stretching Factor": cell["stretching_factor"],
-                    "Surround Strength": cell["surround_strength"]
+                    "Surround Strength": cell["surround_strength"],
                 }
             data.append(row)
         df = pd.DataFrame(data)
