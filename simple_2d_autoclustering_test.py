@@ -390,6 +390,7 @@ def main():
             'errors_current': errors_current,
             'errors_comp': errors_comp
         }
+        save_mat_name = os.path.join(savemat_dir, f'{filename_fixed}prediction_results_reduced.mat')
     else:
         results = {
             'errors_current': errors_current,
@@ -399,7 +400,8 @@ def main():
             'outputs_all_comp': np.stack(outputs_all_comp),  # shape: (num_cells_comp, num_stimuli)
             'targets_all_comp': np.stack(targets_all_comp)
         }
-    save_mat_name = os.path.join(savemat_dir, f'{filename_fixed}prediction_results.mat')
+        save_mat_name = os.path.join(savemat_dir, f'{filename_fixed}prediction_results.mat')
+
     savemat(save_mat_name, results)
     print(f"Prediction results saved to {save_mat_name}")
 
